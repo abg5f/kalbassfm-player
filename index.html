@@ -169,26 +169,25 @@
     .genre-late     { background: #F5A842; color: #0D0D0D; }
     .genre-evening  { background: #C4A5F5; color: #0D0D0D; }
 
-    /* ── Status ── */
-    .status-row {
-      padding: 8px 18px;
+    /* ── Ticker ── */
+    .ticker {
       border-bottom: 3px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      color: var(--muted);
-      letter-spacing: .1em;
-      text-transform: uppercase;
-    }
-    .dot-status {
-      width: 5px;
-      height: 5px;
       background: var(--accent);
+      overflow: hidden;
+      padding: 7px 0;
     }
-    .dot-status.loading { background: #F5A842; animation: blink .8s step-start infinite; }
-    .dot-status.err     { background: var(--red); }
+    .ticker-inner {
+      display: inline-block;
+      white-space: nowrap;
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      font-weight: 700;
+      color: var(--bg);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      animation: ticker 26s linear infinite;
+    }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
     /* ── Controls ── */
     .controls {
@@ -320,7 +319,7 @@
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
     @media (prefers-reduced-motion: reduce) {
-      .bar, .logo-dot, .track-title { animation: none; }
+      .bar, .logo-dot, .track-title, .ticker-inner { animation: none; }
     }
   </style>
 </head>
@@ -359,9 +358,10 @@
       <span class="genre-badge genre-morning" id="genreBadge" aria-label="Genre du moment"></span>
     </div>
 
-    <div class="status-row" role="status" aria-live="polite">
-      <span class="dot-status" id="statusDot"></span>
-      <span id="statusText">EN ATTENTE</span>
+    <div class="ticker" aria-label="KALBASS FM — la webradio 100% électronique des Caraïbes, 24/7">
+      <div class="ticker-inner" aria-hidden="true">
+        <span id="tickerText"></span><span id="tickerText2"></span>
+      </div>
     </div>
 
     <div class="controls">
@@ -438,8 +438,6 @@
   const titleEl   = document.getElementById('trackTitle');
   const artistEl  = document.getElementById('trackArtist');
   const badgeEl   = document.getElementById('genreBadge');
-  const statusDot = document.getElementById('statusDot');
-  const statusTxt = document.getElementById('statusText');
   const footerSt  = document.getElementById('footerStatus');
   const viz       = document.getElementById('visualizer');
   const artwork   = document.getElementById('artwork');
@@ -484,10 +482,12 @@
       error:   { dot: 'err',     text: 'ERREUR' },
     };
     const s = map[state] || map.paused;
-    statusDot.className = 'dot-status ' + s.dot;
-    statusTxt.textContent = s.text;
-    footerSt.textContent  = s.text;
+    footerSt.textContent = s.text;
   }
+
+  const TICKER_MSG = 'KALBASS FM ★ LA WEBRADIO 100% ÉLECTRONIQUE DES CARAÏBES ★ 24/7 ★ HOUSE · DISCO · TECH HOUSE · TECHNO ★ ';
+  document.getElementById('tickerText').textContent  = TICKER_MSG.repeat(3);
+  document.getElementById('tickerText2').textContent = TICKER_MSG.repeat(3);
 
   btnPlay.addEventListener('click', () => {
     if (playing) {
