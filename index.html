@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CALBASSFM — FM Caraïbes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #0D0D0D;
+      --card:    #111111;
+      --border:  #FFFFFF;
+      --accent:  #F5E642;
+      --red:     #FF3B3B;
+      --fg:      #FFFFFF;
+      --muted:   #555555;
+      --dark:    #1A1A1A;
+      --track:   #2A2A2A;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(380px, 100%);
+      background: var(--card);
+      border: 3px solid var(--border);
+      box-shadow: 7px 7px 0 var(--accent);
+    }
+
+    /* ── Header ── */
+    .header {
+      border-bottom: 3px solid var(--border);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 1.45rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--red);
+      flex-shrink: 0;
+      animation: blink 1.4s step-start infinite;
+    }
+    .badge-live {
+      background: var(--accent);
+      color: var(--bg);
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .15em;
+      padding: 4px 10px;
+      text-transform: uppercase;
+      border: 2px solid var(--border);
+    }
+
+    /* ── Artwork ── */
+    .artwork {
+      border-bottom: 3px solid var(--border);
+      background: var(--dark);
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+    }
+    .visualizer {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      padding: 12px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+    .bar {
+      flex: 1;
+      background: var(--accent);
+      animation: vbar var(--d, .7s) ease-in-out infinite alternate;
+      height: 3px;
+    }
+    @keyframes vbar { from { height: 3px; } to { height: var(--h, 28px); } }
+    .visualizer.stopped .bar { animation-play-state: paused; }
+
+    /* ── Track ── */
+    .track-block {
+      padding: 14px 18px;
+      border-bottom: 3px solid var(--border);
+    }
+    .track-label {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      color: var(--muted);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .track-title-wrap {
+      overflow: hidden;
+      mask-image: linear-gradient(to right, black 80%, transparent 100%);
+    }
+    .track-title {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      line-height: 1.2;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .track-title.scroll { animation: marquee 14s linear infinite; }
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    .track-artist {
+      font-family: 'Space Mono', monospace;
+      font-size: .72rem;
+      color: #888;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .genre-badge {
+      margin-top: 10px;
+      display: inline-block;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border: 2px solid var(--border);
+    }
+    .genre-morning  { background: #F5E642; color: #0D0D0D; }
+    .genre-afternoon { background: #A5F5E6; color: #0D0D0D; }
+    .genre-late     { background: #F5A842; color: #0D0D0D; }
+    .genre-evening  { background: #C4A5F5; color: #0D0D0D; }
+
+    /* ── Status ── */
+    .status-row {
+      padding: 8px 18px;
+      border-bottom: 3px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .dot-status {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+    }
+    .dot-status.loading { background: #F5A842; animation: blink .8s step-start infinite; }
+    .dot-status.err     { background: var(--red); }
+
+    /* ── Controls ── */
+    .controls {
+      padding: 18px;
+      border-bottom: 3px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .btn-ghost {
+      width: 38px;
+      height: 38px;
+      background: transparent;
+      border: 2px solid #2A2A2A;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: not-allowed;
+      flex-shrink: 0;
+    }
+    .btn-play {
+      width: 62px;
+      height: 62px;
+      background: var(--accent);
+      color: var(--bg);
+      border: 3px solid var(--border);
+      box-shadow: 4px 4px 0 var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 80ms, box-shadow 80ms;
+      flex-shrink: 0;
+    }
+    .btn-play:hover  { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
+    .btn-play:active { transform: translate(4px, 4px); box-shadow: none; }
+    .btn-play:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+    /* ── Volume ── */
+    .volume-row {
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 3px solid var(--border);
+    }
+    .vol-label {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+      min-width: 28px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 5px;
+      background: var(--track);
+      outline: none;
+      border: 1px solid #444;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      border: 2px solid var(--border);
+      cursor: pointer;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-text {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      color: #333;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .footer-status {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      color: var(--accent);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bar, .logo-dot, .track-title { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="card" role="main" aria-label="Lecteur CALBASSFM">
+
+    <div class="header">
+      <h1 class="logo">
+        <span class="logo-dot" aria-hidden="true"></span>
+        <span id="stationName">CALBASSFM</span>
+      </h1>
+      <span class="badge-live" role="status" aria-live="polite">■ LIVE</span>
+    </div>
+
+    <div class="artwork" id="artwork" role="img" aria-label="Artwork de la piste en cours">
+      <div class="visualizer stopped" id="visualizer" aria-hidden="true"></div>
+    </div>
+
+    <div class="track-block">
+      <div class="track-label">// NOW PLAYING</div>
+      <div class="track-title-wrap">
+        <p class="track-title" id="trackTitle">WAITING FOR STREAM</p>
+      </div>
+      <p class="track-artist" id="trackArtist">— ARTIST</p>
+      <span class="genre-badge genre-morning" id="genreBadge" aria-label="Genre du moment"></span>
+    </div>
+
+    <div class="status-row" role="status" aria-live="polite">
+      <span class="dot-status" id="statusDot"></span>
+      <span id="statusText">EN ATTENTE</span>
+    </div>
+
+    <div class="controls">
+      <button class="btn-ghost" disabled aria-label="Piste précédente (non disponible en direct)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
+        </svg>
+      </button>
+
+      <button class="btn-play" id="btnPlay" aria-label="Lecture" aria-pressed="false">
+        <svg id="icPlay" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <svg id="icPause" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none">
+          <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+
+      <button class="btn-ghost" disabled aria-label="Piste suivante (non disponible en direct)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="volume-row">
+      <span class="vol-label">VOL</span>
+      <input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+      <span class="vol-label" id="volVal">80</span>
+    </div>
+
+    <div class="footer">
+      <span class="footer-text">// FM CARAÏBES</span>
+      <div class="footer-status">
+        <span class="logo-dot" style="width:5px;height:5px;" aria-hidden="true"></span>
+        <span id="footerStatus">EN ATTENTE</span>
+      </div>
+    </div>
+
+  </main>
+
+  <audio id="audio" preload="none"></audio>
+
+  <script>
+  const CONFIG = {
+    streamUrl:   'http://85.122.120.202/radio.mp3',
+    apiUrl:      'http://85.122.120.202/api/nowplaying/calbassfm',
+    stationName: 'CALBASSFM',
+    pollMs:      8000,
+  };
+
+  const SLOTS = [
+    { from:  6, to: 12, label: 'DISCO · FUNK · SOULFUL', cls: 'genre-morning',   icon: '🌅' },
+    { from: 12, to: 17, label: 'HOUSE · DEEP HOUSE',     cls: 'genre-afternoon', icon: '☀️' },
+    { from: 17, to: 21, label: 'TECH HOUSE',             cls: 'genre-late',      icon: '🌆' },
+    { from: 21, to: 24, label: 'TECHNO · TRANCE',        cls: 'genre-evening',   icon: '🌙' },
+    { from:  0, to:  6, label: 'TECHNO · TRANCE',        cls: 'genre-evening',   icon: '🌙' },
+  ];
+
+  function currentSlot() {
+    const h = new Date().getHours();
+    return SLOTS.find(s => h >= s.from && h < s.to) || SLOTS[3];
+  }
+
+  const audio     = document.getElementById('audio');
+  const btnPlay   = document.getElementById('btnPlay');
+  const icPlay    = document.getElementById('icPlay');
+  const icPause   = document.getElementById('icPause');
+  const volSlider = document.getElementById('volSlider');
+  const volVal    = document.getElementById('volVal');
+  const titleEl   = document.getElementById('trackTitle');
+  const artistEl  = document.getElementById('trackArtist');
+  const badgeEl   = document.getElementById('genreBadge');
+  const statusDot = document.getElementById('statusDot');
+  const statusTxt = document.getElementById('statusText');
+  const footerSt  = document.getElementById('footerStatus');
+  const viz       = document.getElementById('visualizer');
+  const artwork   = document.getElementById('artwork');
+
+  document.getElementById('stationName').textContent = CONFIG.stationName;
+  document.title = CONFIG.stationName + ' — FM Caraïbes';
+  audio.volume = parseFloat(volSlider.value);
+
+  for (let i = 0; i < 22; i++) {
+    const b = document.createElement('div');
+    b.className = 'bar';
+    const h = Math.round(Math.random() * 52 + 6);
+    const d = (Math.random() * 0.5 + 0.35).toFixed(2);
+    b.style.setProperty('--h', h + 'px');
+    b.style.setProperty('--d', d + 's');
+    b.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
+    viz.appendChild(b);
+  }
+
+  function refreshGenre() {
+    const s = currentSlot();
+    badgeEl.className = 'genre-badge ' + s.cls;
+    badgeEl.textContent = s.icon + '  ' + s.label;
+  }
+  refreshGenre();
+  setInterval(refreshGenre, 60_000);
+
+  let playing = false;
+
+  function setUI(state) {
+    playing = state === 'playing';
+    btnPlay.setAttribute('aria-pressed', playing);
+    btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Lecture');
+    icPlay.style.display  = playing ? 'none'  : 'block';
+    icPause.style.display = playing ? 'block' : 'none';
+    viz.classList.toggle('stopped', !playing);
+
+    const map = {
+      playing: { dot: '',        text: 'EN DIRECT' },
+      paused:  { dot: 'err',     text: 'EN PAUSE' },
+      loading: { dot: 'loading', text: 'CONNEXION...' },
+      error:   { dot: 'err',     text: 'ERREUR' },
+    };
+    const s = map[state] || map.paused;
+    statusDot.className = 'dot-status ' + s.dot;
+    statusTxt.textContent = s.text;
+    footerSt.textContent  = s.text;
+  }
+
+  btnPlay.addEventListener('click', () => {
+    if (playing) {
+      audio.pause();
+      audio.src = '';
+      setUI('paused');
+    } else {
+      setUI('loading');
+      audio.src = CONFIG.streamUrl;
+      audio.play()
+        .then(() => setUI('playing'))
+        .catch(() => setUI('error'));
+    }
+  });
+
+  audio.addEventListener('error',   () => setUI('error'));
+  audio.addEventListener('waiting', () => setUI('loading'));
+  audio.addEventListener('playing', () => setUI('playing'));
+
+  volSlider.addEventListener('input', () => {
+    audio.volume = parseFloat(volSlider.value);
+    volVal.textContent = Math.round(volSlider.value * 100);
+  });
+
+  let lastId = null;
+
+  async function pollNowPlaying() {
+    if (CONFIG.apiUrl.includes('YOUR_SERVER')) return;
+    try {
+      const r = await fetch(CONFIG.apiUrl, { cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      const np = d.now_playing;
+      if (!np || np.sh_id === lastId) return;
+      lastId = np.sh_id;
+
+      const { title = '—', artist = '—', art } = np.song || {};
+      artistEl.textContent = artist.toUpperCase();
+
+      titleEl.textContent = title.length > 26
+        ? title.toUpperCase() + '   //   ' + title.toUpperCase()
+        : title.toUpperCase();
+      titleEl.classList.toggle('scroll', title.length > 26);
+
+      if (art) {
+        artwork.style.backgroundImage = `url("${art}")`;
+      } else {
+        artwork.style.backgroundImage = '';
+      }
+    } catch { /* silent */ }
+  }
+
+  pollNowPlaying();
+  setInterval(pollNowPlaying, CONFIG.pollMs);
+  </script>
+</body>
+</html>
