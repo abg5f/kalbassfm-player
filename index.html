@@ -622,13 +622,13 @@
     pollMs:      8000,
   };
 
-  // Grille de programmation — heure de Martinique (UTC−4)
+  // Grille de programmation — heure de Martinique (UTC−4).
+  // Un créneau peut traverser minuit (from > to), ex. 23h → 06h.
   const SLOTS = [
-    { from:  6, to: 12, label: 'HOUSE · DISCO · TECHNO', cls: 'genre-morning',   icon: '🌅' },
-    { from: 12, to: 17, label: 'HOUSE · DEEP HOUSE',     cls: 'genre-afternoon', icon: '☀️' },
-    { from: 17, to: 21, label: 'TECH HOUSE',             cls: 'genre-late',      icon: '🌆' },
-    { from: 21, to: 24, label: 'TECHNO · TRANCE',        cls: 'genre-evening',   icon: '🌙' },
-    { from:  0, to:  6, label: 'TECHNO · TRANCE',        cls: 'genre-evening',   icon: '🌙' },
+    { from:  6, to: 12, label: 'DISCO · FUNK · SOULFUL',      cls: 'genre-morning',   icon: '🌅' },
+    { from: 12, to: 19, label: 'DEEP HOUSE · HOUSE',          cls: 'genre-afternoon', icon: '☀️' },
+    { from: 19, to: 23, label: 'TECH HOUSE · DEEP TECH',      cls: 'genre-late',      icon: '🌆' },
+    { from: 23, to:  6, label: 'TECHNO · TRANCE · DEEP TECH', cls: 'genre-evening',   icon: '🌙' },
   ];
 
   // Heure de la Martinique (UTC−4, pas de changement d'heure) quel que soit le fuseau du visiteur
@@ -636,9 +636,12 @@
     const now = new Date();
     return (now.getUTCHours() + 24 - 4) % 24;
   }
+  function inSlot(h, s) {
+    return s.from < s.to ? (h >= s.from && h < s.to) : (h >= s.from || h < s.to);
+  }
   function currentSlot() {
     const h = martiniqueHour();
-    return SLOTS.find(s => h >= s.from && h < s.to) || SLOTS[3];
+    return SLOTS.find(s => inSlot(h, s)) || SLOTS[0];
   }
 
   const audio     = document.getElementById('audio');
@@ -732,14 +735,12 @@
   function renderProgram() {
     const nowSlot = currentSlot();
     progList.innerHTML = '';
-    // ordre d'affichage : du matin au soir
-    const ordered = [SLOTS[0], SLOTS[1], SLOTS[2], SLOTS[3], SLOTS[4]];
-    ordered.forEach(s => {
+    SLOTS.forEach(s => {
       const isNow = s === nowSlot;
       const row = document.createElement('div');
       row.className = 'prog-item' + (isNow ? ' now' : '');
       row.innerHTML =
-        '<span class="prog-time">' + fmt2(s.from) + 'h – ' + fmt2(s.to === 24 ? 0 : s.to) + 'h</span>' +
+        '<span class="prog-time">' + fmt2(s.from) + 'h – ' + fmt2(s.to) + 'h</span>' +
         '<span class="prog-label">' + s.icon + ' ' + s.label + '</span>' +
         (isNow ? '<span class="prog-live">● EN COURS</span>' : '');
       progList.appendChild(row);
