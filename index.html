@@ -71,16 +71,12 @@
       flex-shrink: 0;
       animation: blink 1.4s step-start infinite;
     }
-    .badge-live {
-      background: var(--accent);
-      color: var(--bg);
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      font-weight: 700;
-      letter-spacing: .15em;
-      padding: 4px 10px;
-      text-transform: uppercase;
+    .badge-flag {
+      display: block;
+      width: 42px;
+      height: 28px;
       border: 2px solid var(--border);
+      flex-shrink: 0;
     }
 
     /* ── Artwork ── */
@@ -342,7 +338,11 @@
         </svg>
         <span id="stationName">KALBASSFM</span>
       </h1>
-      <span class="badge-live" role="status" aria-live="polite">■ LIVE</span>
+      <svg class="badge-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drapeau de la Martinique">
+        <rect width="900" height="300" fill="#00A551"/>
+        <rect y="300" width="900" height="300" fill="#231F20"/>
+        <polygon points="0,0 450,300 0,600" fill="#ED1C24"/>
+      </svg>
     </div>
 
     <div class="artwork" id="artwork" role="img" aria-label="Artwork de la piste en cours">
