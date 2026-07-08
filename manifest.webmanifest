@@ -1,10 +1,13 @@
 {
+  "id": "/",
   "name": "KALBASS FM",
   "short_name": "KALBASS FM",
   "description": "La webradio 100% électronique des Caraïbes. House, disco, tech house, techno. 24/7.",
+  "lang": "fr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0D0D0D",
   "theme_color": "#0D0D0D",
