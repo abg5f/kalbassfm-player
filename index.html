@@ -17,6 +17,12 @@
   <meta name="twitter:title" content="KALBASS FM — La webradio 100% électronique des Caraïbes">
   <meta name="twitter:description" content="House · Disco · Tech House · Techno — en direct 24h/24, 7j/7.">
   <meta name="twitter:image" content="https://kalbassfm-player.vercel.app/og-image.png">
+  <meta name="theme-color" content="#0D0D0D">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="KALBASS FM">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 240'%3E%3Cellipse cx='100' cy='120' rx='60' ry='70' fill='%230D0D0D' stroke='%23FFFFFF' stroke-width='3'/%3E%3Crect x='80' y='35' width='40' height='30' fill='%230D0D0D' stroke='%23FFFFFF' stroke-width='3'/%3E%3Cellipse cx='100' cy='35' rx='20' ry='8' fill='%23F5E642' stroke='%23FFFFFF' stroke-width='2'/%3E%3Crect x='85' y='30' width='30' height='6' fill='%23FFFFFF'/%3E%3Cline x1='85' y1='80' x2='115' y2='80' stroke='%23F5E642' stroke-width='2' fill='none'/%3E%3Cline x1='75' y1='120' x2='125' y2='120' stroke='%23F5E642' stroke-width='2' fill='none'/%3E%3Cline x1='80' y1='160' x2='120' y2='160' stroke='%23F5E642' stroke-width='2' fill='none'/%3E%3Crect x='70' y='145' width='60' height='8' fill='%23F5E642' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M 60 175 Q 100 190 140 175' stroke='%23F5E642' stroke-width='2' fill='none'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,22 +78,16 @@
       align-items: center;
       gap: 8px;
     }
-    .logo-svg {
-      width: 28px;
-      height: 28px;
-      display: inline-block;
-    }
+    .logo-svg { width: 28px; height: 28px; display: inline-block; }
     .logo-dot {
-      width: 10px;
-      height: 10px;
+      width: 10px; height: 10px;
       background: var(--red);
       flex-shrink: 0;
       animation: blink 1.4s step-start infinite;
     }
     .badge-flag {
       display: block;
-      width: 42px;
-      height: 28px;
+      width: 42px; height: 28px;
       border: 2px solid var(--border);
       flex-shrink: 0;
     }
@@ -122,16 +122,19 @@
     }
     @keyframes vbar { from { height: 3px; } to { height: var(--h, 28px); } }
     .visualizer.stopped .bar { animation-play-state: paused; }
-    /* mode "live" : hauteurs pilotées par l'analyseur audio, plus d'anim CSS */
-    .visualizer.live .bar {
-      animation: none;
-      transition: height 70ms linear;
-    }
+    .visualizer.live .bar { animation: none; transition: height 70ms linear; }
 
     /* ── Track ── */
     .track-block {
       padding: 14px 18px;
       border-bottom: 3px solid var(--border);
+    }
+    .track-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
     }
     .track-label {
       font-family: 'Space Mono', monospace;
@@ -139,7 +142,24 @@
       color: var(--muted);
       letter-spacing: .12em;
       text-transform: uppercase;
-      margin-bottom: 6px;
+    }
+    .listeners {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      display: none;
+      align-items: center;
+      gap: 4px;
+    }
+    .listeners.show { display: inline-flex; }
+    .listeners .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--red);
+      animation: blink 1.4s step-start infinite;
     }
     .track-title-wrap {
       overflow: hidden;
@@ -184,6 +204,49 @@
     .genre-late     { background: #F5A842; color: #0D0D0D; }
     .genre-evening  { background: #C4A5F5; color: #0D0D0D; }
 
+    /* ── Actions (chercher / partager / réagir) ── */
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .chip {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--fg);
+      background: transparent;
+      border: 2px solid var(--track);
+      padding: 5px 9px;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: border-color 120ms, color 120ms, background 120ms;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip-fire {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .chip-fire.pop { animation: pop 340ms ease; }
+    @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+    .fire-float {
+      position: fixed;
+      pointer-events: none;
+      font-size: 1.1rem;
+      z-index: 40;
+      animation: floatUp 900ms ease-out forwards;
+    }
+    @keyframes floatUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-46px) scale(1.5); }
+    }
+
     /* ── Ticker ── */
     .ticker {
       border-bottom: 3px solid var(--border);
@@ -214,27 +277,21 @@
       gap: 14px;
     }
     .btn-ghost {
-      width: 38px;
-      height: 38px;
+      width: 38px; height: 38px;
       background: transparent;
       border: 2px solid #2A2A2A;
       color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       cursor: not-allowed;
       flex-shrink: 0;
     }
     .btn-play {
-      width: 62px;
-      height: 62px;
+      width: 62px; height: 62px;
       background: var(--accent);
       color: var(--bg);
       border: 3px solid var(--border);
       box-shadow: 4px 4px 0 var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       transition: transform 80ms, box-shadow 80ms;
       flex-shrink: 0;
@@ -243,7 +300,7 @@
     .btn-play:active { transform: translate(4px, 4px); box-shadow: none; }
     .btn-play:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-    /* ── Volume ── */
+    /* ── Volume + sleep ── */
     .volume-row {
       padding: 12px 18px;
       display: flex;
@@ -272,11 +329,111 @@
     }
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 14px; height: 14px;
       background: var(--accent);
       border: 2px solid var(--border);
       cursor: pointer;
+    }
+    .sleep-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      border: 2px solid var(--track);
+      padding: 5px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color 120ms, color 120ms;
+    }
+    .sleep-btn.on { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Panneaux dépliables (historique / programme) ── */
+    .panel {
+      border-bottom: 3px solid var(--border);
+    }
+    .panel > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 11px 18px;
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .panel > summary::-webkit-details-marker { display: none; }
+    .panel > summary .chev { color: var(--accent); transition: transform 180ms; }
+    .panel[open] > summary .chev { transform: rotate(90deg); }
+    .panel-body { padding: 4px 18px 14px; }
+
+    .hist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-top: 1px solid #222;
+    }
+    .hist-item:first-child { border-top: none; }
+    .hist-art {
+      width: 34px; height: 34px;
+      background: var(--dark) center/cover no-repeat;
+      border: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .hist-meta { min-width: 0; }
+    .hist-title {
+      font-size: .74rem;
+      font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hist-artist {
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      color: #888;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .prog-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-top: 1px solid #222;
+      font-family: 'Space Mono', monospace;
+    }
+    .prog-item:first-child { border-top: none; }
+    .prog-item.now { background: rgba(245,230,66,.07); margin: 0 -18px; padding-left: 18px; padding-right: 18px; }
+    .prog-time {
+      font-size: .64rem;
+      color: var(--accent);
+      font-weight: 700;
+      min-width: 82px;
+      flex-shrink: 0;
+    }
+    .prog-label { font-size: .64rem; color: #ccc; letter-spacing: .04em; }
+    .prog-item.now .prog-label { color: var(--fg); font-weight: 700; }
+    .prog-live {
+      margin-left: auto;
+      font-size: .5rem;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 2px 6px;
+      letter-spacing: .1em;
+    }
+    .prog-note {
+      font-family: 'Space Mono', monospace;
+      font-size: .54rem;
+      color: var(--muted);
+      margin-top: 8px;
+      letter-spacing: .06em;
     }
 
     /* ── Footer ── */
@@ -285,6 +442,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
     }
     .footer-text {
       font-family: 'Space Mono', monospace;
@@ -304,11 +463,15 @@
       gap: 5px;
     }
     .footer-donate {
+      width: 100%;
       margin-top: 10px;
       padding-top: 10px;
       border-top: 1px solid var(--accent);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
-    .donate-link {
+    .donate-link, .install-link {
       display: inline-block;
       background: var(--accent);
       color: var(--bg);
@@ -320,16 +483,13 @@
       padding: 5px 12px;
       border: 2px solid var(--border);
       text-decoration: none;
+      cursor: pointer;
       transition: transform 80ms, box-shadow 80ms;
     }
-    .donate-link:hover {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0 var(--border);
-    }
-    .donate-link:active {
-      transform: translate(4px, 4px);
-      box-shadow: none;
-    }
+    .install-link { background: transparent; color: var(--fg); display: none; }
+    .install-link.show { display: inline-block; }
+    .donate-link:hover, .install-link:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
+    .donate-link:active, .install-link:active { transform: translate(4px, 4px); box-shadow: none; }
 
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
@@ -340,7 +500,7 @@
 </head>
 <body>
 
-  <main class="card" role="main" aria-label="Lecteur CALBASSFM">
+  <main class="card" role="main" aria-label="Lecteur KALBASSFM">
 
     <div class="header">
       <h1 class="logo">
@@ -369,12 +529,22 @@
     </div>
 
     <div class="track-block">
-      <div class="track-label">// NOW PLAYING</div>
+      <div class="track-label-row">
+        <span class="track-label">// NOW PLAYING</span>
+        <span class="listeners" id="listeners"><span class="dot"></span><span id="listenersCount"></span></span>
+      </div>
       <div class="track-title-wrap">
         <p class="track-title" id="trackTitle">WAITING FOR STREAM</p>
       </div>
       <p class="track-artist" id="trackArtist">— ARTIST</p>
       <span class="genre-badge genre-morning" id="genreBadge" aria-label="Genre du moment"></span>
+
+      <div class="actions-row" id="actionsRow" style="display:none">
+        <button class="chip chip-fire" id="reactBtn" aria-label="J'aime ce morceau">🔥 <span id="reactCount">0</span></button>
+        <button class="chip" id="shareBtn" aria-label="Partager le morceau">↗ Partager</button>
+        <a class="chip" id="findYT" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
+        <a class="chip" id="findBP" target="_blank" rel="noopener noreferrer">◆ Beatport</a>
+      </div>
     </div>
 
     <div class="ticker" aria-label="KALBASS FM — la webradio 100% électronique des Caraïbes, 24/7">
@@ -410,7 +580,23 @@
       <span class="vol-label">VOL</span>
       <input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       <span class="vol-label" id="volVal">80</span>
+      <button class="sleep-btn" id="sleepBtn" aria-label="Minuteur de sommeil">💤 OFF</button>
     </div>
+
+    <details class="panel" id="histPanel">
+      <summary>Historique <span class="chev">›</span></summary>
+      <div class="panel-body">
+        <div id="historyList"></div>
+      </div>
+    </details>
+
+    <details class="panel" id="progPanel">
+      <summary>Programme du jour <span class="chev">›</span></summary>
+      <div class="panel-body">
+        <div id="progList"></div>
+        <p class="prog-note">Horaires Antilles (heure de Martinique · UTC−4)</p>
+      </div>
+    </details>
 
     <div class="footer">
       <span class="footer-text">// FM CARAÏBES</span>
@@ -420,6 +606,7 @@
       </div>
       <div class="footer-donate">
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
+        <button class="install-link" id="installBtn">⬇ Installer l'app</button>
       </div>
     </div>
 
@@ -435,6 +622,7 @@
     pollMs:      8000,
   };
 
+  // Grille de programmation — heure de Martinique (UTC−4)
   const SLOTS = [
     { from:  6, to: 12, label: 'HOUSE · DISCO · TECHNO', cls: 'genre-morning',   icon: '🌅' },
     { from: 12, to: 17, label: 'HOUSE · DEEP HOUSE',     cls: 'genre-afternoon', icon: '☀️' },
@@ -443,8 +631,13 @@
     { from:  0, to:  6, label: 'TECHNO · TRANCE',        cls: 'genre-evening',   icon: '🌙' },
   ];
 
+  // Heure de la Martinique (UTC−4, pas de changement d'heure) quel que soit le fuseau du visiteur
+  function martiniqueHour() {
+    const now = new Date();
+    return (now.getUTCHours() + 24 - 4) % 24;
+  }
   function currentSlot() {
-    const h = new Date().getHours();
+    const h = martiniqueHour();
     return SLOTS.find(s => h >= s.from && h < s.to) || SLOTS[3];
   }
 
@@ -460,11 +653,24 @@
   const footerSt  = document.getElementById('footerStatus');
   const viz       = document.getElementById('visualizer');
   const artwork   = document.getElementById('artwork');
+  const listenersEl = document.getElementById('listeners');
+  const listenersCount = document.getElementById('listenersCount');
+  const actionsRow = document.getElementById('actionsRow');
+  const reactBtn  = document.getElementById('reactBtn');
+  const reactCount = document.getElementById('reactCount');
+  const shareBtn  = document.getElementById('shareBtn');
+  const findYT    = document.getElementById('findYT');
+  const findBP    = document.getElementById('findBP');
+  const historyList = document.getElementById('historyList');
+  const progList  = document.getElementById('progList');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
   document.title = CONFIG.stationName + ' — FM Caraïbes';
   audio.volume = parseFloat(volSlider.value);
 
+  let current = { title: '', artist: '', art: '', songId: '' };
+
+  /* ── Visualiseur ── */
   const barEls = [];
   for (let i = 0; i < 22; i++) {
     const b = document.createElement('div');
@@ -478,9 +684,7 @@
     barEls.push(b);
   }
 
-  /* ── Analyseur audio réel (Web Audio API) ── */
   let audioCtx = null, analyser = null, freqData = null, rafId = null;
-
   function initAnalyser() {
     if (audioCtx) { audioCtx.resume(); return; }
     try {
@@ -493,11 +697,9 @@
       analyser.connect(audioCtx.destination);
       freqData = new Uint8Array(analyser.frequencyBinCount);
       viz.classList.add('live');
-    } catch { /* fallback : animation CSS d'origine */ }
+    } catch { /* fallback CSS */ }
   }
-
   let silentFrames = 0;
-
   function drawViz() {
     rafId = requestAnimationFrame(drawViz);
     analyser.getByteFrequencyData(freqData);
@@ -510,37 +712,45 @@
       total += v;
       barEls[i].style.height = Math.max(3, v * v * maxH) + 'px';
     }
-    // aucun signal pendant ~4s alors que ça joue -> retour à l'animation CSS
     if (total === 0 && !audio.paused) {
-      if (++silentFrames > 240) {
-        stopViz();
-        viz.classList.remove('live');
-        barEls.forEach(b => b.style.height = '');
-        analyser = null;
-      }
-    } else {
-      silentFrames = 0;
-    }
+      if (++silentFrames > 240) { stopViz(); viz.classList.remove('live'); barEls.forEach(b => b.style.height = ''); analyser = null; }
+    } else silentFrames = 0;
   }
-
-  function startViz() {
-    if (analyser && !rafId) drawViz();
-  }
+  function startViz() { if (analyser && !rafId) drawViz(); }
   function stopViz() {
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (viz.classList.contains('live')) barEls.forEach(b => b.style.height = '3px');
   }
 
+  /* ── Genre + programme ── */
   function refreshGenre() {
     const s = currentSlot();
     badgeEl.className = 'genre-badge ' + s.cls;
     badgeEl.textContent = s.icon + '  ' + s.label;
   }
+  function fmt2(n) { return String(n).padStart(2, '0'); }
+  function renderProgram() {
+    const nowSlot = currentSlot();
+    progList.innerHTML = '';
+    // ordre d'affichage : du matin au soir
+    const ordered = [SLOTS[0], SLOTS[1], SLOTS[2], SLOTS[3], SLOTS[4]];
+    ordered.forEach(s => {
+      const isNow = s === nowSlot;
+      const row = document.createElement('div');
+      row.className = 'prog-item' + (isNow ? ' now' : '');
+      row.innerHTML =
+        '<span class="prog-time">' + fmt2(s.from) + 'h – ' + fmt2(s.to === 24 ? 0 : s.to) + 'h</span>' +
+        '<span class="prog-label">' + s.icon + ' ' + s.label + '</span>' +
+        (isNow ? '<span class="prog-live">● EN COURS</span>' : '');
+      progList.appendChild(row);
+    });
+  }
   refreshGenre();
-  setInterval(refreshGenre, 60_000);
+  renderProgram();
+  setInterval(() => { refreshGenre(); renderProgram(); }, 60_000);
 
+  /* ── État lecture ── */
   let playing = false;
-
   function setUI(state) {
     playing = state === 'playing';
     btnPlay.setAttribute('aria-pressed', playing);
@@ -548,15 +758,14 @@
     icPlay.style.display  = playing ? 'none'  : 'block';
     icPause.style.display = playing ? 'block' : 'none';
     viz.classList.toggle('stopped', !playing);
-
     const map = {
-      playing: { dot: '',        text: 'EN DIRECT' },
-      paused:  { dot: 'err',     text: 'EN PAUSE' },
-      loading: { dot: 'loading', text: 'CONNEXION...' },
-      error:   { dot: 'err',     text: 'ERREUR' },
+      playing: { text: 'EN DIRECT' },
+      paused:  { text: 'EN PAUSE' },
+      loading: { text: 'CONNEXION...' },
+      error:   { text: 'ERREUR' },
     };
-    const s = map[state] || map.paused;
-    footerSt.textContent = s.text;
+    footerSt.textContent = (map[state] || map.paused).text;
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
     if (playing) startViz(); else stopViz();
   }
 
@@ -564,33 +773,26 @@
   document.getElementById('tickerText').textContent  = TICKER_MSG.repeat(3);
   document.getElementById('tickerText2').textContent = TICKER_MSG.repeat(3);
 
+  /* ── Flux ── */
   let corsOk = true;
-
   function startStream() {
-    if (corsOk) audio.crossOrigin = 'anonymous';
-    else audio.removeAttribute('crossorigin');
+    if (corsOk) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');
     audio.src = CONFIG.streamUrl;
     audio.play()
       .then(() => { if (corsOk) initAnalyser(); setUI('playing'); })
       .catch(() => {
-        if (corsOk && !audioCtx) { corsOk = false; startStream(); } // retente sans CORS (visualiseur CSS)
+        if (corsOk && !audioCtx) { corsOk = false; startStream(); }
         else setUI('error');
       });
   }
-
-  btnPlay.addEventListener('click', () => {
-    if (playing) {
-      audio.pause();
-      audio.src = '';
-      setUI('paused');
-    } else {
-      setUI('loading');
-      startStream();
-    }
-  });
-
-  audio.addEventListener('error',   () => setUI('error'));
-  audio.addEventListener('waiting', () => setUI('loading'));
+  function stopStream() { audio.pause(); audio.src = ''; setUI('paused'); }
+  function togglePlay() {
+    if (playing) stopStream();
+    else { setUI('loading'); startStream(); }
+  }
+  btnPlay.addEventListener('click', togglePlay);
+  audio.addEventListener('error',   () => { if (playing) setUI('error'); });
+  audio.addEventListener('waiting', () => { if (!audio.paused) setUI('loading'); });
   audio.addEventListener('playing', () => setUI('playing'));
 
   volSlider.addEventListener('input', () => {
@@ -598,36 +800,176 @@
     volVal.textContent = Math.round(volSlider.value * 100);
   });
 
-  let lastId = null;
+  /* ── Media Session (écran verrouillé mobile) ── */
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    const art = current.art;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: current.title || 'KALBASS FM',
+      artist: current.artist || 'La webradio électronique des Caraïbes',
+      album: 'KALBASS FM',
+      artwork: art ? [
+        { src: art, sizes: '256x256', type: 'image/jpeg' },
+        { src: art, sizes: '512x512', type: 'image/jpeg' },
+      ] : [
+        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+    });
+    navigator.mediaSession.setActionHandler('play',  () => { if (!playing) togglePlay(); });
+    navigator.mediaSession.setActionHandler('pause', () => { if (playing) togglePlay(); });
+    navigator.mediaSession.setActionHandler('stop',  () => stopStream());
+  }
 
+  /* ── Liens de recherche + partage ── */
+  function updateFindLinks() {
+    const q = encodeURIComponent((current.artist + ' ' + current.title).trim());
+    findYT.href = 'https://www.youtube.com/results?search_query=' + q;
+    findBP.href = 'https://www.beatport.com/search?q=' + q;
+  }
+  shareBtn.addEventListener('click', async () => {
+    const label = current.title ? `${current.artist} – ${current.title}` : 'KALBASS FM';
+    const text = `🎧 J'écoute ${label} sur KALBASS FM — la webradio 100% électronique des Caraïbes !`;
+    const url = 'https://kalbassfm-player.vercel.app/';
+    if (navigator.share) {
+      try { await navigator.share({ title: 'KALBASS FM', text, url }); } catch {}
+    } else {
+      window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + url), '_blank', 'noopener');
+    }
+  });
+
+  /* ── Réactions 🔥 (compteur partagé via /api/reactions, sinon local) ── */
+  const REACTED = new Set(JSON.parse(localStorage.getItem('kfm_reacted') || '[]'));
+  function saveReacted() { localStorage.setItem('kfm_reacted', JSON.stringify([...REACTED].slice(-200))); }
+
+  async function loadReactions(id) {
+    reactBtn.disabled = false;
+    if (!id) { reactCount.textContent = '0'; return; }
+    try {
+      const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), { cache: 'no-store' });
+      const j = await r.json();
+      reactCount.textContent = j.count ?? 0;
+    } catch { reactCount.textContent = reactCount.textContent || '0'; }
+    reactBtn.classList.toggle('chip-fire', true);
+  }
+  reactBtn.addEventListener('click', async (e) => {
+    const id = current.songId;
+    reactCount.textContent = (parseInt(reactCount.textContent, 10) || 0) + 1;
+    reactBtn.classList.remove('pop'); void reactBtn.offsetWidth; reactBtn.classList.add('pop');
+    // petit 🔥 qui s'envole
+    const f = document.createElement('div');
+    f.className = 'fire-float'; f.textContent = '🔥';
+    f.style.left = e.clientX - 8 + 'px'; f.style.top = e.clientY - 12 + 'px';
+    document.body.appendChild(f); setTimeout(() => f.remove(), 900);
+    if (!id) return;
+    try {
+      const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), { method: 'POST', cache: 'no-store' });
+      const j = await r.json();
+      if (j.enabled && typeof j.count === 'number') reactCount.textContent = j.count;
+    } catch {}
+    REACTED.add(id); saveReacted();
+  });
+
+  /* ── Historique ── */
+  function renderHistory(hist) {
+    if (!Array.isArray(hist) || !hist.length) { historyList.innerHTML = '<p class="prog-note">Rien pour l\'instant.</p>'; return; }
+    historyList.innerHTML = '';
+    hist.slice(0, 6).forEach(h => {
+      const s = h.song || {};
+      const el = document.createElement('div');
+      el.className = 'hist-item';
+      el.innerHTML =
+        '<div class="hist-art" style="' + (s.art ? "background-image:url('" + s.art + "')" : '') + '"></div>' +
+        '<div class="hist-meta">' +
+          '<div class="hist-title">' + (s.title || '—') + '</div>' +
+          '<div class="hist-artist">' + (s.artist || '') + '</div>' +
+        '</div>';
+      historyList.appendChild(el);
+    });
+  }
+
+  /* ── Polling now-playing ── */
+  let lastId = null;
   async function pollNowPlaying() {
-    if (CONFIG.apiUrl.includes('YOUR_SERVER')) return;
     try {
       const r = await fetch(CONFIG.apiUrl, { cache: 'no-store' });
       if (!r.ok) return;
       const d = await r.json();
+
+      // Auditeurs
+      const lc = d.listeners && (d.listeners.current ?? d.listeners.total);
+      if (typeof lc === 'number' && lc > 0) {
+        listenersCount.textContent = lc + (lc > 1 ? ' EN LIGNE' : ' EN LIGNE');
+        listenersEl.classList.add('show');
+      } else listenersEl.classList.remove('show');
+
+      // Historique
+      renderHistory(d.song_history);
+
       const np = d.now_playing;
       if (!np || np.sh_id === lastId) return;
       lastId = np.sh_id;
 
-      const { title = '—', artist = '—', art } = np.song || {};
+      const song = np.song || {};
+      const title = song.title || '—';
+      const artist = song.artist || '—';
+      current = { title, artist, art: song.art || '', songId: song.id || String(np.sh_id || '') };
+
       artistEl.textContent = artist.toUpperCase();
-
-      titleEl.textContent = title.length > 26
-        ? title.toUpperCase() + '   //   ' + title.toUpperCase()
-        : title.toUpperCase();
+      titleEl.textContent = title.length > 26 ? title.toUpperCase() + '   //   ' + title.toUpperCase() : title.toUpperCase();
       titleEl.classList.toggle('scroll', title.length > 26);
+      artwork.style.backgroundImage = song.art ? `url("${song.art}")` : '';
 
-      if (art) {
-        artwork.style.backgroundImage = `url("${art}")`;
-      } else {
-        artwork.style.backgroundImage = '';
-      }
+      actionsRow.style.display = 'flex';
+      updateFindLinks();
+      updateMediaSession();
+      loadReactions(current.songId);
     } catch { /* silent */ }
   }
-
   pollNowPlaying();
   setInterval(pollNowPlaying, CONFIG.pollMs);
+
+  /* ── Sleep timer ── */
+  const SLEEP_STEPS = [0, 15, 30, 60];
+  let sleepIdx = 0, sleepDeadline = 0, sleepTick = null;
+  const sleepBtn = document.getElementById('sleepBtn');
+  function renderSleep() {
+    const mins = SLEEP_STEPS[sleepIdx];
+    if (!mins) { sleepBtn.textContent = '💤 OFF'; sleepBtn.classList.remove('on'); return; }
+    const left = Math.max(0, Math.ceil((sleepDeadline - Date.now()) / 60000));
+    sleepBtn.textContent = '💤 ' + left + ' MIN';
+    sleepBtn.classList.add('on');
+  }
+  sleepBtn.addEventListener('click', () => {
+    sleepIdx = (sleepIdx + 1) % SLEEP_STEPS.length;
+    const mins = SLEEP_STEPS[sleepIdx];
+    clearInterval(sleepTick);
+    if (mins) {
+      sleepDeadline = Date.now() + mins * 60000;
+      sleepTick = setInterval(() => {
+        if (Date.now() >= sleepDeadline) { clearInterval(sleepTick); sleepIdx = 0; if (playing) stopStream(); }
+        renderSleep();
+      }, 1000);
+    }
+    renderSleep();
+  });
+
+  /* ── PWA : installation + service worker ── */
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installBtn');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferredPrompt = e; installBtn.classList.add('show');
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null; installBtn.classList.remove('show');
+  });
+  window.addEventListener('appinstalled', () => installBtn.classList.remove('show'));
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
   </script>
 </body>
 </html>
