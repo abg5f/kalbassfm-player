@@ -105,22 +105,28 @@
       background-position: center;
     }
     .visualizer {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: flex-end;
       gap: 3px;
       padding: 12px;
-      width: 100%;
-      position: relative;
       z-index: 1;
     }
     .bar {
       flex: 1;
       background: var(--accent);
+      opacity: .85;
       animation: vbar var(--d, .7s) ease-in-out infinite alternate;
       height: 3px;
     }
     @keyframes vbar { from { height: 3px; } to { height: var(--h, 28px); } }
     .visualizer.stopped .bar { animation-play-state: paused; }
+    /* mode "live" : hauteurs pilotées par l'analyseur audio, plus d'anim CSS */
+    .visualizer.live .bar {
+      animation: none;
+      transition: height 70ms linear;
+    }
 
     /* ── Track ── */
     .track-block {
@@ -459,6 +465,7 @@
   document.title = CONFIG.stationName + ' — FM Caraïbes';
   audio.volume = parseFloat(volSlider.value);
 
+  const barEls = [];
   for (let i = 0; i < 22; i++) {
     const b = document.createElement('div');
     b.className = 'bar';
@@ -468,6 +475,60 @@
     b.style.setProperty('--d', d + 's');
     b.style.animationDelay = (Math.random() * 0.4).toFixed(2) + 's';
     viz.appendChild(b);
+    barEls.push(b);
+  }
+
+  /* ── Analyseur audio réel (Web Audio API) ── */
+  let audioCtx = null, analyser = null, freqData = null, rafId = null;
+
+  function initAnalyser() {
+    if (audioCtx) { audioCtx.resume(); return; }
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaElementSource(audio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      analyser.smoothingTimeConstant = 0.8;
+      src.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+      viz.classList.add('live');
+    } catch { /* fallback : animation CSS d'origine */ }
+  }
+
+  let silentFrames = 0;
+
+  function drawViz() {
+    rafId = requestAnimationFrame(drawViz);
+    analyser.getByteFrequencyData(freqData);
+    const maxH = viz.clientHeight - 24;
+    const n = barEls.length;
+    let total = 0;
+    for (let i = 0; i < n; i++) {
+      const idx = 2 + Math.floor(Math.pow(i / n, 1.6) * (freqData.length - 6));
+      const v = freqData[idx] / 255;
+      total += v;
+      barEls[i].style.height = Math.max(3, v * v * maxH) + 'px';
+    }
+    // aucun signal pendant ~4s alors que ça joue -> retour à l'animation CSS
+    if (total === 0 && !audio.paused) {
+      if (++silentFrames > 240) {
+        stopViz();
+        viz.classList.remove('live');
+        barEls.forEach(b => b.style.height = '');
+        analyser = null;
+      }
+    } else {
+      silentFrames = 0;
+    }
+  }
+
+  function startViz() {
+    if (analyser && !rafId) drawViz();
+  }
+  function stopViz() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (viz.classList.contains('live')) barEls.forEach(b => b.style.height = '3px');
   }
 
   function refreshGenre() {
@@ -496,11 +557,26 @@
     };
     const s = map[state] || map.paused;
     footerSt.textContent = s.text;
+    if (playing) startViz(); else stopViz();
   }
 
   const TICKER_MSG = 'KALBASS FM ★ LA WEBRADIO 100% ÉLECTRONIQUE DES CARAÏBES ★ 24/7 ★ HOUSE · DISCO · TECH HOUSE · TECHNO ★ ';
   document.getElementById('tickerText').textContent  = TICKER_MSG.repeat(3);
   document.getElementById('tickerText2').textContent = TICKER_MSG.repeat(3);
+
+  let corsOk = true;
+
+  function startStream() {
+    if (corsOk) audio.crossOrigin = 'anonymous';
+    else audio.removeAttribute('crossorigin');
+    audio.src = CONFIG.streamUrl;
+    audio.play()
+      .then(() => { if (corsOk) initAnalyser(); setUI('playing'); })
+      .catch(() => {
+        if (corsOk && !audioCtx) { corsOk = false; startStream(); } // retente sans CORS (visualiseur CSS)
+        else setUI('error');
+      });
+  }
 
   btnPlay.addEventListener('click', () => {
     if (playing) {
@@ -509,10 +585,7 @@
       setUI('paused');
     } else {
       setUI('loading');
-      audio.src = CONFIG.streamUrl;
-      audio.play()
-        .then(() => setUI('playing'))
-        .catch(() => setUI('error'));
+      startStream();
     }
   });
 
