@@ -131,6 +131,20 @@
       border: 2px solid var(--border);
       flex-shrink: 0;
     }
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .btn-install-icon {
+      display: none;
+      width: 28px; height: 28px;
+      background: var(--accent);
+      color: var(--bg);
+      border: 2px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-install-icon.show { display: flex; }
+    .btn-install-icon:active { transform: translate(1px, 1px); }
 
     /* ── Artwork ── */
     .artwork {
@@ -642,11 +656,18 @@
         </svg>
         <span id="stationName">KALBASSFM</span>
       </h1>
-      <svg class="badge-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drapeau de la Martinique">
-        <rect width="900" height="300" fill="#00A551"/>
-        <rect y="300" width="900" height="300" fill="#231F20"/>
-        <polygon points="0,0 450,300 0,600" fill="#ED1C24"/>
-      </svg>
+      <div class="header-actions">
+        <button class="btn-install-icon" id="headerInstallBtn" aria-label="Installer l'application KALBASS FM" title="Installer l'app">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M12 3v12M7 10l5 5 5-5M5 20h14"/>
+          </svg>
+        </button>
+        <svg class="badge-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drapeau de la Martinique">
+          <rect width="900" height="300" fill="#00A551"/>
+          <rect y="300" width="900" height="300" fill="#231F20"/>
+          <polygon points="0,0 450,300 0,600" fill="#ED1C24"/>
+        </svg>
+      </div>
     </div>
 
     <div class="artwork" id="artwork" role="img" aria-label="Artwork de la piste en cours">
@@ -1131,6 +1152,7 @@
   /* ── PWA : installation + service worker ── */
   let deferredPrompt = null;
   const installBtn = document.getElementById('installBtn');
+  const headerInstallBtn = document.getElementById('headerInstallBtn');
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -1138,11 +1160,16 @@
     maybeShowInstallToast();
   });
   installBtn.addEventListener('click', () => promptInstall());
+  headerInstallBtn.addEventListener('click', () => maybeShowInstallToast(true));
   window.addEventListener('appinstalled', () => {
     installBtn.classList.remove('show');
+    headerInstallBtn.classList.remove('show');
     hideInstallToast();
     localStorage.setItem('kfm_installed', '1');
   });
+  if (!isStandalone() && localStorage.getItem('kfm_installed') !== '1') {
+    headerInstallBtn.classList.add('show');
+  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
@@ -1184,9 +1211,10 @@
     hideInstallToast();
   }
 
-  function maybeShowInstallToast() {
+  function maybeShowInstallToast(force) {
     if (localStorage.getItem('kfm_installed') === '1') return;
-    if (isStandalone() || !isMobile() || recentlyDismissed()) return;
+    if (isStandalone()) return;
+    if (!force && (!isMobile() || recentlyDismissed())) return;
 
     if (isIOS()) {
       toastText.innerHTML =
