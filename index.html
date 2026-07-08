@@ -543,7 +543,6 @@
         <button class="chip chip-fire" id="reactBtn" aria-label="J'aime ce morceau">🔥 <span id="reactCount">0</span></button>
         <button class="chip" id="shareBtn" aria-label="Partager le morceau">↗ Partager</button>
         <a class="chip" id="findYT" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
-        <a class="chip" id="findBP" target="_blank" rel="noopener noreferrer">◆ Beatport</a>
       </div>
     </div>
 
@@ -663,7 +662,6 @@
   const reactCount = document.getElementById('reactCount');
   const shareBtn  = document.getElementById('shareBtn');
   const findYT    = document.getElementById('findYT');
-  const findBP    = document.getElementById('findBP');
   const historyList = document.getElementById('historyList');
   const progList  = document.getElementById('progList');
 
@@ -687,24 +685,27 @@
     barEls.push(b);
   }
 
-  let audioCtx = null, analyser = null, freqData = null, rafId = null;
+  let audioCtx = null, analyser = null, freqData = null, rafId = null, mediaSrc = null;
   function initAnalyser() {
-    if (audioCtx) { audioCtx.resume(); return; }
     try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const src = audioCtx.createMediaElementSource(audio);
-      analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 128;
-      analyser.smoothingTimeConstant = 0.8;
-      src.connect(analyser);
-      analyser.connect(audioCtx.destination);
-      freqData = new Uint8Array(analyser.frequencyBinCount);
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        mediaSrc = audioCtx.createMediaElementSource(audio);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.8;
+        mediaSrc.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        freqData = new Uint8Array(analyser.frequencyBinCount);
+      }
+      audioCtx.resume();               // le contexte démarre souvent "suspended"
       viz.classList.add('live');
     } catch { /* fallback CSS */ }
   }
   let silentFrames = 0;
   function drawViz() {
     rafId = requestAnimationFrame(drawViz);
+    if (!analyser) return;
     analyser.getByteFrequencyData(freqData);
     const maxH = viz.clientHeight - 24;
     const n = barEls.length;
@@ -715,8 +716,10 @@
       total += v;
       barEls[i].style.height = Math.max(3, v * v * maxH) + 'px';
     }
+    // silence prolongé pendant la lecture : on tente de réveiller le contexte
+    // (repli visuel non destructif — l'analyseur est conservé)
     if (total === 0 && !audio.paused) {
-      if (++silentFrames > 240) { stopViz(); viz.classList.remove('live'); barEls.forEach(b => b.style.height = ''); analyser = null; }
+      if (++silentFrames === 120 && audioCtx) audioCtx.resume();
     } else silentFrames = 0;
   }
   function startViz() { if (analyser && !rafId) drawViz(); }
@@ -825,7 +828,6 @@
   function updateFindLinks() {
     const q = encodeURIComponent((current.artist + ' ' + current.title).trim());
     findYT.href = 'https://www.youtube.com/results?search_query=' + q;
-    findBP.href = 'https://www.beatport.com/search?q=' + q;
   }
   shareBtn.addEventListener('click', async () => {
     const label = current.title ? `${current.artist} – ${current.title}` : 'KALBASS FM';
