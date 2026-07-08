@@ -779,7 +779,9 @@
 
   /* ── Flux ── */
   let corsOk = true;
+  let userStopped = true; // true = l'utilisateur a volontairement coupé la lecture
   function startStream() {
+    userStopped = false;
     if (corsOk) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');
     audio.src = CONFIG.streamUrl;
     audio.play()
@@ -789,7 +791,7 @@
         else setUI('error');
       });
   }
-  function stopStream() { audio.pause(); audio.src = ''; setUI('paused'); }
+  function stopStream() { userStopped = true; audio.pause(); audio.src = ''; setUI('paused'); }
   function togglePlay() {
     if (playing) stopStream();
     else { setUI('loading'); startStream(); }
@@ -798,6 +800,23 @@
   audio.addEventListener('error',   () => { if (playing) setUI('error'); });
   audio.addEventListener('waiting', () => { if (!audio.paused) setUI('loading'); });
   audio.addEventListener('playing', () => setUI('playing'));
+
+  // Écran éteint / onglet masqué : le navigateur coupe parfois le flux ou
+  // suspend l'AudioContext (économie d'énergie). On relance activement.
+  audio.addEventListener('pause', () => {
+    if (!userStopped) audio.play().catch(() => {});
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    if (!userStopped && audio.paused) audio.play().catch(() => {});
+  });
+  // Filet de sécurité périodique : setInterval continue de tourner en fond
+  // (contrairement à requestAnimationFrame, qui s'arrête écran éteint).
+  setInterval(() => {
+    if (userStopped) return;
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    if (audio.paused) audio.play().catch(() => {});
+  }, 4000);
 
   volSlider.addEventListener('input', () => {
     audio.volume = parseFloat(volSlider.value);
