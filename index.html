@@ -491,6 +491,91 @@
     .donate-link:hover, .install-link:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
     .donate-link:active, .install-link:active { transform: translate(4px, 4px); box-shadow: none; }
 
+    /* ── Bandeau d'installation (mobile) ── */
+    .install-toast {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      z-index: 50;
+      max-width: 380px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 3px solid var(--border);
+      box-shadow: 5px 5px 0 var(--accent);
+      padding: 14px 16px;
+      display: none;
+      gap: 10px;
+      transform: translateY(0);
+      animation: toastUp 260ms ease-out;
+    }
+    .install-toast.show { display: flex; }
+    @keyframes toastUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .install-toast-icon {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      color: var(--bg);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .install-toast-body { flex: 1; min-width: 0; }
+    .install-toast-title {
+      font-weight: 700;
+      font-size: .82rem;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .install-toast-text {
+      font-family: 'Space Mono', monospace;
+      font-size: .66rem;
+      color: #999;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .install-toast-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .install-toast-cta {
+      background: var(--accent);
+      color: var(--bg);
+      border: 2px solid var(--border);
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .install-toast-later {
+      background: transparent;
+      color: #888;
+      border: 2px solid var(--track);
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .install-toast-close {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 2px 4px;
+    }
+    .install-toast-share-icon { flex-shrink: 0; vertical-align: -3px; }
+
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
     @media (prefers-reduced-motion: reduce) {
@@ -610,6 +695,21 @@
     </div>
 
   </main>
+
+  <div class="install-toast" id="installToast" role="dialog" aria-label="Installer KALBASS FM">
+    <div class="install-toast-icon" aria-hidden="true">📻</div>
+    <div class="install-toast-body">
+      <div class="install-toast-title">Installez KALBASS FM</div>
+      <div class="install-toast-text" id="installToastText">
+        Profitez d'un accès direct depuis votre écran d'accueil, sans navigateur.
+      </div>
+      <div class="install-toast-actions">
+        <button class="install-toast-cta" id="installToastCta" style="display:none">Installer</button>
+        <button class="install-toast-later" id="installToastLater">Plus tard</button>
+      </div>
+    </div>
+    <button class="install-toast-close" id="installToastClose" aria-label="Fermer">✕</button>
+  </div>
 
   <audio id="audio" preload="none"></audio>
 
@@ -979,19 +1079,86 @@
   let deferredPrompt = null;
   const installBtn = document.getElementById('installBtn');
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); deferredPrompt = e; installBtn.classList.add('show');
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.classList.add('show');
+    maybeShowInstallToast();
   });
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null; installBtn.classList.remove('show');
+  installBtn.addEventListener('click', () => promptInstall());
+  window.addEventListener('appinstalled', () => {
+    installBtn.classList.remove('show');
+    hideInstallToast();
+    localStorage.setItem('kfm_installed', '1');
   });
-  window.addEventListener('appinstalled', () => installBtn.classList.remove('show'));
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }
+
+  /* ── Bandeau d'invitation à l'installation (mobile) ── */
+  const DISMISS_DAYS = 14;
+  const toast     = document.getElementById('installToast');
+  const toastText = document.getElementById('installToastText');
+  const toastCta  = document.getElementById('installToastCta');
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  }
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function isMobile() {
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.matchMedia('(max-width: 640px)').matches;
+  }
+  function recentlyDismissed() {
+    const t = parseInt(localStorage.getItem('kfm_install_dismissed_at') || '0', 10);
+    return t && (Date.now() - t) < DISMISS_DAYS * 86400000;
+  }
+
+  function hideInstallToast() { toast.classList.remove('show'); }
+  function dismissInstallToast() {
+    localStorage.setItem('kfm_install_dismissed_at', String(Date.now()));
+    hideInstallToast();
+  }
+
+  async function promptInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.classList.remove('show');
+    hideInstallToast();
+  }
+
+  function maybeShowInstallToast() {
+    if (localStorage.getItem('kfm_installed') === '1') return;
+    if (isStandalone() || !isMobile() || recentlyDismissed()) return;
+
+    if (isIOS()) {
+      toastText.innerHTML =
+        'Appuyez sur <svg class="install-toast-share-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg> ' +
+        'puis « Sur l\'écran d\'accueil » pour une meilleure expérience.';
+      toastCta.style.display = 'none';
+    } else if (deferredPrompt) {
+      toastText.textContent = 'Accès direct depuis votre écran d\'accueil, sans navigateur, même écran verrouillé.';
+      toastCta.style.display = '';
+      toastCta.textContent = 'Installer';
+      toastCta.onclick = () => promptInstall();
+    } else {
+      // Navigateur mobile sans evenement beforeinstallprompt (Firefox Android, etc.)
+      toastText.textContent = 'Ouvrez le menu de votre navigateur puis « Ajouter à l\'écran d\'accueil » pour une meilleure expérience.';
+      toastCta.style.display = 'none';
+    }
+    toast.classList.add('show');
+  }
+
+  document.getElementById('installToastClose').addEventListener('click', dismissInstallToast);
+  document.getElementById('installToastLater').addEventListener('click', dismissInstallToast);
+
+  // iOS et certains navigateurs mobiles ne declenchent jamais beforeinstallprompt :
+  // on programme un affichage de repli independant de l'evenement natif.
+  setTimeout(maybeShowInstallToast, 3500);
   </script>
 </body>
 </html>
