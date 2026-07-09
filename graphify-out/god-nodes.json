@@ -1,0 +1,11 @@
+{
+  "god_nodes": [
+    { "id": "index.html", "degree": 8, "reason": "Le player concentre toutes les features front (now-playing, réactions, égaliseur, PWA, programme) et sera le point d'ajout du futur panneau de vote." },
+    { "id": "AzuraCast", "degree": 8, "reason": "Cœur de l'infra streaming : relié à Icecast, Liquidsoap, VPS, Now Playing API et à la future Admin API pour le vote." },
+    { "id": "VotingSystemPlan", "degree": 6, "reason": "Nouvelle feature planifiée (2026-07-08) qui relie déjà 5 autres nœuds (API AzuraCast, reactions.js, KV, programme, front) — candidate à devenir un hub majeur une fois codée." },
+    { "id": "RekordboxPipeline", "degree": 5, "reason": "Processus central reliant les deux scripts locaux, RaiDrive et la grille de programme AzuraCast." },
+    { "id": "api/reactions.js", "degree": 4, "reason": "Seule fonction serverless existante, sert de patron de conception pour toute future fonction (dont le vote)." },
+    { "id": "ProgrammeGrid", "degree": 4, "reason": "Point de convergence entre planification produit, pipeline musique, AzuraCast et le futur système de vote." },
+    { "id": ".planning/PROJECT.md", "degree": 4, "reason": "Document racine de la vision produit, relié à la roadmap, aux requirements et au choix technique AzuraCast." }
+  ]
+}

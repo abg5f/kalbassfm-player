@@ -30,6 +30,7 @@
 ## En cours / TODOs
 
 - [ ] **Système de vote pour changer de style/playlist (planifié, pas codé)** — plan complet écrit dans `C:\Users\ph.dufourcq\.claude\plans\wild-cooking-book.md` : playlists candidates par genre, vote côté public (20 votes → bascule vers la playlist gagnante pendant 2h puis retour à la grille normale), anti-abus 1 vote/navigateur. Nécessite avant codage : créer les playlists genre + clé API AzuraCast (dashboard → My API Keys) + nouvelle fonction `api/vote.js` calquée sur `api/reactions.js` + panneau front dans `index.html`. Rien n'est implémenté à ce stade.
+- [ ] **Graphe graphify construit manuellement (pas de CLI `graphify` installé)** — `graphify-out/` créé via lecture directe du repo (pas de commande `graphify update`/`graphify god-nodes` disponible dans l'environnement). À relancer via `/graphify` après changements significatifs ; si le CLI est installé un jour, préférer `graphify update .` à une reconstruction manuelle.
 - [ ] **SACEM** — formulaire webradio à remplir (frais mentionnés dans les posts de lancement, pas encore fait)
 - [ ] **Connecter un store Upstash/KV à Vercel** — pour que le compteur de réactions 🔥 soit partagé entre auditeurs (actuellement `enabled:false`, fallback local)
 - [ ] **Traiter les morceaux ambigus/introuvables restants** — `AI GO RYTHM - FUNK edit/edit 2`, `Retromigration - Halt & Stop`, `m - jungle remaster...` (scores faibles, jamais tranchés)
@@ -67,6 +68,13 @@
 - **Réseau perso** : RaiDrive monte le SFTP AzuraCast en lecteur `Z:` sur le PC Windows
 
 **Session notable** : une partie du travail PWA/mobile (fullscreen standalone, fix écran verrouillé) a été faite en parallèle par une autre session Claude (lancée depuis l'app mobile Claude), fusionnée sans conflit dans cette session.
+
+## Graphe de connaissances
+> Mis à jour le 2026-07-09 (construction manuelle, pas de CLI `graphify` disponible)
+
+God nodes (concepts centraux) : `index.html` (hub front), `AzuraCast` (cœur infra streaming), `VotingSystemPlan` (feature de vote planifiée), `RekordboxPipeline` (pipeline musique), `api/reactions.js` (patron serverless).
+Communautés détectées : 6 (Player/Frontend, Infra/Streaming, Serverless-API+vote planifié, Outillage/Pipeline musique, Planning/Business, Contexte de session).
+Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---
 
