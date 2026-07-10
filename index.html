@@ -240,24 +240,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .genre-badge {
-      margin-top: 10px;
-      display: inline-block;
-      background: var(--accent);
-      color: var(--bg);
-      font-family: 'Space Mono', monospace;
-      font-size: .6rem;
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      padding: 3px 10px;
-      border: 2px solid var(--border);
-    }
-    .genre-morning  { background: #F5E642; color: #0D0D0D; }
-    .genre-afternoon { background: #A5F5E6; color: #0D0D0D; }
-    .genre-late     { background: #F5A842; color: #0D0D0D; }
-    .genre-evening  { background: #C4A5F5; color: #0D0D0D; }
-
     /* ── Actions (chercher / partager / réagir) ── */
     .actions-row {
       display: flex;
@@ -683,7 +665,6 @@
         <p class="track-title" id="trackTitle">WAITING FOR STREAM</p>
       </div>
       <p class="track-artist" id="trackArtist">— ARTIST</p>
-      <span class="genre-badge genre-morning" id="genreBadge" aria-label="Genre du moment"></span>
 
       <div class="actions-row" id="actionsRow" style="display:none">
         <button class="chip chip-fire" id="reactBtn" aria-label="J'aime ce morceau">🔥 <span id="reactCount">0</span></button>
@@ -775,28 +756,6 @@
     pollMs:      8000,
   };
 
-  // Grille de programmation — heure de Martinique (UTC−4).
-  // Un créneau peut traverser minuit (from > to), ex. 23h → 06h.
-  const SLOTS = [
-    { from:  6, to: 12, label: 'DISCO · FUNK · SOULFUL',      cls: 'genre-morning',   icon: '🌅' },
-    { from: 12, to: 19, label: 'DEEP HOUSE · HOUSE',          cls: 'genre-afternoon', icon: '☀️' },
-    { from: 19, to: 23, label: 'TECH HOUSE · DEEP TECH',      cls: 'genre-late',      icon: '🌆' },
-    { from: 23, to:  6, label: 'TECHNO · TRANCE · DEEP TECH', cls: 'genre-evening',   icon: '🌙' },
-  ];
-
-  // Heure de la Martinique (UTC−4, pas de changement d'heure) quel que soit le fuseau du visiteur
-  function martiniqueHour() {
-    const now = new Date();
-    return (now.getUTCHours() + 24 - 4) % 24;
-  }
-  function inSlot(h, s) {
-    return s.from < s.to ? (h >= s.from && h < s.to) : (h >= s.from || h < s.to);
-  }
-  function currentSlot() {
-    const h = martiniqueHour();
-    return SLOTS.find(s => inSlot(h, s)) || SLOTS[0];
-  }
-
   const audio     = document.getElementById('audio');
   const btnPlay   = document.getElementById('btnPlay');
   const icPlay    = document.getElementById('icPlay');
@@ -805,7 +764,6 @@
   const volVal    = document.getElementById('volVal');
   const titleEl   = document.getElementById('trackTitle');
   const artistEl  = document.getElementById('trackArtist');
-  const badgeEl   = document.getElementById('genreBadge');
   const footerSt  = document.getElementById('footerStatus');
   const viz       = document.getElementById('visualizer');
   const artwork   = document.getElementById('artwork');
@@ -889,15 +847,6 @@
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (viz.classList.contains('live')) barEls.forEach(b => b.style.height = '3px');
   }
-
-  /* ── Genre + programme ── */
-  function refreshGenre() {
-    const s = currentSlot();
-    badgeEl.className = 'genre-badge ' + s.cls;
-    badgeEl.textContent = s.icon + '  ' + s.label;
-  }
-  refreshGenre();
-  setInterval(refreshGenre, 60_000);
 
   /* ── État lecture ── */
   let playing = false;
