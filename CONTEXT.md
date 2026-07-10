@@ -1,14 +1,22 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-10
+> Dernière mise à jour : 2026-07-10 (session 2)
 
 ## État actuel
 
-- ✅ **Pipeline d'analyse musicale Essentia opérationnel (WSL2 + Ubuntu)** — `tools/analyze_essentia.py` extrait BPM, énergie (RMS/dynamic complexity), danceability, mood (happy/sad/aggressive/relaxed/party) et top-3 genres (modèles TensorFlow discogs-effnet) pour casser la redondance de style façon FIP/Radio Meuh. 220 morceaux analysés, résultats dans `tools/metadata.json` (source de vérité unique, plus de copie manuelle WSL↔repo)
+- ✅ **Pipeline d'ingestion `triage_new_tracks.py` complet et utilisé en prod** — nettoyage tags/cover, détection de doublons (artiste+titre normalisés en tokens, seuil de similarité 75%, comparé contre `New_prog` uniquement — PAS toute la bibliothèque Music, cf. décisions), analyse Essentia, classification par créneau, régénération auto de l'ordre. Doublons/échecs déplacés dans `_incoming/_duplicates` et `_incoming/_failed`
+- ✅ **Interface de suivi en direct** — `tools/triage_report.html` (généré/écrasé à chaque morceau traité, auto-refresh 2s, s'ouvre automatiquement dans le navigateur au lancement) : progression, répartition par créneau avec barres, tableaux doublons/échecs
+- ✅ **Lanceur `.bat`** — `C:\Users\ph.dufourcq\Music\00_AZURACAST\scripts\triage.bat` (double-clic → active le venv WSL et lance `triage_new_tracks.py`)
+- ✅ **Bibliothèque `New_prog` passée de 220 à 349 morceaux** — l'utilisateur a lancé le pipeline plusieurs fois en conditions réelles. Répartition finale (après réparation, voir ci-dessous) : 1_morning 74, 2_afternoon 108, 3_evening 76, 4_night 88 (+ 3 doublons physiques laissés de côté, non renommés)
+- 🔧 **Bug critique corrigé : régénération auto de `New_prog` échouait silencieusement depuis le début** — l'appel `subprocess` dans `triage_new_tracks.py` vers `cmd.exe` avait un bug de quoting (chemin avec espaces mal échappé) ; `check=False` masquait l'échec. Conséquence découverte lors de ce `/save` : 129 morceaux sur 349 n'avaient jamais été renumérotés (`NNN_`) malgré plusieurs runs de `triage_new_tracks.py`. Corrigé en passant par une liste d'arguments (pas de `shell=True` fait main) + `encoding="cp1252"` (la sortie console Windows n'est pas UTF-8)
+- 🔧 **Bug corrigé : `export_rotation.py` ne resynchronisait jamais `metadata.json` après renommage** — dès le tout premier cycle de rotation, les chemins stockés dans `metadata.json` devenaient obsolètes, cassant les cycles suivants en cascade (fichiers "MANQUANT"). `export_rotation.py` met maintenant à jour `metadata.json` à la fin de chaque run
+- ⚠️ **~55 doublons physiques découverts dans `New_prog`** (même morceau présent en double, parfois dans deux créneaux différents, ex. `Cinthie - U Gotta Believe` en `2_afternoon` ET `3_evening`) — antérieurs à la détection de doublons de `triage_new_tracks.py` (probablement des lots ingérés avant son ajout). Pas supprimés automatiquement (action destructive volontairement laissée à l'utilisateur) — voir TODO
+- ✅ **Couverture 24h largement atteinte** — total 35h24 sur 24h visées (6h/créneau) ; les créneaux morning/night autrefois sous-alimentés sont désormais couverts. Seul déséquilibre restant : `afternoon` nettement plus gros que les autres (pas bloquant)
+- ✅ **Visuels + textes de lancement Instagram créés** — post carré 1080×1080 et story 1080×1920 (identité visuelle noir/jaune/mascotte calebasse avec casque, cohérente avec `og-image.png` existant), sur le bureau (`kalbassfm_launch_post_square.png/.svg`, `kalbassfm_launch_story.png/.svg`). Légende finale orientée storytelling perso ("années de digging, moins sollicité pour jouer, partage gratuit de la bibliothèque") plutôt que communiqué de lancement générique
+- ✅ **Campagne sponsorisée Instagram lancée par l'utilisateur** — ciblage Martinique/Guadeloupe/Saint-Martin, 18-35 ans, intérêts musique électronique/house/techno, budget 5€/jour sur 7 jours (~35€ total). Résultats pas encore analysés
+- ✅ **Pipeline d'analyse musicale Essentia opérationnel (WSL2 + Ubuntu)** — `tools/analyze_essentia.py` extrait BPM, énergie (RMS/dynamic complexity), danceability, mood (happy/sad/aggressive/relaxed/party) et top-3 genres (modèles TensorFlow discogs-effnet) pour casser la redondance de style façon FIP/Radio Meuh. `tools/metadata.json` = source de vérité unique (plus de copie manuelle WSL↔repo)
 - ✅ **Rotation automatique par énergie + anti-répétition genre/artiste** — `tools/build_rotation.py` calcule un ordre de lecture par créneau (courbes d'énergie cible par slot dans `ENERGY_CURVES`, fenêtre glissante anti-répétition sur le sous-genre Discogs et l'artiste). `tools/export_rotation.py` applique l'ordre en renommant les fichiers en place (préfixe `NNN_`)
-- ✅ **`New_prog` = nouvelle bibliothèque de référence** — les anciens dossiers `1_morning/2_afternoon/3_evening/4_night` (racine `00_AZURACAST`) ont été supprimés par l'utilisateur ; `New_prog\<créneau>\` les remplace, contient les 220 morceaux triés (27/76/78/39). Upload SFTP vers AzuraCast fait manuellement par l'utilisateur
-- ✅ **Ingestion automatisée des nouveaux téléchargements** — `tools/triage_new_tracks.py` : dépôt dans `_incoming`, nettoyage tags/cover (réutilise `clean_local_tracks.py`), analyse Essentia, classification automatique du créneau (énergie la plus proche des courbes cibles), déplacement direct dans `New_prog\<créneau>\`, régénération auto de l'ordre. Testé avec succès sur un fichier réel (imports OK, modèles chargés)
-- ⏳ **Couverture 24h incomplète** — total ~21h09/24h en supposant 6h/créneau ; morning (43% de couverture) et night (61%) sous-alimentés, l'utilisateur ajoute des morceaux manuellement
+- ✅ **`New_prog` = bibliothèque de référence** — les anciens dossiers `1_morning/2_afternoon/3_evening/4_night` (racine `00_AZURACAST`) ont été supprimés par l'utilisateur ; `New_prog\<créneau>\` les remplace. Upload SFTP vers AzuraCast fait manuellement par l'utilisateur
 - ✅ **Radio en ligne et diffusant 24/7** — AzuraCast station KALBASSFM, AutoDJ actif
 - ✅ **Domaine + SSL actifs** — `kalbassfm.duckdns.org` (DuckDNS gratuit, pas d'achat de domaine payant finalement) + certificat Let's Encrypt auto-renouvelé
 - ✅ **Player web public fonctionnel** — https://kalbassfm-player.vercel.app/ — flux HTTPS, now-playing, pochettes, égaliseur réactif au son réel (Web Audio API, désactivé sur mobile pour survivre à l'écran verrouillé)
@@ -36,13 +44,20 @@
 | **`New_prog` remplace les dossiers créneaux d'origine** | Décision utilisateur (suppression volontaire des anciens dossiers) — tous les scripts (`build_rotation.py`, `export_rotation.py`, `triage_new_tracks.py`) pointent désormais sur `New_prog\<créneau>\` comme unique source |
 | **`export_rotation.py` renomme en place (2 phases) plutôt que de copier** | Depuis que `New_prog` est à la fois source et destination, un renommage direct (temp puis final, pour éviter les collisions) remplace l'ancienne copie inter-dossiers |
 | **Upload SFTP fait manuellement par l'utilisateur, pas automatisé** | Choix explicite pour garder le contrôle sur la mise en prod ; le pipeline s'arrête à la préparation locale dans `New_prog` |
+| **Détection de doublons : tokens artiste+titre normalisés (seuil 75%), pas nom de fichier exact** | Les noms de fichiers varient trop selon la source de téléchargement (suffixes site, casse, ponctuation) pour un matching exact ; le seuil à 75% reste un point fragile (faux positifs/négatifs possibles), pas encore testé sur cas limites |
+| **Index de doublons scanne `New_prog` uniquement, pas tout `C:\Users\ph.dufourcq\Music`** | Testé puis explicitement annulé par l'utilisateur — la bibliothèque Music complète (2944 fichiers) contient des dossiers hors-scope radio (`Mariage`, `iTunes`, outils) ; `_incoming` reste aussi l'unique source des "nouveaux morceaux à traiter" |
+| **Rapport HTML régénéré à chaque fichier (pas de serveur local)** | `triage_report.html` avec `<meta http-equiv="refresh">` suffit pour un suivi live en ouvrant simplement le fichier dans le navigateur, évite la complexité d'un serveur HTTP local |
+| **Conversion SVG→PNG via Edge headless (`--screenshot`)** | `cairosvg` non installé sur la machine ; Edge headless déjà présent nativement sur Windows 11, évite une dépendance supplémentaire |
 
 ## En cours / TODOs
 
-- [ ] **Combler morning/night** — ajout manuel de morceaux en cours par l'utilisateur pour ces créneaux sous-alimentés (43%/61% de couverture des 6h cibles) ; relancer `analyze_essentia.py` (ou `triage_new_tracks.py` via `_incoming`) une fois de nouveaux fichiers ajoutés
+- [ ] **Nettoyer les ~55 doublons physiques dans `New_prog`** — même fichier (taille identique) présent 2-3 fois, parfois dans des créneaux différents (ex. `Cinthie - U Gotta Believe`, `Retromigration - Half Fried` en 3 exemplaires). Repérables via les noms sans le préfixe `NNN_` ; supprimer manuellement après vérification (action destructive, pas automatisée)
+- [ ] **Analyser les résultats de la campagne Instagram sponsorisée** — lancée le 2026-07-10, 5€/jour sur 7 jours (fin prévue ~2026-07-17), ciblage Martinique/Guadeloupe/Saint-Martin 18-35 ans. Revenir avec les stats (CTR, coût/clic, portée) une fois disponibles
+- [ ] **Calibrer le seuil de détection de doublons (75%) sur des cas limites réels** — pas encore testé sur des paires ambiguës (ex. deux remixes différents du même morceau, qui ne doivent PAS matcher)
+- [ ] **Régénérer les visuels Instagram avec l'accroche "années de digging" si souhaité** — actuellement les PNG/SVG sur le bureau disent encore "C'EST LE LANCEMENT !" ; l'utilisateur a dit "oui" à l'ajustement du ton mais n'a pas confirmé vouloir régénérer les fichiers images eux-mêmes
 - [ ] **Remplacer/retélécharger `Alex Cortex - Discola.mp3`** — fichier MP3 corrompu (échoue à l'analyse Essentia ET à la lecture mutagen, "can't sync to MPEG frame")
-- [ ] **Tags ID3 artiste manquants sur une grande partie de la bibliothèque** — la colonne "artiste" des CSV de rotation est presque toujours "?" ; lancer `clean_local_tracks.py --apply` sur `New_prog\*` (chemins à mettre à jour dans le script, il pointe encore sur les anciens dossiers) pour que l'anti-répétition d'artiste soit utile
-- [ ] **Tester `triage_new_tracks.py` en conditions réelles avec upload SFTP ensuite** — le script a été validé sur les imports et un run à vide, mais pas encore sur un vrai nouveau téléchargement suivi d'un upload SFTP
+- [ ] **Tags ID3 artiste manquants sur une partie de la bibliothèque** — colonne "artiste" des CSV de rotation souvent "?" ; lancer `clean_local_tracks.py --apply` sur `New_prog\*` (chemins à mettre à jour dans le script, il pointe encore sur les anciens dossiers) pour que l'anti-répétition d'artiste et la détection de doublons soient pleinement fiables
+- [ ] **Rééquilibrer `afternoon`** — nettement plus gros que les autres créneaux (11h vs 7-9h), pas bloquant mais un morceau y revient moins souvent
 - [ ] **Système de vote pour changer de style/playlist (planifié, pas codé)** — plan complet écrit dans `C:\Users\ph.dufourcq\.claude\plans\wild-cooking-book.md` : playlists candidates par genre, vote côté public (20 votes → bascule vers la playlist gagnante pendant 2h puis retour à la grille normale), anti-abus 1 vote/navigateur. Nécessite avant codage : créer les playlists genre + clé API AzuraCast (dashboard → My API Keys) + nouvelle fonction `api/vote.js` calquée sur `api/reactions.js` + panneau front dans `index.html`. Rien n'est implémenté à ce stade.
 - [ ] **Graphe graphify construit manuellement (pas de CLI `graphify` installé)** — `graphify-out/` créé via lecture directe du repo (pas de commande `graphify update`/`graphify god-nodes` disponible dans l'environnement). À relancer via `/graphify` après changements significatifs ; si le CLI est installé un jour, préférer `graphify update .` à une reconstruction manuelle.
 - [ ] **SACEM** — formulaire webradio à remplir (frais mentionnés dans les posts de lancement, pas encore fait)
@@ -75,8 +90,11 @@
 | `tools/analyze_essentia.py` | Analyse Essentia (BPM/énergie/genre/mood/danceability) sur toute la bibliothèque, écrit `tools/metadata.json` | ✅ WSL2 uniquement |
 | `tools/build_rotation.py` | Calcule l'ordre de lecture par créneau (courbe d'énergie + anti-répétition genre/artiste), écrit `tools/playlists/*.{csv,m3u}` | ✅ Windows, pointe sur `New_prog` |
 | `tools/export_rotation.py` | Applique l'ordre calculé : renomme les fichiers en place dans `New_prog` (préfixe `NNN_`, 2 phases anti-collision) | ✅ Windows |
-| `tools/triage_new_tracks.py` | Pipeline d'ingestion des nouveaux téléchargements : `_incoming` → nettoyage → analyse Essentia → classification créneau → `New_prog` → régénération auto | ✅ WSL2, testé sur imports + 1 run réel |
+| `tools/triage_new_tracks.py` | Pipeline d'ingestion complet : `_incoming` → nettoyage → dédoublonnage (vs `New_prog`) → analyse Essentia → classification créneau → `New_prog` → régénération auto + rapport HTML live | ✅ WSL2, utilisé en prod (220→349 morceaux sur 2 lots) |
+| `tools/triage_report.html` (généré, pas versionné) | Rapport de suivi live auto-refresh, ouvert automatiquement au lancement | ✅ |
+| `C:\Users\ph.dufourcq\Music\00_AZURACAST\scripts\triage.bat` (hors repo) | Lanceur double-clic du pipeline d'ingestion | ✅ |
 | `~/kalbassfm-analysis/models/` (WSL, hors repo) | Modèles TensorFlow Essentia (discogs-effnet embeddings + têtes genre/danceability/mood) | ✅ ~150-200 Mo, téléchargés une fois |
+| `~/Desktop/kalbassfm_launch_post_square.{png,svg}`, `~/Desktop/kalbassfm_launch_story.{png,svg}` (hors repo) | Visuels de lancement Instagram (post carré 1080×1080, story 1080×1920), identité noir/jaune/mascotte calebasse | ✅ |
 
 ## Infrastructure
 
@@ -91,8 +109,8 @@
 ## Graphe de connaissances
 > Mis à jour le 2026-07-10 (construction manuelle, pas de CLI `graphify` disponible)
 
-God nodes (concepts centraux) : `index.html` (hub front), `AzuraCast` (cœur infra streaming), `New_prog` (nouvelle bibliothèque de référence), `analyze_essentia.py`/`metadata.json` (pipeline d'analyse musicale), `build_rotation.py` (logique de diversité/rotation), `VotingSystemPlan` (feature de vote planifiée).
-Communautés détectées : 7 (Player/Frontend, Infra/Streaming, Serverless-API+vote planifié, Outillage/Pipeline musique Rekordbox, Pipeline Essentia/Rotation musicale, Planning/Business, Contexte de session).
+God nodes (concepts centraux) : `index.html` (hub front), `AzuraCast` (cœur infra streaming), `New_prog` (bibliothèque de référence), `triage_new_tracks.py` (pipeline d'ingestion complet — dédoublonnage/analyse/classification/rapport), `build_rotation.py` (logique de diversité/rotation), `VotingSystemPlan` (feature de vote planifiée), `Instagram launch` (visuels + campagne sponsorisée).
+Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless-API+vote planifié, Outillage/Pipeline musique Rekordbox, Pipeline Essentia/Rotation musicale, Marketing/Lancement Instagram, Planning/Business, Contexte de session).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

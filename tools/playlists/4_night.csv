@@ -1,40 +1,92 @@
 position,energie,bpm,genre,artiste,titre,chemin
-1,0.667,134,Techno,?,038_Hidde Van Wee - Far Out (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\038_Hidde Van Wee - Far Out (Original Mix).mp3
-2,0.589,131,House,Hidde van Wee,Aspire to Inspire (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\006_Hidde van Wee - Aspire to Inspire (Original Mix).mp3
-3,0.597,135,Trance,BMPR,Fresh Statement (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\024_Bmpr - Fresh Statement (Original Mix).mp3
-4,0.650,150,Goa Trance,Andre Zimmer,Invisible Sandwich Glen S InstruMental Remix,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\001_Andre Zimmer - Invisible Sandwich Glen S InstruMental Remix.mp3
-5,0.628,120,Deep Techno,DARK HEART & JOHN CALA,CIGARETTE (EXTENDED MIX) MHT 120,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\003_DARK HEART & JOHN CALA - CIGARETTE (EXTENDED MIX) MHT 120.mp3
-6,0.583,128,Tech House,James Greene,Vamos (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\005_James Greene - Vamos (Extended Mix).mp3
-7,0.583,127,House,LouLou Players,Freedom (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\031_LouLou Players - Freedom (Extended Mix).mp3
-8,0.571,130,Techno,Friendly Fire (Us),Prescribe The Sound (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\026_02-friendly fire (us) - prescribe the sound (extended mix).mp3
-9,0.565,130,UK Garage,Sidney Charles,No Way Out,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\009_Sidney Charles - No Way Out.mp3
-10,0.566,130,Psy-Trance,InntRaw,Night Hustle (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\007_InntRaw - Night Hustle (Extended Mix).mp3
-11,0.528,130,Tech House,LOTTEN,5 Letras,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\018_LOTTEN - 5 Letras.mp3
-12,0.564,122,Deep Techno,"Durante, TEED",The Echo (Durante Remix),"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\008_01. Durante, TEED - The Echo (Durante Remix).mp3"
-13,0.559,133,Techno,Octave Five,Vitess (Original Mix) 133,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\028_Octave Five - Vitess (Original Mix) 133.mp3
-14,0.535,135,Trance,Fatima Yamaha,What's A Girl To Do (RUZE Edit),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\019_Fatima Yamaha - What's A Girl To Do (RUZE Edit).mp3
-15,0.537,129,Tribal House,ACID HARRY,AY PAPI (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\011_ACID HARRY - AY PAPI (Original Mix).mp3
-16,0.476,129,House,Jesse Maas,LTD,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\017_Jesse Maas - LTD.mp3
-17,0.452,130,Electro,Liam Fattori,911 Funk Rescue,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\015_069. Liam Fattori - 911 Funk Rescue.mp3
-18,0.519,125,Tech House,George Smeddles,Breathe (Ki Creighton Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\023_11A - 125 - Breathe (Ki Creighton Remix) - George Smeddles.mp3
-19,0.457,128,Techno,ocsav,salt ache city (original mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\020_02-ocsav - salt ache city (original mix).mp3
-20,0.493,129,Progressive House,Robbie Doherty,Flawless (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\014_Robbie Doherty - Flawless (Extended Mix).mp3
-21,0.550,133,UK Garage,Sidney Charles & Bugs UK,"Trip Advisor (Rhythm, Snare, Bass) (2025 Warp Mix) (Rhythm, Snare, Bass)","C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\016_Sidney Charles - Trip Advisor (Rhythm, Snare, Bass) (Original Mix).mp3"
-22,0.487,124,House,W.O.L.F. & justoese,TODOS SON DJS (Ruben Coslada Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\022_01-w.o.l.f. and justoese-todos son djs (ruben coslada remix).mp3
-23,0.520,124,Tech House,ETTA,Like Us (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\013_07 - ETTA - Like Us (Original Mix).mp3
-24,0.544,128,Techno,KANIO,Live Show Radio (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\010_14 - KANIO - Live Show Radio (Original Mix).mp3
-25,0.210,97,Ambient,Bass Bumpers Feat. E. Mello,The M.E.L.L.O. (Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\025_Bass Bumpers Feat. E. Mello - The M.E.L.L.O. (Remix).mp3
-26,0.610,132,Bassline,Biscits,2C2 (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\004_Biscits - 2C2 (Extended Mix).mp3
-27,0.562,130,House,Julian Fijma,Get Stupid Original Mix,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\012_Julian Fijma - Get Stupid (Original Mix).mp3
-28,0.576,128,Techno,Mau P,Like I Like It,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\030_01 Mau P - Like I Like It.mp3
-29,0.573,128,House,Patrick Topping,Boom Shakalak (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\027_Patrick Topping - Boom Shakalak (Extended Mix).mp3
-30,0.559,131,Techno,Rello,KO (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\021_Rello - KO (Original Mix).mp3
-31,0.576,130,House,bob manzanilla,onyx (near the speaker) (original mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\029_13-bob manzanilla - onyx (near the speaker) (original mix).mp3
-32,0.588,128,House,Caique Carvalho,Get It Right (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\033_12 - Caique Carvalho - Get It Right (Extended Mix).mp3
-33,0.601,130,Techno,Jamback,FEEL THE MUSIC (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\032_Jamback - FEEL THE MUSIC (Original Mix).mp3
-34,0.600,132,Techno,Joshwa,Time 2 Move (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\002_Joshwa - Time 2 Move (Extended Mix).mp3
-35,0.603,132,Techno,Danny Snowden,14 Degree (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\034_Danny Snowden - 14 Degree (Original Mix).mp3
-36,0.612,130,Techno,3Beat & Greggio,Zen,"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\035_3beat, Greggio - Zen (Extended Mix).mp3"
-37,0.632,132,House,"Breaking Beattz, Almanac",People In The House (Extended Mix),"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\036_Breaking Beattz, Almanac - People In The House (Extended Mix).mp3"
-38,0.659,127,House,AYYBO,RIZZ (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\037_063 - AYYBO - RIZZ (Extended Mix).mp3
-39,0.692,130,Techno,Joshwa,High (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\039_Joshwa - High (Original Mix).mp3
+1,0.647,150,Goa Trance,Andre Zimmer,Invisible Sandwich Glen S InstruMental Remix,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\004_Andre Zimmer - Invisible Sandwich Glen S InstruMental Remix.mp3
+2,0.674,134,Techno,?,001_Hidde Van Wee - Far Out (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\001_Hidde Van Wee - Far Out (Original Mix).mp3
+3,0.599,131,House,Hidde van Wee,Aspire to Inspire (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\002_Hidde van Wee - Aspire to Inspire (Original Mix).mp3
+4,0.619,132,Bassline,Biscits,2C2 (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\026_Biscits - 2C2 (Extended Mix).mp3
+5,0.605,135,Trance,BMPR,Fresh Statement (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\003_Bmpr - Fresh Statement (Original Mix).mp3
+6,0.581,122,Deep Techno,"Durante, TEED",The Echo (Durante Remix),"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\012_01. Durante, TEED - The Echo (Durante Remix).mp3"
+7,0.610,132,Techno,Joshwa,Time 2 Move (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\034_Joshwa - Time 2 Move (Extended Mix).mp3
+8,0.585,128,House,Patrick Topping,Boom Shakalak (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\029_Patrick Topping - Boom Shakalak (Extended Mix).mp3
+9,0.576,130,UK Garage,Sidney Charles,No Way Out,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\072_Sidney Charles - No Way Out.mp3
+10,0.536,124,Tech House,ETTA,Like Us (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\023_07 - ETTA - Like Us (Original Mix).mp3
+11,0.544,135,Trance,Fatima Yamaha,What's A Girl To Do (RUZE Edit),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\014_Fatima Yamaha - What's A Girl To Do (RUZE Edit).mp3
+12,0.582,130,Techno,Friendly Fire (Us),Prescribe The Sound (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\008_02-friendly fire (us) - prescribe the sound (extended mix).mp3
+13,0.577,130,Psy-Trance,InntRaw,Night Hustle (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\010_InntRaw - Night Hustle (Extended Mix).mp3
+14,0.645,120,Deep Techno,DARK HEART & JOHN CALA,CIGARETTE (EXTENDED MIX) MHT 120,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\005_DARK HEART & JOHN CALA - CIGARETTE (EXTENDED MIX) MHT 120.mp3
+15,0.532,125,House,Mark Farina,Dream Machine(JT Donaldson Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\079_04 - Dream Machine(JT Donaldson Mix).mp3
+16,0.509,118,Dub Techno,?,016_Moritz Von Oswald - Ole (Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\016_Moritz Von Oswald - Ole (Remix).mp3
+17,0.550,129,Tribal House,ACID HARRY,AY PAPI (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\015_ACID HARRY - AY PAPI (Original Mix).mp3
+18,0.535,125,Tech House,George Smeddles,Breathe (Ki Creighton Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\018_11A - 125 - Breathe (Ki Creighton Remix) - George Smeddles.mp3
+19,0.556,128,Techno,KANIO,Live Show Radio (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\024_14 - KANIO - Live Show Radio (Original Mix).mp3
+20,0.504,124,House,W.O.L.F. & justoese,TODOS SON DJS (Ruben Coslada Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\077_01-w.o.l.f. and justoese-todos son djs (ruben coslada remix).mp3
+21,0.560,133,UK Garage,Sidney Charles & Bugs UK,"Trip Advisor (Rhythm, Snare, Bass) (2025 Warp Mix) (Rhythm, Snare, Bass)","C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\021_Sidney Charles - Trip Advisor (Rhythm, Snare, Bass) (Original Mix).mp3"
+22,0.502,119,Deep House,Bosq,Tumbalà,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\034_Bosq - Tumbalá (feat Tempo Alomar).mp3
+23,0.518,125,Deep Techno,?,B1. Andrey Pushkarev - Can I take a picture with you [LOA001],C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\048_Andrey Pushkarev - Can I take a picture wi-1.mp3
+24,0.536,124,Tech House,ETTA,Like Us (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\023_07 - ETTA - Like Us (Original Mix).mp3
+25,0.504,136,Goa Trance,Lisene,Rush B,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\027_Lisene - Rush B.mp3
+26,0.502,130,Techno,SJ Tequilla,Untitled 130 M41,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\036_01 Untitled 130 M41.mp3
+27,0.521,122,Deep House,St. Germain,Sittin' Here,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\017_02 - Sittin' Here.mp3
+28,0.485,120,House,Claptone,Dear Life Feat. Jaw (Purple Disco Machine Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\075_Claptone - Dear Life Feat. Jaw (Purple Disco Machine Remix).mp3
+29,0.509,118,Dub Techno,?,016_Moritz Von Oswald - Ole (Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\016_Moritz Von Oswald - Ole (Remix).mp3
+30,0.473,128,Progressive Breaks,Harrison BDP,Seeing Spiders,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\031_01-harrison bdp-seeing spiders.mp3
+31,0.539,130,Tech House,LOTTEN,5 Letras,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\011_LOTTEN - 5 Letras.mp3
+32,0.505,138,Disco,Black Soul,Mangous Yé,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\026_05. Mangous Yé.mp3
+33,0.479,123,House,?,029_Pray For More feat. Eddy - Brand New Day (83 West Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\029_Pray For More feat. Eddy - Brand New Day (83 West Remix).mp3
+34,0.465,124,African,Ajukaja,Benga Benga,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\038_Benga Benga.mp3
+35,0.471,128,Techno,ocsav,salt ache city (original mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\019_02-ocsav - salt ache city (original mix).mp3
+36,0.478,120,Deep House,?,039_Atjazz - From Me To You (Original Mix) myfre,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\039_Atjazz - From Me To You (Original Mix) myfre.mp3
+37,0.506,129,Progressive House,Robbie Doherty,Flawless (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\020_Robbie Doherty - Flawless (Extended Mix).mp3
+38,0.510,126,House,Glory,Sun's Rise (Club Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\078_11. Glory - Sun's Rise (Club Mix).mp3
+39,0.464,130,Electro,Liam Fattori,911 Funk Rescue,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\017_069. Liam Fattori - 911 Funk Rescue.mp3
+40,0.458,115,Disco,Fingerman,Spunky Funk,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\037_Fingerman - Spunky Funk.mp3
+41,0.455,115,Funk,Sohight & Cheevy,You never know,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\043_Sohight & Cheevy - You never know.mp3
+42,0.457,130,UK Garage,Glamma Kid,Taboo (Mj Cole Full Vocal Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\042_Glamma Kid - Taboo (Mj Cole Full Vocal Mix).mp3
+43,0.474,123,House,?,Jared Wilson- You get Down,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\068_Jared Wilson- You get Down.mp3
+44,0.457,123,Deep House,?,Toni Be - Lovely City,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\064_35 Toni Be - Lovely City.mp3
+45,0.430,121,Disco,George Duke,I Want You for Myself (Mike Maurro Extended Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\046_George Duke - I Want You for Myself (Mike Maurro Extended Remix).mp3
+46,0.470,124,Tribal House,Saliva Commandos,You Have Done To Me (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\032_Saliva Commandos - You Have Done To Me (Original Mix).mp3
+47,0.512,125,Tech House,10Drums,Conga Lament (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\030_10drums - conga lament (original mix) [fqoto records].mp3
+48,0.439,120,Nu-Disco,Crazy P,Like A Fool,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\047_21-Crazy P-Like A Fool.mp3
+49,0.443,126,House,?,058_Monaco - Sweet lips (Joey Negro Main Slice),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\058_Monaco - Sweet lips (Joey Negro Main Slice).mp3
+50,0.428,134,Disco,Womack &amp/Womack,Teardrops,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\051_Womack &amp;amp-Womack-Teardrops.mp3
+51,0.450,113,Deep House,?,Chez Damier-Why (D's Deep Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\059_Chez Damier-Why (D's Deep Mix).mp3
+52,0.569,133,Techno,Octave Five,Vitess (Original Mix) 133,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\013_Octave Five - Vitess (Original Mix) 133.mp3
+53,0.430,123,House,Those Guys,Love Love Love,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\061_those guys - love love love.mp3
+54,0.430,116,House,Ferry Ultra,Good Times (feat Boris Jennings),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\050_Ferry Ultra - Good Times (feat Boris Jennings).mp3
+55,0.436,127,House,Barbara Tucker feat. Darryl D'Bonneau,Stop Playing With My Mind (Whiplash And Turner Vocal Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\055_Barbara Tucker feat. Darryl D Bonneau - Stop Playing With My Mind (Whiplash And Turner Vocal Mix).mp3
+56,0.447,117,Deep House,Brame & Fion,Boulder Cash,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\054_Boulder Cash.mp3
+57,0.450,116,House,Ash Reynolds,Remind Me,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\062_Ash Reynolds - Remind Me.mp3
+58,0.249,97,Ambient,Bass Bumpers Feat. E. Mello,The M.E.L.L.O. (Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\057_Bass Bumpers Feat. E. Mello - The M.E.L.L.O. (Remix).mp3
+59,0.454,127,House,?,Roy Davis Jr -Sonny,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\063_Roy Davis Jr -Sonny.mp3
+60,0.440,126,House,Sunkids ft. Chance,Rescue Me (Masters At Work Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\069_Sunkids ft. Chance-Rescue Me (Masters At Work Remix).mp3
+61,0.452,110,Deep House,Gene On Earth,The City Special,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\049_02-gene on earth - the city special-tr.mp3
+62,0.446,124,House,?,056_Urban Blues Project Presents Mother Of Pearl - Your Heaven (I Can Feel It) (U B P Classic Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\056_Urban Blues Project Presents Mother Of Pearl - Your Heaven (I Can Feel It) (U B P Classic Mix).mp3
+63,0.448,122,House,Blaze,Let The Music Take You (feat. Alexander Hope) (The Klub Head Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\067_Blaze-Let The Music Take You (feat. Alexander Hope) (The Klub Head Mix).mp3
+64,0.454,123,Deep House,Solar House,Heaven (Cloud Nine),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\044_Solar House - Heaven (Cloud Nine).mp3
+65,0.459,120,Deep House,Mitch Oliver,Intrepid (Raw Main Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\066_Mitch Oliver - Intrepid (Raw Main Remix).mp3
+66,0.435,126,House,?,060_Urban Blues Project - Deliver Me,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\060_Urban Blues Project - Deliver Me.mp3
+67,0.454,125,House,?,065_Soulphusion Allstars - Only You (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\065_Soulphusion Allstars - Only You (Original Mix).mp3
+68,0.476,130,House,Armand Van Helden Feat. Duane Harden,You Don't Know Me (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\070_Armand Van Helden Feat. Duane Harden - You Don't Know Me (Original Mix) (http vk.com tupo musica).mp3
+69,0.462,113,House,"CASTILLO, Eduardo/SABO",Mogo Te Disco,"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\045_CASTILLO, Eduardo SABO - Mogo Te Disco.mp3"
+70,0.476,124,House,?,071_Urban Blues Project Presents Jay Williams - Testify (Mousse T),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\071_Urban Blues Project Presents Jay Williams - Testify (Mousse T).mp3
+71,0.480,119,House,Oliver Koletzki & Fren,Echoes (Niko Schwind Remix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\040_Oliver Koletzki & Fren - Echoes (Niko Schwind Remix).mp3
+72,0.482,118,House,?,073_The Persuader - Central Bron,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\073_The Persuader - Central Bron.mp3
+73,0.527,121,Deep House,Doug Gomez,Descarga (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\025_Doug Gomez - Descarga (Original Mix).mp3
+74,0.570,131,Techno,Rello,KO (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\030_Rello - KO (Original Mix).mp3
+75,0.489,129,House,Jesse Maas,LTD,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\016_Jesse Maas - LTD.mp3
+76,0.492,125,House,?,035_Urban Blues Project feat. Bobby Pruitt - We Are One [Jazz-N-Groove Hands Up Vocal Mix] (Duffmann Edit),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\035_Urban Blues Project feat. Bobby Pruitt - We Are One [Jazz-N-Groove Hands Up Vocal Mix] (Duffmann Edit).mp3
+77,0.492,127,House,DIGIKID84,Look At Me Baby,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\076_DIGIKID84 - Look At Me Baby.mp3
+78,0.523,125,House,Brothers' Vibe,Sunburst,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\014_01 - Brothers' Vibe - Sunburst.mp3
+79,0.588,128,Techno,Mau P,Like I Like It,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\028_01 Mau P - Like I Like It.mp3
+80,0.595,128,Tech House,James Greene,Vamos (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\006_James Greene - Vamos (Extended Mix).mp3
+81,0.587,130,House,bob manzanilla,onyx (near the speaker) (original mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\031_13-bob manzanilla - onyx (near the speaker) (original mix).mp3
+82,0.574,130,House,Julian Fijma,Get Stupid Original Mix,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\027_Julian Fijma - Get Stupid (Original Mix).mp3
+83,0.596,127,House,LouLou Players,Freedom (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\007_LouLou Players - Freedom (Extended Mix).mp3
+84,0.612,130,Techno,Jamback,FEEL THE MUSIC (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\033_Jamback - FEEL THE MUSIC (Original Mix).mp3
+85,0.574,130,House,Julian Fijma,Get Stupid Original Mix,C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\027_Julian Fijma - Get Stupid (Original Mix).mp3
+86,0.600,128,House,Caique Carvalho,Get It Right (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\032_12 - Caique Carvalho - Get It Right (Extended Mix).mp3
+87,0.612,132,Techno,Danny Snowden,14 Degree (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\035_Danny Snowden - 14 Degree (Original Mix).mp3
+88,0.623,130,Techno,3Beat & Greggio,Zen,"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\036_3beat, Greggio - Zen (Extended Mix).mp3"
+89,0.641,132,House,"Breaking Beattz, Almanac",People In The House (Extended Mix),"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\037_Breaking Beattz, Almanac - People In The House (Extended Mix).mp3"
+90,0.671,127,House,AYYBO,RIZZ (Extended Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\038_063 - AYYBO - RIZZ (Extended Mix).mp3
+91,0.702,130,Techno,Joshwa,High (Original Mix),C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night\089_Joshwa - High (Original Mix).mp3
