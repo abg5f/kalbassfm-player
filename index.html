@@ -36,7 +36,7 @@
       --accent:  #F5E642;
       --red:     #FF3B3B;
       --fg:      #FFFFFF;
-      --muted:   #555555;
+      --muted:   #7A7A7A;
       --dark:    #1A1A1A;
       --track:   #2A2A2A;
     }
@@ -44,7 +44,11 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 50% 32%, rgba(245,230,66,.07), transparent 60%),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 1px, transparent 1px, transparent 24px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 1px, transparent 1px, transparent 24px),
+        var(--bg);
       color: var(--fg);
       font-family: 'Space Grotesk', sans-serif;
       min-height: 100dvh;
@@ -256,7 +260,7 @@
       color: var(--fg);
       background: transparent;
       border: 2px solid var(--track);
-      padding: 5px 9px;
+      padding: 9px 12px;
       text-decoration: none;
       cursor: pointer;
       display: inline-flex;
@@ -335,6 +339,11 @@
     .btn-play:hover  { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
     .btn-play:active { transform: translate(4px, 4px); box-shadow: none; }
     .btn-play:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .btn-play.loading { animation: playPulse 900ms ease-in-out infinite; }
+    @keyframes playPulse {
+      0%, 100% { transform: translate(0, 0);   box-shadow: 4px 4px 0 var(--border); }
+      50%      { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
+    }
 
     /* ── Volume + sleep ── */
     .volume-row {
@@ -355,9 +364,10 @@
     }
     input[type="range"] {
       -webkit-appearance: none;
+      -moz-appearance: none;
       appearance: none;
       flex: 1;
-      height: 5px;
+      height: 6px;
       background: var(--track);
       outline: none;
       border: 1px solid #444;
@@ -365,10 +375,22 @@
     }
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px; height: 14px;
+      width: 10px; height: 20px;
       background: var(--accent);
       border: 2px solid var(--border);
       cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 10px; height: 20px;
+      background: var(--accent);
+      border: 2px solid var(--border);
+      border-radius: 0;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      background: var(--track);
+      border: 1px solid #444;
     }
     .sleep-btn {
       font-family: 'Space Mono', monospace;
@@ -379,7 +401,7 @@
       color: var(--muted);
       background: transparent;
       border: 2px solid var(--track);
-      padding: 5px 8px;
+      padding: 9px 10px;
       cursor: pointer;
       flex-shrink: 0;
       transition: border-color 120ms, color 120ms;
@@ -406,9 +428,18 @@
       user-select: none;
     }
     .panel > summary::-webkit-details-marker { display: none; }
-    .panel > summary .chev { color: var(--accent); transition: transform 180ms; }
+    .panel > summary .chev { color: var(--accent); transition: transform 180ms; flex-shrink: 0; }
     .panel[open] > summary .chev { transform: rotate(90deg); }
     .panel-body { padding: 4px 18px 14px; }
+    .panel-summary-label { min-width: 0; overflow: hidden; white-space: nowrap; }
+    .hist-preview {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    .panel[open] .hist-preview { display: none; }
 
     .hist-item {
       display: flex;
@@ -507,7 +538,7 @@
       gap: 8px;
       flex-wrap: wrap;
     }
-    .donate-link, .install-link {
+    .donate-link {
       display: inline-block;
       background: var(--accent);
       color: var(--bg);
@@ -522,10 +553,8 @@
       cursor: pointer;
       transition: transform 80ms, box-shadow 80ms;
     }
-    .install-link { background: transparent; color: var(--fg); display: none; }
-    .install-link.show { display: inline-block; }
-    .donate-link:hover, .install-link:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
-    .donate-link:active, .install-link:active { transform: translate(4px, 4px); box-shadow: none; }
+    .donate-link:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
+    .donate-link:active { transform: translate(4px, 4px); box-shadow: none; }
 
     /* ── Bandeau d'installation (mobile) ── */
     .install-toast {
@@ -615,7 +644,7 @@
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
     @media (prefers-reduced-motion: reduce) {
-      .bar, .logo-dot, .track-title { animation: none; }
+      .bar, .logo-dot, .track-title, .btn-play.loading { animation: none; }
     }
   </style>
 </head>
@@ -710,7 +739,10 @@
     </div>
 
     <details class="panel" id="histPanel">
-      <summary>Historique <span class="chev">›</span></summary>
+      <summary>
+        <span class="panel-summary-label">Historique <span class="hist-preview" id="histPreview"></span></span>
+        <span class="chev">›</span>
+      </summary>
       <div class="panel-body">
         <div id="historyList"></div>
       </div>
@@ -725,7 +757,6 @@
       <div class="footer-donate">
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
         <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">Owned by Lupari</a>
-        <button class="install-link" id="installBtn">⬇ Installer l'app</button>
       </div>
     </div>
 
@@ -775,6 +806,7 @@
   const shareBtn  = document.getElementById('shareBtn');
   const findYT    = document.getElementById('findYT');
   const historyList = document.getElementById('historyList');
+  const histPreview = document.getElementById('histPreview');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
   document.title = CONFIG.stationName + ' — FM Caraïbes';
@@ -852,6 +884,7 @@
   let playing = false;
   function setUI(state) {
     playing = state === 'playing';
+    btnPlay.classList.toggle('loading', state === 'loading');
     btnPlay.setAttribute('aria-pressed', playing);
     btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Lecture');
     icPlay.style.display  = playing ? 'none'  : 'block';
@@ -992,7 +1025,13 @@
 
   /* ── Historique ── */
   function renderHistory(hist) {
-    if (!Array.isArray(hist) || !hist.length) { historyList.innerHTML = '<p class="prog-note">Rien pour l\'instant.</p>'; return; }
+    if (!Array.isArray(hist) || !hist.length) {
+      historyList.innerHTML = '<p class="prog-note">Rien pour l\'instant.</p>';
+      histPreview.textContent = '';
+      return;
+    }
+    const last = hist[0].song || {};
+    histPreview.textContent = last.title ? '· ' + last.title + (last.artist ? ' — ' + last.artist : '') : '';
     historyList.innerHTML = '';
     hist.slice(0, 6).forEach(h => {
       const s = h.song || {};
@@ -1076,18 +1115,14 @@
 
   /* ── PWA : installation + service worker ── */
   let deferredPrompt = null;
-  const installBtn = document.getElementById('installBtn');
   const headerInstallBtn = document.getElementById('headerInstallBtn');
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    installBtn.classList.add('show');
     maybeShowInstallToast();
   });
-  installBtn.addEventListener('click', () => promptInstall());
   headerInstallBtn.addEventListener('click', () => maybeShowInstallToast(true));
   window.addEventListener('appinstalled', () => {
-    installBtn.classList.remove('show');
     headerInstallBtn.classList.remove('show');
     hideInstallToast();
     localStorage.setItem('kfm_installed', '1');
@@ -1132,7 +1167,6 @@
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
-    installBtn.classList.remove('show');
     hideInstallToast();
   }
 
