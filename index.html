@@ -735,14 +735,6 @@
       </div>
     </details>
 
-    <details class="panel" id="progPanel">
-      <summary>Programme du jour <span class="chev">›</span></summary>
-      <div class="panel-body">
-        <div id="progList"></div>
-        <p class="prog-note">Horaires Antilles (heure de Martinique · UTC−4)</p>
-      </div>
-    </details>
-
     <div class="footer">
       <span class="footer-text">// FM CARAÏBES</span>
       <div class="footer-status">
@@ -751,6 +743,7 @@
       </div>
       <div class="footer-donate">
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
+        <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">Owned by Lupari</a>
         <button class="install-link" id="installBtn">⬇ Installer l'app</button>
       </div>
     </div>
@@ -824,7 +817,6 @@
   const shareBtn  = document.getElementById('shareBtn');
   const findYT    = document.getElementById('findYT');
   const historyList = document.getElementById('historyList');
-  const progList  = document.getElementById('progList');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
   document.title = CONFIG.stationName + ' — FM Caraïbes';
@@ -904,24 +896,8 @@
     badgeEl.className = 'genre-badge ' + s.cls;
     badgeEl.textContent = s.icon + '  ' + s.label;
   }
-  function fmt2(n) { return String(n).padStart(2, '0'); }
-  function renderProgram() {
-    const nowSlot = currentSlot();
-    progList.innerHTML = '';
-    SLOTS.forEach(s => {
-      const isNow = s === nowSlot;
-      const row = document.createElement('div');
-      row.className = 'prog-item' + (isNow ? ' now' : '');
-      row.innerHTML =
-        '<span class="prog-time">' + fmt2(s.from) + 'h – ' + fmt2(s.to) + 'h</span>' +
-        '<span class="prog-label">' + s.icon + ' ' + s.label + '</span>' +
-        (isNow ? '<span class="prog-live">● EN COURS</span>' : '');
-      progList.appendChild(row);
-    });
-  }
   refreshGenre();
-  renderProgram();
-  setInterval(() => { refreshGenre(); renderProgram(); }, 60_000);
+  setInterval(refreshGenre, 60_000);
 
   /* ── État lecture ── */
   let playing = false;
