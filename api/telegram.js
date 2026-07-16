@@ -48,6 +48,7 @@ async function handleMessage(token, message) {
 
   if (text === '/skip') {
     const r = await skipSong();
+    if (r.ok) await postAdminMessage('⏭ Un admin a passé le morceau en cours.');
     return sendMessage(token, chatId, r.ok ? '⏭ Morceau suivant lance.' : `Echec du skip (${r.status}).`);
   }
 
