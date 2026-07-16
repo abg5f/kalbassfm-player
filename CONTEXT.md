@@ -1,8 +1,20 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-10 (session 2)
+> Dernière mise à jour : 2026-07-16
 
-## État actuel
+## État actuel (2026-07-16)
+
+- ✅ **Système de vote 🔥 par morceau opérationnel de bout en bout, store Redis connecté** — `api/reactions.js` réécrit : vote libre et illimité (plus de limite 1/morceau/auditeur, retirée à la demande explicite de l'utilisateur), classement Top 5 (sorted set Redis `ZINCRBY`/`ZRANGE`), panneau `#topPanel`/`#topList` dans `index.html` avec jauges proportionnelles, poll toutes les 4s + re-poll immédiat après chaque vote. **Upstash for Redis connecté au projet Vercel le 2026-07-16** (via Vercel Storage → Marketplace → Upstash for Redis, région Washington D.C., plan Free, Production+Preview) — les variables `KV_REST_API_URL`/`KV_REST_API_TOKEN` sont en place. Redeploy déclenché ; vérification live en direct (vote → Top 5 qui se peuple) pas encore confirmée dans cette session
+- ✅ **Diversification de la rotation enrichie** — `tools/build_rotation.py` : mini-mouvements sinusoïdaux d'énergie superposés à la rampe linéaire par créneau (respirations façon set DJ), quota minoritaire garantissant qu'une famille rare apparaît au moins une fois par quart de créneau, deux nouvelles familles de style de premier rang **Reggae/Dub** et **Jungle/DnB** (au même titre que House/Techno/Garage/Disco-Funk), garde-fou `enforce_family_limit` désormais bidirectionnel (recherche avant ET arrière) avec jusqu'à 5 passes
+- ✅ **Bug de mélange de formats de chemin WSL/Windows corrigé définitivement** — `analyze_essentia.py` (`normalize_path()`) et `triage_new_tracks.py` (`wsl_to_windows()`) normalisent systématiquement ; a mis fin à un incident de ~5h30 de ré-analyse redondante causé par des comparaisons `done_paths` qui échouaient entre chemins équivalents mais formatés différemment
+- ✅ **`tools/normalize_and_dedup_metadata.py` créé** — script de réparation sûr de `metadata.json` (ne supprime jamais une entrée irrécupérable sans avoir tenté de la réparer d'abord), tire la leçon de l'incident de perte de données causé par `tools/dedup_metadata.py` (260 entrées perdues, désormais superseded)
+- ✅ **`clean_mp3_library.py` fusionné** (hors repo, `C:\Users\ph.dufourcq\Music\00_AZURACAST\scripts\`) — fusion de `clean_local_tracks.py` + `clean_mp3_library.py` en un seul script complet (nettoyage tags, détection covers de sites pirates, lookup iTunes, préservation du préfixe `NNN_`), à la demande explicite de l'utilisateur
+- ✅ **15 jingles audio générés (voix off) et intégrés nativement dans AzuraCast** — dossier `Jingles/` (hors repo, non versionné), uploadés dans Media → Files, playlist dédiée créée avec Mode Jingle activé (masque les métadonnées) et type "Une fois tous les x titres" (10-15) — volontairement **hors du pipeline Python** (`build_rotation.py`/`export_rotation.py`) pour rester stable indépendamment des régénérations de rotation
+- ✅ **`.gitignore` créé** — exclut `.claude/`, `.planning/`, `Jingles/`, `tools/__pycache__/`, `tools/triage_report.html`
+- ⏳ **SACEM toujours pas fait**
+- ⏳ **TuneIn Partner ID/Partner Key toujours en attente** de TuneIn support (station soumise, ID s358721/référence 358721)
+
+## État antérieur (2026-07-10, conservé pour l'historique)
 
 - ✅ **Pipeline d'ingestion `triage_new_tracks.py` complet et utilisé en prod** — nettoyage tags/cover, détection de doublons (artiste+titre normalisés en tokens, seuil de similarité 75%, comparé contre `New_prog` uniquement — PAS toute la bibliothèque Music, cf. décisions), analyse Essentia, classification par créneau, régénération auto de l'ordre. Doublons/échecs déplacés dans `_incoming/_duplicates` et `_incoming/_failed`
 - ✅ **Interface de suivi en direct** — `tools/triage_report.html` (généré/écrasé à chaque morceau traité, auto-refresh 2s, s'ouvre automatiquement dans le navigateur au lancement) : progression, répartition par créneau avec barres, tableaux doublons/échecs
@@ -48,6 +60,10 @@
 | **Index de doublons scanne `New_prog` uniquement, pas tout `C:\Users\ph.dufourcq\Music`** | Testé puis explicitement annulé par l'utilisateur — la bibliothèque Music complète (2944 fichiers) contient des dossiers hors-scope radio (`Mariage`, `iTunes`, outils) ; `_incoming` reste aussi l'unique source des "nouveaux morceaux à traiter" |
 | **Rapport HTML régénéré à chaque fichier (pas de serveur local)** | `triage_report.html` avec `<meta http-equiv="refresh">` suffit pour un suivi live en ouvrant simplement le fichier dans le navigateur, évite la complexité d'un serveur HTTP local |
 | **Conversion SVG→PNG via Edge headless (`--screenshot`)** | `cairosvg` non installé sur la machine ; Edge headless déjà présent nativement sur Windows 11, évite une dépendance supplémentaire |
+| **Vote 🔥 libre et illimité (pas de limite 1/auditeur)** | Décision explicite de l'utilisateur (2026-07-16), revient sur le choix initial "1 vote/morceau/auditeur" du plan — priorité donnée à l'effet "jauge qui monte en direct" plutôt qu'à l'équité stricte du classement |
+| **Jingles gérés nativement dans AzuraCast (Media → Playlists), pas dans le pipeline Python** | Le pipeline (`build_rotation.py`/`export_rotation.py`) réécrit intégralement les playlists de créneaux à chaque export ; des jingles insérés "en dur" seraient perdus/décalés à chaque régénération. La fonctionnalité native "Une fois tous les x titres" + Mode Jingle est stable indépendamment de ça |
+| **Upstash for Redis (Marketplace) au lieu de l'ancien "Vercel KV" natif** | Vercel a migré son offre de storage clé-valeur vers des providers Marketplace ; Upstash for Redis expose la même API REST (`KV_REST_API_URL`/`KV_REST_API_TOKEN`) que le code attendait déjà, donc compatible sans changement de code |
+| **Reggae/Dub et Jungle/DnB en familles de style de premier rang (pas des sous-genres génériques)** | Demande explicite : ces styles doivent être traités "au même titre que" House/Techno pour la contrainte anti-monotonie (max 2 consécutifs, quota minoritaire), pas relégués en famille résiduelle |
 
 ## En cours / TODOs
 
@@ -61,7 +77,9 @@
 - [ ] **Système de vote pour changer de style/playlist (planifié, pas codé)** — plan complet écrit dans `C:\Users\ph.dufourcq\.claude\plans\wild-cooking-book.md` : playlists candidates par genre, vote côté public (20 votes → bascule vers la playlist gagnante pendant 2h puis retour à la grille normale), anti-abus 1 vote/navigateur. Nécessite avant codage : créer les playlists genre + clé API AzuraCast (dashboard → My API Keys) + nouvelle fonction `api/vote.js` calquée sur `api/reactions.js` + panneau front dans `index.html`. Rien n'est implémenté à ce stade.
 - [ ] **Graphe graphify construit manuellement (pas de CLI `graphify` installé)** — `graphify-out/` créé via lecture directe du repo (pas de commande `graphify update`/`graphify god-nodes` disponible dans l'environnement). À relancer via `/graphify` après changements significatifs ; si le CLI est installé un jour, préférer `graphify update .` à une reconstruction manuelle.
 - [ ] **SACEM** — formulaire webradio à remplir (frais mentionnés dans les posts de lancement, pas encore fait)
-- [ ] **Connecter un store Upstash/KV à Vercel** — pour que le compteur de réactions 🔥 soit partagé entre auditeurs (actuellement `enabled:false`, fallback local)
+- [x] **Connecter un store Upstash/KV à Vercel** — fait le 2026-07-16 (Upstash for Redis, Production+Preview). Reste à confirmer en live que le vote persiste bien et que le Top 5 se peuple après le redeploy
+- [ ] **Vérifier en direct le fonctionnement du vote/Top 5 une fois le redeploy Vercel terminé** — voter sur un morceau, confirmer que le compteur persiste après reload, que le Top 5 se peuple et se trie, capture finale du rendu des jauges
+- [ ] **Mettre à jour `tools/build_rotation.py` + `export_rotation.py` avec les nouveaux morceaux Reggae/Dub et Jungle/DnB une fois `triage.bat` lancé** — l'utilisateur était encore en train de télécharger ces morceaux au moment de la dernière session, le triage n'a pas encore tourné dessus
 - [ ] **Traiter les morceaux ambigus/introuvables restants** — `AI GO RYTHM - FUNK edit/edit 2`, `Retromigration - Halt & Stop`, `m - jungle remaster...` (scores faibles, jamais tranchés)
 - [ ] **Synchro hebdomadaire PC → radio** — script WinSCP + tâche planifiée Windows évoqué mais pas mis en place
 - [ ] **Jingles ElevenLabs** — propositions de textes faites, ni la génération audio ni l'intégration playlist "Jingles" faites
@@ -83,7 +101,10 @@
 | `index.html` | Player web complet (flux, égaliseur, PWA, features live) | ✅ Live sur Vercel |
 | `manifest.webmanifest`, `sw.js` | Config PWA + service worker | ✅ Actifs |
 | `icon-192.png`, `icon-512.png`, `og-image.png` | Icônes PWA (logo Kalbass) + image de partage réseaux sociaux | ✅ |
-| `api/reactions.js` | Fonction serverless Vercel pour compteur 🔥 partagé | ⏳ Déployée mais store KV pas connecté |
+| `api/reactions.js` | Fonction serverless Vercel : vote libre illimité 🔥 + classement Top 5 (sorted set Redis) | ✅ Déployée, store Upstash Redis connecté (2026-07-16) |
+| `tools/normalize_and_dedup_metadata.py` | Réparation sûre de `metadata.json` (normalise/dédoublonne/répare sans jamais supprimer une entrée irrécupérable) | ✅ Local, WSL2 |
+| `tools/dedup_metadata.py` | Ancien script de dédoublonnage (supprimait sans réparer) — conservé pour l'historique, ne plus utiliser | ⚠️ Superseded |
+| `.gitignore` | Exclut `.claude/`, `.planning/`, `Jingles/`, `tools/__pycache__/`, `tools/triage_report.html` du repo | ✅ Créé le 2026-07-16 |
 | `tools/import-rekordbox.ps1` | Script local (PC) : matche les exports Rekordbox .txt aux fichiers audio, copie vers dossiers playlists | ✅ Local uniquement, non versionné dans le repo public |
 | `tools/clean_local_tracks.py` | Script local : nettoie tags/noms de fichiers, détecte et remplace les covers de sites pirates via iTunes API | ✅ Local uniquement, chemins encore sur les anciens dossiers créneaux (à mettre à jour vers `New_prog`) |
 | `/root/clean_music.py`, `/root/clean_covers.py` (sur le VPS) | Équivalents du nettoyage côté serveur AzuraCast | ✅ Sur le VPS, hors repo |
@@ -107,10 +128,10 @@
 **Session notable** : une partie du travail PWA/mobile (fullscreen standalone, fix écran verrouillé) a été faite en parallèle par une autre session Claude (lancée depuis l'app mobile Claude), fusionnée sans conflit dans cette session.
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-10 (construction manuelle, pas de CLI `graphify` disponible)
+> Mis à jour le 2026-07-16 (construction manuelle, pas de CLI `graphify` disponible)
 
-God nodes (concepts centraux) : `index.html` (hub front), `AzuraCast` (cœur infra streaming), `New_prog` (bibliothèque de référence), `triage_new_tracks.py` (pipeline d'ingestion complet — dédoublonnage/analyse/classification/rapport), `build_rotation.py` (logique de diversité/rotation), `VotingSystemPlan` (feature de vote planifiée), `Instagram launch` (visuels + campagne sponsorisée).
-Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless-API+vote planifié, Outillage/Pipeline musique Rekordbox, Pipeline Essentia/Rotation musicale, Marketing/Lancement Instagram, Planning/Business, Contexte de session).
+God nodes (concepts centraux) : `index.html` (hub front — now-playing/vote/Top5/égaliseur/PWA), `AzuraCast` (cœur infra streaming, inclut désormais la playlist Jingles native), `api/reactions.js` (vote libre + Top 5, Upstash Redis réellement connecté depuis le 2026-07-16), `VotingSystemPlan` (feature distincte de vote de playlist par genre, toujours planifiée/non codée), `tools/build_rotation.py` (diversité de rotation : familles de style, mini-mouvements, quota minoritaire).
+Communautés détectées : 7 (Player/Frontend, Infra/Streaming, Serverless-API+vote planifié, Outillage/Pipeline musique Rekordbox, Pipeline Essentia/Rotation musicale, Planning/Business, Contexte de session).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

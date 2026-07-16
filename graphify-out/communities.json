@@ -3,22 +3,27 @@
     {
       "id": "player-frontend",
       "label": "Player / Frontend",
-      "members": ["index.html", "sw.js", "manifest.webmanifest", "PWAFeature", "EqualizerFeature", "ReactionsFeature", "ProgrammeGrid", "NowPlayingAPI"]
+      "members": ["index.html", "sw.js", "manifest.webmanifest", "PWAFeature", "EqualizerFeature", "ReactionsFeature", "TopFiveFeature", "ProgrammeGrid", "NowPlayingAPI"]
     },
     {
       "id": "infra-streaming",
       "label": "Infra / Streaming",
-      "members": ["AzuraCast", "Icecast", "Liquidsoap", "VPS", "DuckDNS", "GitHubRepo", "Vercel", "AzuraCastAdminAPI"]
+      "members": ["AzuraCast", "Icecast", "Liquidsoap", "VPS", "DuckDNS", "GitHubRepo", "Vercel", "AzuraCastAdminAPI", "JinglesFeature"]
     },
     {
       "id": "serverless-api",
-      "label": "Serverless / API + planned voting feature",
-      "members": ["api/reactions.js", "VercelKV", "VotingSystemPlan"]
+      "label": "Serverless / API (vote temps réel connecté) + vote playlist planifié",
+      "members": ["api/reactions.js", "VercelKV", "TopFiveFeature", "VotingSystemPlan"]
     },
     {
       "id": "tooling-pipeline",
       "label": "Outillage / Pipeline musique",
       "members": ["RekordboxPipeline", "tools/import-rekordbox.ps1", "tools/clean_local_tracks.py", "RaiDrive", "iTunesSearchAPI"]
+    },
+    {
+      "id": "essentia-rotation",
+      "label": "Pipeline Essentia / Rotation musicale",
+      "members": ["tools/analyze_essentia.py", "tools/build_rotation.py", "tools/dedup_metadata.py", "tools/normalize_and_dedup_metadata.py"]
     },
     {
       "id": "planning-business",
