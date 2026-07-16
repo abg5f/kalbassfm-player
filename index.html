@@ -525,6 +525,59 @@
       height: 100%;
     }
 
+    /* ── Chat live ── */
+    .chat-list {
+      max-height: 260px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    .chat-item {
+      padding: 6px 0;
+      border-top: 1px solid #222;
+    }
+    .chat-item:last-child { border-top: none; }
+    .chat-item-head {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .chat-nick {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .chat-time {
+      font-family: 'Space Mono', monospace;
+      font-size: .54rem;
+      color: var(--muted);
+    }
+    .chat-text {
+      font-size: .74rem;
+      word-break: break-word;
+    }
+    .chat-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chat-input {
+      flex: 1;
+      min-width: 0;
+      font-family: 'Space Mono', monospace;
+      font-size: .68rem;
+      color: var(--fg);
+      background: var(--dark);
+      border: 2px solid var(--track);
+      padding: 8px 10px;
+    }
+    .chat-input:focus { outline: none; border-color: var(--accent); }
+    .chat-send { flex-shrink: 0; }
+    .chat-send:disabled { opacity: .4; cursor: default; }
+    .chat-send:disabled:hover { border-color: var(--track); color: var(--fg); }
+
     /* ── Footer ── */
     .footer {
       padding: 10px 18px;
@@ -780,6 +833,20 @@
       </div>
     </details>
 
+    <details class="panel" id="chatPanel">
+      <summary>
+        <span class="panel-summary-label">Chat live</span>
+        <span class="chev">›</span>
+      </summary>
+      <div class="panel-body">
+        <div class="chat-list" id="chatList"></div>
+        <form class="chat-form" id="chatForm">
+          <input class="chat-input" id="chatInput" type="text" maxlength="200" placeholder="Un message..." autocomplete="off" aria-label="Message du chat">
+          <button class="chip chat-send" id="chatSend" type="submit">Envoyer</button>
+        </form>
+      </div>
+    </details>
+
     <div class="footer">
       <span class="footer-text">// FM CARAÏBES</span>
       <div class="footer-status">
@@ -840,6 +907,10 @@
   const historyList = document.getElementById('historyList');
   const topList = document.getElementById('topList');
   const histPreview = document.getElementById('histPreview');
+  const chatList  = document.getElementById('chatList');
+  const chatForm  = document.getElementById('chatForm');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend  = document.getElementById('chatSend');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
   document.title = CONFIG.stationName + ' — FM Caraïbes';
@@ -1096,6 +1167,76 @@
   }
   pollTop();
   setInterval(pollTop, 4000);
+
+  /* ── Chat live (anonyme, pseudo auto-genere, partage via /api/chat) ── */
+  function getClientId() {
+    let v = localStorage.getItem('kfm_client_id');
+    if (!v) {
+      v = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+      localStorage.setItem('kfm_client_id', v);
+    }
+    return v;
+  }
+  const clientId = getClientId();
+  const chatNick = 'Auditeur-' + (parseInt(clientId.replace(/[^0-9]/g, '').slice(0, 8) || '0', 10) % 9000 + 1000);
+
+  function formatChatTime(ts) {
+    const d = new Date(ts);
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+  function renderChat(messages) {
+    if (!Array.isArray(messages) || !messages.length) {
+      chatList.innerHTML = '<p class="prog-note">Aucun message pour l\'instant.</p>';
+      return;
+    }
+    chatList.innerHTML = '';
+    messages.forEach((m) => {
+      const el = document.createElement('div');
+      el.className = 'chat-item';
+      const head = document.createElement('div');
+      head.className = 'chat-item-head';
+      const nick = document.createElement('span');
+      nick.className = 'chat-nick'; nick.textContent = m.nick || 'Auditeur';
+      const time = document.createElement('span');
+      time.className = 'chat-time'; time.textContent = formatChatTime(m.ts);
+      head.appendChild(nick); head.appendChild(time);
+      const text = document.createElement('div');
+      text.className = 'chat-text'; text.textContent = m.text || '';
+      el.appendChild(head); el.appendChild(text);
+      chatList.appendChild(el);
+    });
+  }
+  async function pollChat() {
+    try {
+      const r = await fetch('/api/chat', { cache: 'no-store' });
+      const j = await r.json();
+      if (!j.enabled) throw new Error('disabled');
+      renderChat(j.messages);
+    } catch {
+      chatList.innerHTML = '<p class="prog-note">Chat bientôt disponible.</p>';
+    }
+  }
+  pollChat();
+  setInterval(pollChat, 3000);
+
+  let chatCooldown = false;
+  chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text || chatCooldown) return;
+    chatCooldown = true;
+    chatSend.disabled = true;
+    chatInput.value = '';
+    try {
+      await fetch('/api/chat', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, nick: chatNick, text }),
+      });
+      pollChat();
+    } catch {}
+    setTimeout(() => { chatCooldown = false; chatSend.disabled = false; }, 3000);
+  });
 
   /* ── Historique ── */
   function renderHistory(hist) {
