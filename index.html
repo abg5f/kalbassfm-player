@@ -79,6 +79,35 @@
       .card { box-shadow: 5px 5px 0 var(--accent); }
     }
 
+    /* ── Desktop : chat + Top 5 en colonne latérale ── */
+    @media (min-width: 1024px) {
+      .card {
+        width: min(960px, 94vw);
+        display: grid;
+        grid-template-columns: minmax(340px, 1fr) minmax(320px, 420px);
+        grid-template-areas:
+          "header   header"
+          "artwork  chat"
+          "track    chat"
+          "controls chat"
+          "volume   top5"
+          "hist     top5"
+          "footer   footer";
+      }
+      .card > .header      { grid-area: header; }
+      .card > .artwork     { grid-area: artwork; }
+      .card > .track-block { grid-area: track; }
+      .card > .controls    { grid-area: controls; }
+      .card > .volume-row  { grid-area: volume; }
+      .card > #histPanel   { grid-area: hist; }
+      .card > #chatPanel   { grid-area: chat; border-left: 3px solid var(--border); border-bottom: none; display: flex; flex-direction: column; min-height: 0; }
+      .card > #topPanel    { grid-area: top5; border-left: 3px solid var(--border); }
+      .card > .footer      { grid-area: footer; }
+
+      #chatPanel .panel-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+      .chat-list { max-height: 50vh; }
+    }
+
     /* App installée (standalone / fullscreen) : plein écran bord-à-bord,
        la zone d'état (encoche) est absorbée par les safe-area insets. */
     @media (display-mode: standalone), (display-mode: fullscreen) {

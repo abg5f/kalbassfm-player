@@ -31,9 +31,17 @@ export default async function handler(req, res) {
   // ---- GET : les 50 derniers messages (plus recent en premier) ----
   if (req.method === 'GET') {
     try {
-      const lj = await kv('lrange', 'chat:messages', '0', '49');
+      const [lj, dj] = await Promise.all([
+        kv('lrange', 'chat:messages', '0', '49'),
+        kv('hgetall', 'chat:deleted'),
+      ]);
       const raw = lj.result || [];
-      const messages = raw.map((s) => { try { return JSON.parse(s); } catch { return null; } }).filter(Boolean);
+      const deletedFields = dj.result || [];
+      const deletedIds = new Set();
+      for (let i = 0; i < deletedFields.length; i += 2) deletedIds.add(deletedFields[i]);
+      const messages = raw
+        .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+        .filter((m) => m && !deletedIds.has(m.id));
       return res.status(200).json({ enabled: true, messages });
     } catch {
       return res.status(200).json({ enabled: false, messages: [] });
@@ -57,8 +65,30 @@ export default async function handler(req, res) {
     const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
+    await notifyTelegram(msg);
     return res.status(200).json({ enabled: true, ok: true });
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
   }
+}
+
+// Relaie chaque nouveau message vers l'admin Telegram avec un bouton de
+// suppression inline — permet de moderer sans passer par le dashboard.
+// No-op silencieux si le bot n'est pas configure ou en cas d'erreur reseau :
+// la publication du message dans le chat ne doit jamais en dependre.
+async function notifyTelegram(msg) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: `${msg.nick}: ${msg.text}`,
+        reply_markup: { inline_keyboard: [[{ text: '🗑 Supprimer', callback_data: 'del:' + msg.id }]] },
+      }),
+    });
+  } catch {}
 }
