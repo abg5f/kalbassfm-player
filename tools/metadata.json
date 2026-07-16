@@ -3836,34 +3836,6 @@
   ]
  },
  {
-  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\2_afternoon\\005_Goutham & Jeremy - Revival.mp3",
-  "bpm": 129.968505859375,
-  "rms": 0.25750187039375305,
-  "dynamic_complexity": 4.453433036804199,
-  "danceability": 0.9997111558914185,
-  "mood": {
-   "happy": 0.5350126624107361,
-   "sad": 0.9706950783729553,
-   "aggressive": 0.04158003628253937,
-   "relaxed": 0.8683981895446777,
-   "party": 0.05484861508011818
-  },
-  "genres": [
-   [
-    "Electronic---UK Garage",
-    0.4991256594657898
-   ],
-   [
-    "Electronic---Speed Garage",
-    0.4932912290096283
-   ],
-   [
-    "Electronic---House",
-    0.4466201961040497
-   ]
-  ]
- },
- {
   "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\3_evening\\027_Hidde Van Wee - Far Out (Original Mix).mp3",
   "bpm": 133.98721313476562,
   "rms": 0.35590508580207825,
@@ -5264,34 +5236,6 @@
   ]
  },
  {
-  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\4_night\\010_07 - ETTA - Like Us (Original Mix).mp3",
-  "bpm": 123.91783905029297,
-  "rms": 0.28533655405044556,
-  "dynamic_complexity": 5.238056659698486,
-  "danceability": 0.9989968538284302,
-  "mood": {
-   "happy": 0.09852103888988495,
-   "sad": 0.9630160927772522,
-   "aggressive": 0.2660292685031891,
-   "relaxed": 0.7435732483863831,
-   "party": 0.051326557993888855
-  },
-  "genres": [
-   [
-    "Electronic---Tech House",
-    0.33450156450271606
-   ],
-   [
-    "Electronic---Minimal Techno",
-    0.2359524667263031
-   ],
-   [
-    "Electronic---Techno",
-    0.1979750394821167
-   ]
-  ]
- },
- {
   "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\4_night\\018_11A - 125 - Breathe (Ki Creighton Remix) - George Smeddles.mp3",
   "bpm": 124.99638366699219,
   "rms": 0.2780938446521759,
@@ -5904,34 +5848,6 @@
    [
     "Electronic---House",
     0.1769174486398697
-   ]
-  ]
- },
- {
-  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\4_night\\082_Julian Fijma - Get Stupid (Original Mix).mp3",
-  "bpm": 129.8961944580078,
-  "rms": 0.2967929244041443,
-  "dynamic_complexity": 3.674112319946289,
-  "danceability": 0.9969618916511536,
-  "mood": {
-   "happy": 0.37560269236564636,
-   "sad": 0.9711715579032898,
-   "aggressive": 0.27946075797080994,
-   "relaxed": 0.9248009920120239,
-   "party": 0.02237553894519806
-  },
-  "genres": [
-   [
-    "Electronic---House",
-    0.422120600938797
-   ],
-   [
-    "Electronic---Techno",
-    0.1887616068124771
-   ],
-   [
-    "Electronic---Ghetto House",
-    0.17431199550628662
    ]
   ]
  },
@@ -8764,34 +8680,6 @@
   ]
  },
  {
-  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_morning\\033_Mark Bell - Revolution (Rae & Christian Remix).mp3",
-  "bpm": 111.47758483886719,
-  "rms": 0.18996694684028625,
-  "dynamic_complexity": 4.5584001541137695,
-  "danceability": 0.9905169606208801,
-  "mood": {
-   "happy": 0.3054908812046051,
-   "sad": 0.8366413712501526,
-   "aggressive": 0.01745571196079254,
-   "relaxed": 0.3252498507499695,
-   "party": 0.3616291284561157
-  },
-  "genres": [
-   [
-    "Electronic---Disco",
-    0.24662746489048004
-   ],
-   [
-    "Electronic---House",
-    0.22194184362888336
-   ],
-   [
-    "Electronic---Nu-Disco",
-    0.19312401115894318
-   ]
-  ]
- },
- {
   "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_morning\\034_Masters Of The Universe-Check It Out (Hit 'N' Run Mix).mp3",
   "bpm": 125.04680633544922,
   "rms": 0.14544826745986938,
@@ -8956,34 +8844,6 @@
    [
     "Electronic---Progressive House",
     0.11962733417749405
-   ]
-  ]
- },
- {
-  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\4_night\\016_Moritz Von Oswald - Ole (Remix).mp3",
-  "bpm": 117.98807525634766,
-  "rms": 0.21821056306362152,
-  "dynamic_complexity": 6.0702714920043945,
-  "danceability": 0.9779505729675293,
-  "mood": {
-   "happy": 0.05636172369122505,
-   "sad": 0.8790881037712097,
-   "aggressive": 0.017011074349284172,
-   "relaxed": 0.16171230375766754,
-   "party": 0.5366653203964233
-  },
-  "genres": [
-   [
-    "Electronic---Dub Techno",
-    0.42345795035362244
-   ],
-   [
-    "Electronic---Deep House",
-    0.34109655022621155
-   ],
-   [
-    "Electronic---Ambient",
-    0.18259945511817932
    ]
   ]
  },
@@ -9824,6 +9684,5046 @@
    [
     "Electronic---Deep House",
     0.43015775084495544
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/001_Gus Pirelli -Meet In The Middle.mp3",
+  "bpm": 115.9677505493164,
+  "rms": 0.10425029695034027,
+  "dynamic_complexity": 5.788482666015625,
+  "danceability": 0.9944894909858704,
+  "mood": {
+   "happy": 0.7553700804710388,
+   "sad": 0.9142248034477234,
+   "aggressive": 0.013872487470507622,
+   "relaxed": 0.8798352479934692,
+   "party": 0.06280751526355743
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.2849215865135193
+   ],
+   [
+    "Electronic---Disco",
+    0.21111446619033813
+   ],
+   [
+    "Electronic---House",
+    0.18053044378757477
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/002_2 - The Earons - Land Of Hunger (Dub Version.mp3",
+  "bpm": 111.25345611572266,
+  "rms": 0.09969507902860641,
+  "dynamic_complexity": 3.6130294799804688,
+  "danceability": 0.9980013370513916,
+  "mood": {
+   "happy": 0.8666418790817261,
+   "sad": 0.9580614566802979,
+   "aggressive": 0.036022137850522995,
+   "relaxed": 0.8863654732704163,
+   "party": 0.031213801354169846
+  },
+  "genres": [
+   [
+    "Electronic---Synth-pop",
+    0.32973700761795044
+   ],
+   [
+    "Electronic---Disco",
+    0.2470282018184662
+   ],
+   [
+    "Electronic---Euro-Disco",
+    0.2385897934436798
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/003_03 Dawn Again - Vanilla Sky.mp3",
+  "bpm": 104.97122955322266,
+  "rms": 0.14714418351650238,
+  "dynamic_complexity": 6.334339141845703,
+  "danceability": 0.9659321308135986,
+  "mood": {
+   "happy": 0.09226472675800323,
+   "sad": 0.8643893599510193,
+   "aggressive": 0.06507248431444168,
+   "relaxed": 0.24947389960289001,
+   "party": 0.3614130914211273
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.33967339992523193
+   ],
+   [
+    "Electronic---Ambient",
+    0.2754954695701599
+   ],
+   [
+    "Electronic---Chillwave",
+    0.231444850564003
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/004_Glenn Underground - 12 O'clock Pumpkin - Change Things - 7A - 127.mp3",
+  "bpm": 127.00325012207031,
+  "rms": 0.11813365668058395,
+  "dynamic_complexity": 5.072249889373779,
+  "danceability": 0.9967688918113708,
+  "mood": {
+   "happy": 0.5863795280456543,
+   "sad": 0.9423583745956421,
+   "aggressive": 0.05324534326791763,
+   "relaxed": 0.8661726117134094,
+   "party": 0.09767083078622818
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.6681832671165466
+   ],
+   [
+    "Electronic---Deep House",
+    0.2302066683769226
+   ],
+   [
+    "Electronic---Garage House",
+    0.18411730229854584
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/005_Muriel Dacq-Tropique.mp3",
+  "bpm": 121.89855194091797,
+  "rms": 0.12684756517410278,
+  "dynamic_complexity": 3.3372151851654053,
+  "danceability": 0.9725987911224365,
+  "mood": {
+   "happy": 0.7883824706077576,
+   "sad": 0.9001557230949402,
+   "aggressive": 0.020612210035324097,
+   "relaxed": 0.6766572594642639,
+   "party": 0.12209285795688629
+  },
+  "genres": [
+   [
+    "Electronic---Euro-Disco",
+    0.5570866465568542
+   ],
+   [
+    "Electronic---Synth-pop",
+    0.437686026096344
+   ],
+   [
+    "Electronic---Italo-Disco",
+    0.3710964322090149
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/006_Rayko -Getting Down.mp3",
+  "bpm": 115.02277374267578,
+  "rms": 0.16089847683906555,
+  "dynamic_complexity": 9.565110206604004,
+  "danceability": 0.993170976638794,
+  "mood": {
+   "happy": 0.7735529541969299,
+   "sad": 0.9592152237892151,
+   "aggressive": 0.02943364903330803,
+   "relaxed": 0.931123673915863,
+   "party": 0.026945767924189568
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.6551113128662109
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.449548602104187
+   ],
+   [
+    "Electronic---Beatdown",
+    0.3622027337551117
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/007_Alaska - Hosherr.mp3",
+  "bpm": 106.03166961669922,
+  "rms": 0.18524041771888733,
+  "dynamic_complexity": 3.1562447547912598,
+  "danceability": 0.999247133731842,
+  "mood": {
+   "happy": 0.7949231863021851,
+   "sad": 0.9306622743606567,
+   "aggressive": 0.016810061410069466,
+   "relaxed": 0.6817625164985657,
+   "party": 0.09498713165521622
+  },
+  "genres": [
+   [
+    "Electronic---Euro House",
+    0.14601154625415802
+   ],
+   [
+    "Electronic---House",
+    0.1284981369972229
+   ],
+   [
+    "Hip Hop---Pop Rap",
+    0.12083118408918381
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/008_05. MC Solaar - Solaar power.mp3",
+  "bpm": 93.94015502929688,
+  "rms": 0.13355009257793427,
+  "dynamic_complexity": 4.58461856842041,
+  "danceability": 0.9491416811943054,
+  "mood": {
+   "happy": 0.19053611159324646,
+   "sad": 0.670720636844635,
+   "aggressive": 0.007697840686887503,
+   "relaxed": 0.16562998294830322,
+   "party": 0.7017443776130676
+  },
+  "genres": [
+   [
+    "Funk / Soul---Soul",
+    0.5046996474266052
+   ],
+   [
+    "Funk / Soul---UK Street Soul",
+    0.4352235198020935
+   ],
+   [
+    "Electronic---Downtempo",
+    0.27559739351272583
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/009_1-02 Lac Of Therein.mp3",
+  "bpm": 89.99394989013672,
+  "rms": 0.0955616906285286,
+  "dynamic_complexity": 3.514058828353882,
+  "danceability": 0.9821568131446838,
+  "mood": {
+   "happy": 0.13516753911972046,
+   "sad": 0.7511418461799622,
+   "aggressive": 0.02503081038594246,
+   "relaxed": 0.1956152766942978,
+   "party": 0.6390433311462402
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.31620797514915466
+   ],
+   [
+    "Electronic---Ambient",
+    0.20220334827899933
+   ],
+   [
+    "Electronic---Chillwave",
+    0.13254661858081818
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/010_Ed Wizard and Disco Double Dee-Music Is Love.mp3",
+  "bpm": 110.97256469726562,
+  "rms": 0.1805417388677597,
+  "dynamic_complexity": 6.086658477783203,
+  "danceability": 0.9773634672164917,
+  "mood": {
+   "happy": 0.5188184976577759,
+   "sad": 0.9081813097000122,
+   "aggressive": 0.04329140484333038,
+   "relaxed": 0.7232447862625122,
+   "party": 0.10280028730630875
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.2750283181667328
+   ],
+   [
+    "Electronic---Deep House",
+    0.19765709340572357
+   ],
+   [
+    "Electronic---Disco",
+    0.14653244614601135
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/011_Fatnotronic & In Flagranti - Botoque.mp3",
+  "bpm": 107.97740173339844,
+  "rms": 0.20755022764205933,
+  "dynamic_complexity": 4.379396438598633,
+  "danceability": 0.993857204914093,
+  "mood": {
+   "happy": 0.6566309332847595,
+   "sad": 0.971220076084137,
+   "aggressive": 0.02138487808406353,
+   "relaxed": 0.742026686668396,
+   "party": 0.08673620223999023
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.6907329559326172
+   ],
+   [
+    "Electronic---Beatdown",
+    0.646273136138916
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.1854640245437622
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/012_01 Be Thankful For What You Got (Vocal).mp3",
+  "bpm": 111.60079193115234,
+  "rms": 0.17408201098442078,
+  "dynamic_complexity": 3.160235643386841,
+  "danceability": 0.9959129095077515,
+  "mood": {
+   "happy": 0.5825117230415344,
+   "sad": 0.9613469839096069,
+   "aggressive": 0.06469132751226425,
+   "relaxed": 0.7770744562149048,
+   "party": 0.04803495481610298
+  },
+  "genres": [
+   [
+    "Electronic---Synth-pop",
+    0.3225904405117035
+   ],
+   [
+    "Electronic---Electro",
+    0.24750889837741852
+   ],
+   [
+    "Electronic---Disco",
+    0.15926997363567352
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/013_Low Orbit Satellite - Supersonic Traveller.mp3",
+  "bpm": 95.98733520507812,
+  "rms": 0.23402580618858337,
+  "dynamic_complexity": 4.995063781738281,
+  "danceability": 0.9931378960609436,
+  "mood": {
+   "happy": 0.11322440207004547,
+   "sad": 0.9160063862800598,
+   "aggressive": 0.06950979679822922,
+   "relaxed": 0.33834415674209595,
+   "party": 0.17746774852275848
+  },
+  "genres": [
+   [
+    "Hip Hop---Hardcore Hip-Hop",
+    0.20310141146183014
+   ],
+   [
+    "Hip Hop---Boom Bap",
+    0.1514541655778885
+   ],
+   [
+    "Electronic---Downtempo",
+    0.11951377987861633
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/014_01 Dawn Again - A Day In The Life Of Pond Algae.mp3",
+  "bpm": 104.99490356445312,
+  "rms": 0.18620771169662476,
+  "dynamic_complexity": 5.245701313018799,
+  "danceability": 0.9964084625244141,
+  "mood": {
+   "happy": 0.24432426691055298,
+   "sad": 0.9241621494293213,
+   "aggressive": 0.022450529038906097,
+   "relaxed": 0.4333043396472931,
+   "party": 0.20213523507118225
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.32168319821357727
+   ],
+   [
+    "Electronic---Beatdown",
+    0.2928023636341095
+   ],
+   [
+    "Electronic---Downtempo",
+    0.2512592673301697
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/015_Alysha Warren - I Pray (Rogers Gospel Revival Mix.mp3",
+  "bpm": 123.97173309326172,
+  "rms": 0.11809957772493362,
+  "dynamic_complexity": 3.5289223194122314,
+  "danceability": 0.9971394538879395,
+  "mood": {
+   "happy": 0.44555991888046265,
+   "sad": 0.8891462087631226,
+   "aggressive": 0.02480604685842991,
+   "relaxed": 0.7232459783554077,
+   "party": 0.2811182141304016
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.6931899189949036
+   ],
+   [
+    "Electronic---Garage House",
+    0.40100377798080444
+   ],
+   [
+    "Electronic---Deep House",
+    0.23978275060653687
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/016_Fatnotronic - 7 8 E 1.mp3",
+  "bpm": 95.9900894165039,
+  "rms": 0.16554772853851318,
+  "dynamic_complexity": 5.389647483825684,
+  "danceability": 0.9683657288551331,
+  "mood": {
+   "happy": 0.8027563691139221,
+   "sad": 0.9022843837738037,
+   "aggressive": 0.029234180226922035,
+   "relaxed": 0.6917672157287598,
+   "party": 0.17771440744400024
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.2364237904548645
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.18113990128040314
+   ],
+   [
+    "Electronic---Downtempo",
+    0.17759273946285248
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/017_Gilberto Gil - Maracatu Atomico (Greg Wilson & Derek Kaye Remix).mp3",
+  "bpm": 103.98658752441406,
+  "rms": 0.2180708944797516,
+  "dynamic_complexity": 3.9464988708496094,
+  "danceability": 0.9840254783630371,
+  "mood": {
+   "happy": 0.4403899013996124,
+   "sad": 0.9333105683326721,
+   "aggressive": 0.021697916090488434,
+   "relaxed": 0.5592873692512512,
+   "party": 0.06687507778406143
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.3529696464538574
+   ],
+   [
+    "Electronic---House",
+    0.16855120658874512
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.1547960788011551
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/018_09 A Tribe Called Quest - The Hop.mp3",
+  "bpm": 95.54283905029297,
+  "rms": 0.21173807978630066,
+  "dynamic_complexity": 5.033021926879883,
+  "danceability": 0.9683891534805298,
+  "mood": {
+   "happy": 0.5157254934310913,
+   "sad": 0.8787412643432617,
+   "aggressive": 0.012187615968286991,
+   "relaxed": 0.3616538643836975,
+   "party": 0.22872573137283325
+  },
+  "genres": [
+   [
+    "Hip Hop---Jazzy Hip-Hop",
+    0.4155372381210327
+   ],
+   [
+    "Hip Hop---Conscious",
+    0.39442676305770874
+   ],
+   [
+    "Hip Hop---Boom Bap",
+    0.20832037925720215
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/019_102 carroll thompson - too late (db + mj cole mix).mp3",
+  "bpm": 128.97116088867188,
+  "rms": 0.12253480404615402,
+  "dynamic_complexity": 6.269972801208496,
+  "danceability": 0.9999775290489197,
+  "mood": {
+   "happy": 0.6035447716712952,
+   "sad": 0.9427722096443176,
+   "aggressive": 0.0029399972409009933,
+   "relaxed": 0.6209742426872253,
+   "party": 0.27580726146698
+  },
+  "genres": [
+   [
+    "Electronic---UK Garage",
+    0.9411993622779846
+   ],
+   [
+    "Electronic---Speed Garage",
+    0.697677493095398
+   ],
+   [
+    "Electronic---Garage House",
+    0.3803797662258148
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/020_Ron Trent-I Feel The Rhythm (Inner Experience Revision).mp3",
+  "bpm": 128.39697265625,
+  "rms": 0.12355104088783264,
+  "dynamic_complexity": 5.117023944854736,
+  "danceability": 0.9733917117118835,
+  "mood": {
+   "happy": 0.35849854350090027,
+   "sad": 0.9239951372146606,
+   "aggressive": 0.08096050471067429,
+   "relaxed": 0.6878377199172974,
+   "party": 0.13895732164382935
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.3820669651031494
+   ],
+   [
+    "Electronic---Tribal House",
+    0.22974106669425964
+   ],
+   [
+    "Electronic---Deep House",
+    0.2161877155303955
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/021_sheila & black devotion - spacer (rayko edit).mp3",
+  "bpm": 120.16722869873047,
+  "rms": 0.1954725980758667,
+  "dynamic_complexity": 5.512794494628906,
+  "danceability": 0.987133264541626,
+  "mood": {
+   "happy": 0.9410531520843506,
+   "sad": 0.9262821078300476,
+   "aggressive": 0.05877208337187767,
+   "relaxed": 0.9174824953079224,
+   "party": 0.016272420063614845
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.5279415845870972
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.29065898060798645
+   ],
+   [
+    "Electronic---House",
+    0.2539917230606079
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/022_Chosen Few - Revolution Of The Heart (Original UN Resoultion 194 Mix).mp3",
+  "bpm": 126.23631286621094,
+  "rms": 0.13856180012226105,
+  "dynamic_complexity": 3.9931087493896484,
+  "danceability": 0.9999384880065918,
+  "mood": {
+   "happy": 0.15821924805641174,
+   "sad": 0.9831703305244446,
+   "aggressive": 0.08630635589361191,
+   "relaxed": 0.9280796647071838,
+   "party": 0.22524696588516235
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.689341127872467
+   ],
+   [
+    "Electronic---Bleep",
+    0.6722556948661804
+   ],
+   [
+    "Electronic---House",
+    0.4756334722042084
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/023_09-gene on earth - aston martinez-tr.mp3",
+  "bpm": 84.97356414794922,
+  "rms": 0.1663709431886673,
+  "dynamic_complexity": 3.514690637588501,
+  "danceability": 0.9543945789337158,
+  "mood": {
+   "happy": 0.13223837316036224,
+   "sad": 0.7961533069610596,
+   "aggressive": 0.10348345339298248,
+   "relaxed": 0.28593915700912476,
+   "party": 0.5137981176376343
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.23367489874362946
+   ],
+   [
+    "Electronic---Trip Hop",
+    0.20382238924503326
+   ],
+   [
+    "Hip Hop---Trip Hop",
+    0.1110113337635994
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/024_Late Nite Tuff Guy - Bless The Rains [Lntg E.mp3",
+  "bpm": 93.99918365478516,
+  "rms": 0.22589395940303802,
+  "dynamic_complexity": 3.8539254665374756,
+  "danceability": 0.9759109616279602,
+  "mood": {
+   "happy": 0.1331130415201187,
+   "sad": 0.8518551588058472,
+   "aggressive": 0.012839477509260178,
+   "relaxed": 0.260400652885437,
+   "party": 0.30294349789619446
+  },
+  "genres": [
+   [
+    "Electronic---Vaporwave",
+    0.41559508442878723
+   ],
+   [
+    "Electronic---Downtempo",
+    0.24814316630363464
+   ],
+   [
+    "Electronic---Ambient",
+    0.140390083193779
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/025_Gari Romalis-Come 2 Gether (2 The Sun).mp3",
+  "bpm": 120.03559112548828,
+  "rms": 0.165204256772995,
+  "dynamic_complexity": 6.186242580413818,
+  "danceability": 0.9987994432449341,
+  "mood": {
+   "happy": 0.5684909820556641,
+   "sad": 0.9579036831855774,
+   "aggressive": 0.010932838544249535,
+   "relaxed": 0.8628256916999817,
+   "party": 0.15237842500209808
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.871719479560852
+   ],
+   [
+    "Electronic---Garage House",
+    0.629404604434967
+   ],
+   [
+    "Electronic---Deep House",
+    0.3689887821674347
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/026_89 michael jackson - You Rock My World.mp3",
+  "bpm": 95.02105712890625,
+  "rms": 0.24493485689163208,
+  "dynamic_complexity": 4.501433372497559,
+  "danceability": 0.997096598148346,
+  "mood": {
+   "happy": 0.9012055397033691,
+   "sad": 0.9306596517562866,
+   "aggressive": 0.016921766102313995,
+   "relaxed": 0.8413349390029907,
+   "party": 0.23799671232700348
+  },
+  "genres": [
+   [
+    "Hip Hop---RnB/Swing",
+    0.44199442863464355
+   ],
+   [
+    "Funk / Soul---Swingbeat",
+    0.2581310272216797
+   ],
+   [
+    "Funk / Soul---New Jack Swing",
+    0.2106117606163025
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/027_Stan Tone & Dasha Zarya - Do Utra (Madraas R.mp3",
+  "bpm": 122.02774047851562,
+  "rms": 0.1523280292749405,
+  "dynamic_complexity": 3.7142088413238525,
+  "danceability": 0.9973415732383728,
+  "mood": {
+   "happy": 0.028003809973597527,
+   "sad": 0.9196856617927551,
+   "aggressive": 0.05664242058992386,
+   "relaxed": 0.4537436366081238,
+   "party": 0.2591753304004669
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.27544572949409485
+   ],
+   [
+    "Electronic---Deep House",
+    0.24668198823928833
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.23804958164691925
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/028_Ed Wizard & Disco Double Dee - Talkin About (Original Mix).mp3",
+  "bpm": 111.98578643798828,
+  "rms": 0.2061862051486969,
+  "dynamic_complexity": 5.772487640380859,
+  "danceability": 0.9917770028114319,
+  "mood": {
+   "happy": 0.5103368759155273,
+   "sad": 0.9410480856895447,
+   "aggressive": 0.020476387813687325,
+   "relaxed": 0.8516492247581482,
+   "party": 0.04761287942528725
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.7306511402130127
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.5984846353530884
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.5169551968574524
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/029_Raphael Saadiq feat. Q-Tip - Get Involved (Jean Tonique Edit).mp3",
+  "bpm": 106.0198745727539,
+  "rms": 0.22682856023311615,
+  "dynamic_complexity": 4.035340309143066,
+  "danceability": 0.9964011311531067,
+  "mood": {
+   "happy": 0.5204604268074036,
+   "sad": 0.9187332391738892,
+   "aggressive": 0.03612794727087021,
+   "relaxed": 0.6127684116363525,
+   "party": 0.07514458149671555
+  },
+  "genres": [
+   [
+    "Electronic---Nu-Disco",
+    0.24775193631649017
+   ],
+   [
+    "Electronic---Vaporwave",
+    0.2123320996761322
+   ],
+   [
+    "Electronic---House",
+    0.17967194318771362
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/030_Gus Pirelli ft. Andre Espeut - Good Feeling.mp3",
+  "bpm": 124.47134399414062,
+  "rms": 0.1572049856185913,
+  "dynamic_complexity": 4.464507579803467,
+  "danceability": 0.9732116460800171,
+  "mood": {
+   "happy": 0.7769492864608765,
+   "sad": 0.9203833341598511,
+   "aggressive": 0.04683341830968857,
+   "relaxed": 0.907496988773346,
+   "party": 0.12564748525619507
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.2749742269515991
+   ],
+   [
+    "Electronic---Disco",
+    0.18751735985279083
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.17392346262931824
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/031_06. Jamiroquai - Alright (DJ Version Excursi.mp3",
+  "bpm": 105.7139892578125,
+  "rms": 0.1890275776386261,
+  "dynamic_complexity": 4.255125045776367,
+  "danceability": 0.9958451986312866,
+  "mood": {
+   "happy": 0.5033103823661804,
+   "sad": 0.9422423243522644,
+   "aggressive": 0.031175119802355766,
+   "relaxed": 0.5820997357368469,
+   "party": 0.4055556356906891
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.28760597109794617
+   ],
+   [
+    "Electronic---House",
+    0.27379491925239563
+   ],
+   [
+    "Electronic---Ambient",
+    0.2521003484725952
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/032_Manu Dibango - Soul Makossa.mp3",
+  "bpm": 116.57112121582031,
+  "rms": 0.21361617743968964,
+  "dynamic_complexity": 5.197182655334473,
+  "danceability": 0.94209223985672,
+  "mood": {
+   "happy": 0.7180633544921875,
+   "sad": 0.9176514744758606,
+   "aggressive": 0.31877362728118896,
+   "relaxed": 0.8287954926490784,
+   "party": 0.04951060563325882
+  },
+  "genres": [
+   [
+    "Funk / Soul---Funk",
+    0.1825752556324005
+   ],
+   [
+    "Electronic---House",
+    0.15331865847110748
+   ],
+   [
+    "Electronic---Disco",
+    0.10107620805501938
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/033_Mark Bell - Revolution (Rae & Christian Remix).mp3",
+  "bpm": 111.47758483886719,
+  "rms": 0.18996694684028625,
+  "dynamic_complexity": 4.5584001541137695,
+  "danceability": 0.9905169606208801,
+  "mood": {
+   "happy": 0.3054908812046051,
+   "sad": 0.8366413712501526,
+   "aggressive": 0.01745571196079254,
+   "relaxed": 0.3252498507499695,
+   "party": 0.3616291284561157
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.24662746489048004
+   ],
+   [
+    "Electronic---House",
+    0.22194184362888336
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.19312401115894318
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/034_Masters Of The Universe-Check It Out (Hit 'N' Run Mix).mp3",
+  "bpm": 125.04680633544922,
+  "rms": 0.14544826745986938,
+  "dynamic_complexity": 3.3141534328460693,
+  "danceability": 0.9999217391014099,
+  "mood": {
+   "happy": 0.6032131910324097,
+   "sad": 0.9728801846504211,
+   "aggressive": 0.018225593492388725,
+   "relaxed": 0.8912731409072876,
+   "party": 0.3754335939884186
+  },
+  "genres": [
+   [
+    "Electronic---Italo House",
+    0.517144501209259
+   ],
+   [
+    "Electronic---House",
+    0.3147495687007904
+   ],
+   [
+    "Electronic---Euro House",
+    0.26729732751846313
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/035_AI GO RYTHM - Welcome to Groove Latitude (HOUSE edit).mp3",
+  "bpm": 124.01268768310547,
+  "rms": 0.16266822814941406,
+  "dynamic_complexity": 3.6237752437591553,
+  "danceability": 0.9967679977416992,
+  "mood": {
+   "happy": 0.38452818989753723,
+   "sad": 0.8738304972648621,
+   "aggressive": 0.01758650131523609,
+   "relaxed": 0.665304958820343,
+   "party": 0.1376315951347351
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4827931225299835
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.22791580855846405
+   ],
+   [
+    "Electronic---Deep House",
+    0.21627603471279144
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/036_01 The Pilotwings - Trance En Aubrac.mp3",
+  "bpm": 104.01502990722656,
+  "rms": 0.1970459520816803,
+  "dynamic_complexity": 5.074710369110107,
+  "danceability": 0.7877275347709656,
+  "mood": {
+   "happy": 0.23083807528018951,
+   "sad": 0.8249226808547974,
+   "aggressive": 0.24584105610847473,
+   "relaxed": 0.45451098680496216,
+   "party": 0.4854637682437897
+  },
+  "genres": [
+   [
+    "Electronic---Ambient",
+    0.09176868945360184
+   ],
+   [
+    "Electronic---Downtempo",
+    0.07231799513101578
+   ],
+   [
+    "Electronic---Experimental",
+    0.06899011880159378
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/037_Amadeezy - Eternal Doom.mp3",
+  "bpm": 86.89998626708984,
+  "rms": 0.2762523293495178,
+  "dynamic_complexity": 4.014584541320801,
+  "danceability": 0.9965491890907288,
+  "mood": {
+   "happy": 0.3826180398464203,
+   "sad": 0.8714849948883057,
+   "aggressive": 0.09418868273496628,
+   "relaxed": 0.3836674392223358,
+   "party": 0.33421289920806885
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.1210772767663002
+   ],
+   [
+    "Electronic---Halftime",
+    0.09850350022315979
+   ],
+   [
+    "Electronic---Drum n Bass",
+    0.08101276308298111
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/038_Fingerman - Way U Move.mp3",
+  "bpm": 114.01405334472656,
+  "rms": 0.2209620475769043,
+  "dynamic_complexity": 4.210508346557617,
+  "danceability": 0.9882903695106506,
+  "mood": {
+   "happy": 0.5351609587669373,
+   "sad": 0.9437527656555176,
+   "aggressive": 0.06278866529464722,
+   "relaxed": 0.8318209052085876,
+   "party": 0.05154820531606674
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.5132735967636108
+   ],
+   [
+    "Electronic---Beatdown",
+    0.3887888789176941
+   ],
+   [
+    "Electronic---House",
+    0.26698029041290283
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/039_c- Francesco Del Garda & Seuil - 111.mp3",
+  "bpm": 129.7054901123047,
+  "rms": 0.1717412769794464,
+  "dynamic_complexity": 5.484745979309082,
+  "danceability": 0.9834250211715698,
+  "mood": {
+   "happy": 0.09120488911867142,
+   "sad": 0.9668797254562378,
+   "aggressive": 0.09587554633617401,
+   "relaxed": 0.8022019863128662,
+   "party": 0.2580260932445526
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.5185626745223999
+   ],
+   [
+    "Electronic---Minimal",
+    0.2753009796142578
+   ],
+   [
+    "Electronic---House",
+    0.22521592676639557
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/040_09 Blissed Out Snacking Zombies.mp3",
+  "bpm": 125.99626159667969,
+  "rms": 0.15363748371601105,
+  "dynamic_complexity": 6.124747276306152,
+  "danceability": 0.9761088490486145,
+  "mood": {
+   "happy": 0.2564489543437958,
+   "sad": 0.9093306660652161,
+   "aggressive": 0.08804355561733246,
+   "relaxed": 0.7878666520118713,
+   "party": 0.08743879199028015
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.3152199983596802
+   ],
+   [
+    "Electronic---Deep House",
+    0.17307089269161224
+   ],
+   [
+    "Electronic---Progressive House",
+    0.15589465200901031
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/041_01 Roulade Records - Occibel - Coton Dancefloor.mp3",
+  "bpm": 127.0315933227539,
+  "rms": 0.2547057569026947,
+  "dynamic_complexity": 4.28882360458374,
+  "danceability": 0.9969092011451721,
+  "mood": {
+   "happy": 0.15264448523521423,
+   "sad": 0.9424380660057068,
+   "aggressive": 0.16450735926628113,
+   "relaxed": 0.6629133820533752,
+   "party": 0.030806785449385643
+  },
+  "genres": [
+   [
+    "Electronic---Progressive House",
+    0.3608277142047882
+   ],
+   [
+    "Electronic---House",
+    0.2289356142282486
+   ],
+   [
+    "Electronic---Tech House",
+    0.142388716340065
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/042_Chris Stussy - Boogie Trippin (Original Mix).mp3",
+  "bpm": 124.00315856933594,
+  "rms": 0.2645391523838043,
+  "dynamic_complexity": 4.759219646453857,
+  "danceability": 0.999982476234436,
+  "mood": {
+   "happy": 0.3623679578304291,
+   "sad": 0.9797254800796509,
+   "aggressive": 0.024485565721988678,
+   "relaxed": 0.8670607805252075,
+   "party": 0.17041361331939697
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.5387263298034668
+   ],
+   [
+    "Electronic---House",
+    0.47881776094436646
+   ],
+   [
+    "Electronic---Tech House",
+    0.2499312162399292
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/043_FabioLous Barker - The Boogie.mp3",
+  "bpm": 109.97918701171875,
+  "rms": 0.25322389602661133,
+  "dynamic_complexity": 4.071053981781006,
+  "danceability": 0.995918869972229,
+  "mood": {
+   "happy": 0.8387840390205383,
+   "sad": 0.9341766834259033,
+   "aggressive": 0.11767904460430145,
+   "relaxed": 0.8988606929779053,
+   "party": 0.02957197278738022
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.28513675928115845
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.24653729796409607
+   ],
+   [
+    "Electronic---House",
+    0.22501176595687866
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/044_Ben Rau - B1 Expand [Inkal Music].mp3",
+  "bpm": 126.00764465332031,
+  "rms": 0.23749737441539764,
+  "dynamic_complexity": 6.47909688949585,
+  "danceability": 0.989415168762207,
+  "mood": {
+   "happy": 0.024177497252821922,
+   "sad": 0.9846795797348022,
+   "aggressive": 0.06908143311738968,
+   "relaxed": 0.8290748596191406,
+   "party": 0.2569173276424408
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.55035001039505
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.4347383975982666
+   ],
+   [
+    "Electronic---Minimal",
+    0.39340850710868835
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/045_Afrobuddha meets Kakatsitsi Drummers - Obame(Radio Mix).mp3",
+  "bpm": 114.94409942626953,
+  "rms": 0.21525251865386963,
+  "dynamic_complexity": 4.657966136932373,
+  "danceability": 0.9446160197257996,
+  "mood": {
+   "happy": 0.7227210998535156,
+   "sad": 0.9070948362350464,
+   "aggressive": 0.020219039171934128,
+   "relaxed": 0.5490794777870178,
+   "party": 0.23505420982837677
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.30592337250709534
+   ],
+   [
+    "Electronic---Disco",
+    0.15237757563591003
+   ],
+   [
+    "Folk, World, & Country---African",
+    0.11814962327480316
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/046_Marsolo - Sense of Style (Original Mix).mp3",
+  "bpm": 132.01698303222656,
+  "rms": 0.2613505721092224,
+  "dynamic_complexity": 4.287845611572266,
+  "danceability": 0.9985149502754211,
+  "mood": {
+   "happy": 0.3593572676181793,
+   "sad": 0.9725601077079773,
+   "aggressive": 0.500271201133728,
+   "relaxed": 0.8619516491889954,
+   "party": 0.016588157042860985
+  },
+  "genres": [
+   [
+    "Electronic---Progressive House",
+    0.28144264221191406
+   ],
+   [
+    "Electronic---House",
+    0.20397897064685822
+   ],
+   [
+    "Electronic---Progressive Trance",
+    0.15905317664146423
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/047_Radic The Myth - About You (Kwaito Bass Mix) 117.mp3",
+  "bpm": 117.103515625,
+  "rms": 0.3019469678401947,
+  "dynamic_complexity": 3.673987865447998,
+  "danceability": 0.9996768236160278,
+  "mood": {
+   "happy": 0.04627436026930809,
+   "sad": 0.9613481163978577,
+   "aggressive": 0.05636604130268097,
+   "relaxed": 0.4468705654144287,
+   "party": 0.12671884894371033
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.44892045855522156
+   ],
+   [
+    "Electronic---House",
+    0.24142663180828094
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.20278990268707275
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/048_Funk Hunk - Next To Harlem.mp3",
+  "bpm": 103.50363159179688,
+  "rms": 0.26330333948135376,
+  "dynamic_complexity": 3.2345786094665527,
+  "danceability": 0.9973776340484619,
+  "mood": {
+   "happy": 0.7304636240005493,
+   "sad": 0.9043375253677368,
+   "aggressive": 0.012478615157306194,
+   "relaxed": 0.7187745571136475,
+   "party": 0.07163669914007187
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.5342190265655518
+   ],
+   [
+    "Electronic---House",
+    0.34287604689598083
+   ],
+   [
+    "Electronic---Vaporwave",
+    0.2166396826505661
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/049_Earth, Wind & Fire - Let's Groove (Fede Aliprandi Edit).mp3",
+  "bpm": 131.94741821289062,
+  "rms": 0.2717828154563904,
+  "dynamic_complexity": 4.516979217529297,
+  "danceability": 0.9978242516517639,
+  "mood": {
+   "happy": 0.3315962553024292,
+   "sad": 0.9775127172470093,
+   "aggressive": 0.5458223819732666,
+   "relaxed": 0.9231170415878296,
+   "party": 0.03329739719629288
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.2716836631298065
+   ],
+   [
+    "Electronic---House",
+    0.20147304236888885
+   ],
+   [
+    "Electronic---Tech Trance",
+    0.19123101234436035
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/050_Cabello - Reboot The Brian.mp3",
+  "bpm": 125.99085998535156,
+  "rms": 0.24701088666915894,
+  "dynamic_complexity": 3.8273532390594482,
+  "danceability": 0.9997548460960388,
+  "mood": {
+   "happy": 0.7003117203712463,
+   "sad": 0.9623295664787292,
+   "aggressive": 0.07771039754152298,
+   "relaxed": 0.8778245449066162,
+   "party": 0.03050067648291588
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5814553499221802
+   ],
+   [
+    "Electronic---Deep House",
+    0.27144068479537964
+   ],
+   [
+    "Electronic---Tribal House",
+    0.13501307368278503
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/051_Kyle Walker - Feels So Good (Extended Mix).mp3",
+  "bpm": 128.04159545898438,
+  "rms": 0.2794802188873291,
+  "dynamic_complexity": 4.532535076141357,
+  "danceability": 0.9998257756233215,
+  "mood": {
+   "happy": 0.6957512497901917,
+   "sad": 0.965782642364502,
+   "aggressive": 0.24441993236541748,
+   "relaxed": 0.9588879942893982,
+   "party": 0.0037129190750420094
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.7001898288726807
+   ],
+   [
+    "Electronic---Electro House",
+    0.22764314711093903
+   ],
+   [
+    "Electronic---Disco",
+    0.18920880556106567
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/052_Elleot, Astre - Tutti Flutti.mp3",
+  "bpm": 130.00868225097656,
+  "rms": 0.3197181522846222,
+  "dynamic_complexity": 3.597355365753174,
+  "danceability": 0.9995453357696533,
+  "mood": {
+   "happy": 0.08967017382383347,
+   "sad": 0.9828135967254639,
+   "aggressive": 0.2614933252334595,
+   "relaxed": 0.8268587589263916,
+   "party": 0.09164600819349289
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.4175063371658325
+   ],
+   [
+    "Electronic---Tech House",
+    0.32463985681533813
+   ],
+   [
+    "Electronic---Minimal",
+    0.32377052307128906
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/054_DJ Atlance - Liquid Sunshine (Original Mix).mp3",
+  "bpm": 127.00546264648438,
+  "rms": 0.25781819224357605,
+  "dynamic_complexity": 3.498370409011841,
+  "danceability": 0.9983406662940979,
+  "mood": {
+   "happy": 0.43930256366729736,
+   "sad": 0.9553744196891785,
+   "aggressive": 0.06732770055532455,
+   "relaxed": 0.856445848941803,
+   "party": 0.07308118045330048
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5567463040351868
+   ],
+   [
+    "Electronic---Deep House",
+    0.28107601404190063
+   ],
+   [
+    "Electronic---Tech House",
+    0.171654611825943
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/055_Tranquil Elephantizer - No Slo Dub ( remix ).wav.mp3",
+  "bpm": 124.99437713623047,
+  "rms": 0.20621131360530853,
+  "dynamic_complexity": 6.9042840003967285,
+  "danceability": 0.9978255033493042,
+  "mood": {
+   "happy": 0.5539242029190063,
+   "sad": 0.9503416419029236,
+   "aggressive": 0.026067979633808136,
+   "relaxed": 0.8033410906791687,
+   "party": 0.22455354034900665
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5976406931877136
+   ],
+   [
+    "Electronic---Deep House",
+    0.5331884622573853
+   ],
+   [
+    "Electronic---Garage House",
+    0.26872289180755615
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/056_04 Renva - Renva - Positive Vibes.mp3",
+  "bpm": 125.96012878417969,
+  "rms": 0.25627246499061584,
+  "dynamic_complexity": 5.365541458129883,
+  "danceability": 0.9997921586036682,
+  "mood": {
+   "happy": 0.13211244344711304,
+   "sad": 0.9678593277931213,
+   "aggressive": 0.3817084729671478,
+   "relaxed": 0.8920421004295349,
+   "party": 0.011356196366250515
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.2832682132720947
+   ],
+   [
+    "Electronic---Tech House",
+    0.2194504588842392
+   ],
+   [
+    "Electronic---Techno",
+    0.18080079555511475
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/057_Retromigration - Half Fried Original Mix.mp3",
+  "bpm": 128.02455139160156,
+  "rms": 0.2888846695423126,
+  "dynamic_complexity": 3.6020843982696533,
+  "danceability": 0.9998102188110352,
+  "mood": {
+   "happy": 0.3609016537666321,
+   "sad": 0.9678372144699097,
+   "aggressive": 0.08153367787599564,
+   "relaxed": 0.8975249528884888,
+   "party": 0.02579956129193306
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5971509218215942
+   ],
+   [
+    "Electronic---Deep House",
+    0.303260862827301
+   ],
+   [
+    "Electronic---Techno",
+    0.18460163474082947
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/058_Ice T-I'm Your Pusher (Cool Hand J's Boogie Mix).mp3",
+  "bpm": 117.05380249023438,
+  "rms": 0.2149953693151474,
+  "dynamic_complexity": 6.788197040557861,
+  "danceability": 0.98605877161026,
+  "mood": {
+   "happy": 0.821025550365448,
+   "sad": 0.9379870295524597,
+   "aggressive": 0.11747205257415771,
+   "relaxed": 0.9230878353118896,
+   "party": 0.03502845764160156
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.4485990107059479
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.3307746350765228
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.239341139793396
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/059_Dance Forever (Extended Mix) - Maison Blanche.mp3",
+  "bpm": 124.17655944824219,
+  "rms": 0.2845006585121155,
+  "dynamic_complexity": 3.6077165603637695,
+  "danceability": 0.9955248236656189,
+  "mood": {
+   "happy": 0.30587244033813477,
+   "sad": 0.9554327726364136,
+   "aggressive": 0.06627689301967621,
+   "relaxed": 0.771730899810791,
+   "party": 0.07313627004623413
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4775468409061432
+   ],
+   [
+    "Electronic---Deep House",
+    0.3373982608318329
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.2789163589477539
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/060_Choices - Less Is More (Original Mix).mp3",
+  "bpm": 122.10218048095703,
+  "rms": 0.28934186697006226,
+  "dynamic_complexity": 5.240850925445557,
+  "danceability": 0.9852107763290405,
+  "mood": {
+   "happy": 0.22590294480323792,
+   "sad": 0.9456228017807007,
+   "aggressive": 0.1185581386089325,
+   "relaxed": 0.7227884531021118,
+   "party": 0.08485954254865646
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5119480490684509
+   ],
+   [
+    "Electronic---Tropical House",
+    0.2836626172065735
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.270119309425354
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/061_Da House Vibe (Makito Remix).mp3",
+  "bpm": 123.33350372314453,
+  "rms": 0.30265823006629944,
+  "dynamic_complexity": 5.080161094665527,
+  "danceability": 0.9958720803260803,
+  "mood": {
+   "happy": 0.33827462792396545,
+   "sad": 0.9656639695167542,
+   "aggressive": 0.09994503110647202,
+   "relaxed": 0.8117743134498596,
+   "party": 0.03244655579328537
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5112897157669067
+   ],
+   [
+    "Electronic---Tech House",
+    0.3165197968482971
+   ],
+   [
+    "Electronic---Deep House",
+    0.20889912545681
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/062_05-nick van tiel ft. siila-not mine (extended mix).mp3",
+  "bpm": 124.0077133178711,
+  "rms": 0.3060508370399475,
+  "dynamic_complexity": 3.367528200149536,
+  "danceability": 0.9967184066772461,
+  "mood": {
+   "happy": 0.7891248464584351,
+   "sad": 0.9569477438926697,
+   "aggressive": 0.09247949719429016,
+   "relaxed": 0.9041672348976135,
+   "party": 0.012426297180354595
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.6571803092956543
+   ],
+   [
+    "Electronic---Electro House",
+    0.20755355060100555
+   ],
+   [
+    "Electronic---Deep House",
+    0.18667282164096832
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/063_07. Africa Africa.mp3",
+  "bpm": 125.03825378417969,
+  "rms": 0.20742563903331757,
+  "dynamic_complexity": 3.46581768989563,
+  "danceability": 0.9892040491104126,
+  "mood": {
+   "happy": 0.8374224901199341,
+   "sad": 0.9535751342773438,
+   "aggressive": 0.07274384796619415,
+   "relaxed": 0.9131642580032349,
+   "party": 0.06021592766046524
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.7280114889144897
+   ],
+   [
+    "Electronic---Tribal House",
+    0.26984158158302307
+   ],
+   [
+    "Electronic---Deep House",
+    0.26832523941993713
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/064_Miguel Migs, Blank, Jones, Cathy Battistessa - Happiness (Miguel Migs Salted Vocal Mix).mp3",
+  "bpm": 117.95652770996094,
+  "rms": 0.214572012424469,
+  "dynamic_complexity": 5.634886741638184,
+  "danceability": 0.999786376953125,
+  "mood": {
+   "happy": 0.4720877408981323,
+   "sad": 0.9518894553184509,
+   "aggressive": 0.016439862549304962,
+   "relaxed": 0.8324941396713257,
+   "party": 0.058024853467941284
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.46256670355796814
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.431948721408844
+   ],
+   [
+    "Electronic---Disco",
+    0.4314040243625641
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/065_AI GO RYTHM - The light is fading in the street (Original Mix).mp3",
+  "bpm": 123.96530151367188,
+  "rms": 0.17703814804553986,
+  "dynamic_complexity": 2.6889655590057373,
+  "danceability": 0.9992753863334656,
+  "mood": {
+   "happy": 0.5693864822387695,
+   "sad": 0.8861568570137024,
+   "aggressive": 0.005301236175000668,
+   "relaxed": 0.6009855270385742,
+   "party": 0.12458814680576324
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5694278478622437
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.30852073431015015
+   ],
+   [
+    "Electronic---Disco",
+    0.19648529589176178
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/066_Bibi Tanga & The Selenites - Africa (K&F Edit).mp3",
+  "bpm": 126.41085815429688,
+  "rms": 0.16745539009571075,
+  "dynamic_complexity": 4.909898281097412,
+  "danceability": 0.9649971723556519,
+  "mood": {
+   "happy": 0.6440296173095703,
+   "sad": 0.9147517681121826,
+   "aggressive": 0.05455627292394638,
+   "relaxed": 0.7710732221603394,
+   "party": 0.08113270252943039
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.46135708689689636
+   ],
+   [
+    "Electronic---Deep House",
+    0.15868352353572845
+   ],
+   [
+    "Electronic---Disco",
+    0.10246378183364868
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/067_AI GO RYTHM - Mon ami Pierrot (Prète moi ta plume).mp3",
+  "bpm": 125.98086547851562,
+  "rms": 0.1769891083240509,
+  "dynamic_complexity": 2.525099039077759,
+  "danceability": 0.9990158081054688,
+  "mood": {
+   "happy": 0.8340562582015991,
+   "sad": 0.9466435313224792,
+   "aggressive": 0.051306381821632385,
+   "relaxed": 0.9357438087463379,
+   "party": 0.016232343390583992
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.598804771900177
+   ],
+   [
+    "Electronic---Disco",
+    0.2584908604621887
+   ],
+   [
+    "Electronic---Vaporwave",
+    0.14170557260513306
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/068_Inland Knights-What To Do.mp3",
+  "bpm": 125.04893493652344,
+  "rms": 0.16924524307250977,
+  "dynamic_complexity": 8.46276569366455,
+  "danceability": 0.9983059167861938,
+  "mood": {
+   "happy": 0.4558032155036926,
+   "sad": 0.9349215030670166,
+   "aggressive": 0.051108602434396744,
+   "relaxed": 0.8132302165031433,
+   "party": 0.0975799486041069
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5859325528144836
+   ],
+   [
+    "Electronic---Deep House",
+    0.32174259424209595
+   ],
+   [
+    "Electronic---Garage House",
+    0.18966691195964813
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/069_Park Ave.-Don't Turn Your Love (Dangerous Mix).mp3",
+  "bpm": 120.03038787841797,
+  "rms": 0.12024180591106415,
+  "dynamic_complexity": 3.2308833599090576,
+  "danceability": 0.9893818497657776,
+  "mood": {
+   "happy": 0.7727137207984924,
+   "sad": 0.8995246291160583,
+   "aggressive": 0.014371001161634922,
+   "relaxed": 0.7944550514221191,
+   "party": 0.4866843521595001
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.45440229773521423
+   ],
+   [
+    "Electronic---Garage House",
+    0.13043008744716644
+   ],
+   [
+    "Folk, World, & Country---African",
+    0.12028909474611282
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/070_Chain Reaction - Sweet Lady [Sunner Soul Edit].mp3",
+  "bpm": 123.00144958496094,
+  "rms": 0.16204802691936493,
+  "dynamic_complexity": 4.981320858001709,
+  "danceability": 0.9989038705825806,
+  "mood": {
+   "happy": 0.7873451113700867,
+   "sad": 0.9587225317955017,
+   "aggressive": 0.11096557229757309,
+   "relaxed": 0.9441206455230713,
+   "party": 0.014826985076069832
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5130915641784668
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.39959216117858887
+   ],
+   [
+    "Electronic---Disco",
+    0.3588985502719879
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/071_Dusty - Heavy Lights [Jazz & Milk].mp3",
+  "bpm": 107.01750183105469,
+  "rms": 0.1735263615846634,
+  "dynamic_complexity": 3.5576326847076416,
+  "danceability": 0.9624166488647461,
+  "mood": {
+   "happy": 0.26920807361602783,
+   "sad": 0.8706605434417725,
+   "aggressive": 0.025632191449403763,
+   "relaxed": 0.4858175814151764,
+   "party": 0.29382407665252686
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.28881436586380005
+   ],
+   [
+    "Electronic---Deep House",
+    0.2849588394165039
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.23712158203125
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/072_01-gene on earth - snooze operator-tr.mp3",
+  "bpm": 107.97236633300781,
+  "rms": 0.16520154476165771,
+  "dynamic_complexity": 5.058821201324463,
+  "danceability": 0.9822853207588196,
+  "mood": {
+   "happy": 0.0982024297118187,
+   "sad": 0.9396927952766418,
+   "aggressive": 0.196015864610672,
+   "relaxed": 0.5962449312210083,
+   "party": 0.06872674822807312
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.23613697290420532
+   ],
+   [
+    "Electronic---House",
+    0.12935425341129303
+   ],
+   [
+    "Electronic---Ambient",
+    0.12677963078022003
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/073_Aftershock-Slave To The Vibe Club Dub 1993.mp3",
+  "bpm": 122.8578872680664,
+  "rms": 0.1292680948972702,
+  "dynamic_complexity": 4.480101108551025,
+  "danceability": 0.9980737566947937,
+  "mood": {
+   "happy": 0.5683070421218872,
+   "sad": 0.9587647318840027,
+   "aggressive": 0.024906737729907036,
+   "relaxed": 0.8676270842552185,
+   "party": 0.15287549793720245
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.8693307042121887
+   ],
+   [
+    "Electronic---Garage House",
+    0.6287676692008972
+   ],
+   [
+    "Electronic---Deep House",
+    0.3790154457092285
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/074_Solaris Heights-Midnight (Original mix) [Cat# AIR 022].mp3",
+  "bpm": 125.0764389038086,
+  "rms": 0.07935110479593277,
+  "dynamic_complexity": 7.069136142730713,
+  "danceability": 0.971697211265564,
+  "mood": {
+   "happy": 0.3481115996837616,
+   "sad": 0.9358818531036377,
+   "aggressive": 0.19674040377140045,
+   "relaxed": 0.808265745639801,
+   "party": 0.1192222312092781
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4336971044540405
+   ],
+   [
+    "Electronic---Deep House",
+    0.2839437425136566
+   ],
+   [
+    "Electronic---Tech House",
+    0.2015594094991684
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/075_Rayko - inside out.mp3",
+  "bpm": 108.77156066894531,
+  "rms": 0.12268467992544174,
+  "dynamic_complexity": 6.178112030029297,
+  "danceability": 0.9967643618583679,
+  "mood": {
+   "happy": 0.890773594379425,
+   "sad": 0.9578784704208374,
+   "aggressive": 0.016801724210381508,
+   "relaxed": 0.9565792679786682,
+   "party": 0.006994879804551601
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.8543121814727783
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.7230916023254395
+   ],
+   [
+    "Electronic---Beatdown",
+    0.6297532916069031
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/076_(A2) Space Bunny - The Key (Wax Trax Mix).mp3",
+  "bpm": 136.12294006347656,
+  "rms": 0.12600062787532806,
+  "dynamic_complexity": 4.908689022064209,
+  "danceability": 0.9686766266822815,
+  "mood": {
+   "happy": 0.15367716550827026,
+   "sad": 0.9418842792510986,
+   "aggressive": 0.22852642834186554,
+   "relaxed": 0.7843263149261475,
+   "party": 0.09123696386814117
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.2299894541501999
+   ],
+   [
+    "Electronic---Progressive House",
+    0.1745450794696808
+   ],
+   [
+    "Electronic---Speed Garage",
+    0.1716233789920807
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/077_01 Make Up Your Mind.mp3",
+  "bpm": 123.096923828125,
+  "rms": 0.09262305498123169,
+  "dynamic_complexity": 6.138226509094238,
+  "danceability": 0.7235373854637146,
+  "mood": {
+   "happy": 0.787604033946991,
+   "sad": 0.5787534713745117,
+   "aggressive": 0.004549282602965832,
+   "relaxed": 0.6658353805541992,
+   "party": 0.1324111670255661
+  },
+  "genres": [
+   [
+    "Funk / Soul---Soul",
+    0.5649277567863464
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.5583421587944031
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.4256439208984375
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/078_01 stop fantasy (extended dance version).mp3",
+  "bpm": 120.3182601928711,
+  "rms": 0.21354232728481293,
+  "dynamic_complexity": 5.3852620124816895,
+  "danceability": 0.9981985688209534,
+  "mood": {
+   "happy": 0.8809975981712341,
+   "sad": 0.9529844522476196,
+   "aggressive": 0.018453368917107582,
+   "relaxed": 0.9220342040061951,
+   "party": 0.02862946130335331
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.560816764831543
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.4320240914821625
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.37641337513923645
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/079_02 - ymc - erotic city.mp3",
+  "bpm": 132.00601196289062,
+  "rms": 0.14227789640426636,
+  "dynamic_complexity": 3.388679027557373,
+  "danceability": 0.9996387362480164,
+  "mood": {
+   "happy": 0.042934585362672806,
+   "sad": 0.9478023648262024,
+   "aggressive": 0.09350571781396866,
+   "relaxed": 0.5794002413749695,
+   "party": 0.03467845171689987
+  },
+  "genres": [
+   [
+    "Electronic---Trance",
+    0.516962468624115
+   ],
+   [
+    "Electronic---Progressive Trance",
+    0.31123948097229004
+   ],
+   [
+    "Electronic---Techno",
+    0.27078521251678467
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/080_03 Night (Younker Remix).mp3",
+  "bpm": 120.00176239013672,
+  "rms": 0.17301525175571442,
+  "dynamic_complexity": 4.87120246887207,
+  "danceability": 0.9605457186698914,
+  "mood": {
+   "happy": 0.6377101540565491,
+   "sad": 0.88576740026474,
+   "aggressive": 0.03330511599779129,
+   "relaxed": 0.7574609518051147,
+   "party": 0.16656771302223206
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.459857314825058
+   ],
+   [
+    "Electronic---Disco",
+    0.31409087777137756
+   ],
+   [
+    "Electronic---Deep House",
+    0.1893952339887619
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/082_04-lo-rez--stickwich-dh.mp3",
+  "bpm": 128.0075225830078,
+  "rms": 0.0860825777053833,
+  "dynamic_complexity": 5.568945407867432,
+  "danceability": 0.9961076378822327,
+  "mood": {
+   "happy": 0.4008026123046875,
+   "sad": 0.9469423890113831,
+   "aggressive": 0.17590947449207306,
+   "relaxed": 0.8353531956672668,
+   "party": 0.03380048647522926
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.293815016746521
+   ],
+   [
+    "Electronic---Techno",
+    0.16405068337917328
+   ],
+   [
+    "Electronic---Deep House",
+    0.14748549461364746
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/083_05 - Light Years Away (Dub Version).mp3",
+  "bpm": 116.45172119140625,
+  "rms": 0.20891892910003662,
+  "dynamic_complexity": 5.92822790145874,
+  "danceability": 0.9911674857139587,
+  "mood": {
+   "happy": 0.4389932155609131,
+   "sad": 0.9448758959770203,
+   "aggressive": 0.10384178906679153,
+   "relaxed": 0.8698456883430481,
+   "party": 0.053752098232507706
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.2658112943172455
+   ],
+   [
+    "Electronic---Electro",
+    0.25795894861221313
+   ],
+   [
+    "Electronic---Deep House",
+    0.18276962637901306
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/084_05 - State Of Grace - Touching The Times.mp3",
+  "bpm": 104.73492431640625,
+  "rms": 0.14260801672935486,
+  "dynamic_complexity": 3.9109768867492676,
+  "danceability": 0.9913110733032227,
+  "mood": {
+   "happy": 0.8819175958633423,
+   "sad": 0.9495041966438293,
+   "aggressive": 0.02379401959478855,
+   "relaxed": 0.8584251403808594,
+   "party": 0.02695084549486637
+  },
+  "genres": [
+   [
+    "Funk / Soul---Boogie",
+    0.4632985591888428
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.37219247221946716
+   ],
+   [
+    "Pop---Bubblegum",
+    0.3704300820827484
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/085_08 - Dick Khoza - African Live (Moto).mp3",
+  "bpm": 131.47039794921875,
+  "rms": 0.1618005782365799,
+  "dynamic_complexity": 2.604642629623413,
+  "danceability": 0.7555984258651733,
+  "mood": {
+   "happy": 0.8249133229255676,
+   "sad": 0.8273018598556519,
+   "aggressive": 0.02468736283481121,
+   "relaxed": 0.6406949758529663,
+   "party": 0.05167331174015999
+  },
+  "genres": [
+   [
+    "Funk / Soul---Funk",
+    0.34146150946617126
+   ],
+   [
+    "Electronic---Disco",
+    0.1197301372885704
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.1125641018152237
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/086_08.George Benson - Gimme The Night (Extended).mp3",
+  "bpm": 111.7564468383789,
+  "rms": 0.2440350204706192,
+  "dynamic_complexity": 3.144442319869995,
+  "danceability": 0.998894453048706,
+  "mood": {
+   "happy": 0.7788858413696289,
+   "sad": 0.8743770122528076,
+   "aggressive": 0.007553325034677982,
+   "relaxed": 0.6676183938980103,
+   "party": 0.06562905013561249
+  },
+  "genres": [
+   [
+    "Funk / Soul---Funk",
+    0.3620404601097107
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.34477555751800537
+   ],
+   [
+    "Electronic---Disco",
+    0.3221438229084015
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/087_09 - Zacks Nikosi - Wilderness.mp3",
+  "bpm": 98.1205062866211,
+  "rms": 0.23909921944141388,
+  "dynamic_complexity": 2.855408191680908,
+  "danceability": 0.9380870461463928,
+  "mood": {
+   "happy": 0.723047137260437,
+   "sad": 0.6694669127464294,
+   "aggressive": 0.007277378346771002,
+   "relaxed": 0.2445252239704132,
+   "party": 0.14565621316432953
+  },
+  "genres": [
+   [
+    "Funk / Soul---Funk",
+    0.25997909903526306
+   ],
+   [
+    "Funk / Soul---Afrobeat",
+    0.15256071090698242
+   ],
+   [
+    "Electronic---Acid Jazz",
+    0.14146587252616882
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/088_12 Make It Fast, Make It Slow - Rob.mp3",
+  "bpm": 94.11964416503906,
+  "rms": 0.1469527781009674,
+  "dynamic_complexity": 5.31592321395874,
+  "danceability": 0.8916919231414795,
+  "mood": {
+   "happy": 0.6605656743049622,
+   "sad": 0.7654845118522644,
+   "aggressive": 0.01835480146110058,
+   "relaxed": 0.27341967821121216,
+   "party": 0.22362710535526276
+  },
+  "genres": [
+   [
+    "Funk / Soul---Afrobeat",
+    0.35566475987434387
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.3391067683696747
+   ],
+   [
+    "Jazz---Afrobeat",
+    0.19233211874961853
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/089_13 Fan the Fire.mp3",
+  "bpm": 115.82354736328125,
+  "rms": 0.07516761124134064,
+  "dynamic_complexity": 4.8574652671813965,
+  "danceability": 0.833848237991333,
+  "mood": {
+   "happy": 0.6412393450737,
+   "sad": 0.6559711694717407,
+   "aggressive": 0.010118505917489529,
+   "relaxed": 0.693286657333374,
+   "party": 0.3650883138179779
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.46180635690689087
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.43331968784332275
+   ],
+   [
+    "Funk / Soul---Soul",
+    0.3235931992530823
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/090_7-marc sadane-one minute for love.mp3",
+  "bpm": 120.60880279541016,
+  "rms": 0.20552179217338562,
+  "dynamic_complexity": 5.320757865905762,
+  "danceability": 0.9438120722770691,
+  "mood": {
+   "happy": 0.8910060524940491,
+   "sad": 0.8747503161430359,
+   "aggressive": 0.003083777381107211,
+   "relaxed": 0.9227626919746399,
+   "party": 0.038245126605033875
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.632095217704773
+   ],
+   [
+    "Electronic---Disco",
+    0.3937690556049347
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.3690727651119232
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/091_A1 - Kadenza - Let's Do It.mp3",
+  "bpm": 105.14009857177734,
+  "rms": 0.13893184065818787,
+  "dynamic_complexity": 5.486270427703857,
+  "danceability": 0.9991714358329773,
+  "mood": {
+   "happy": 0.8872028589248657,
+   "sad": 0.9361217617988586,
+   "aggressive": 0.017151879146695137,
+   "relaxed": 0.8452163934707642,
+   "party": 0.03960658237338066
+  },
+  "genres": [
+   [
+    "Funk / Soul---Soul",
+    0.3911956548690796
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.33582594990730286
+   ],
+   [
+    "Electronic---Disco",
+    0.27954861521720886
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/092_Aftershock-Slave To The Vibe Club Dub 1993.mp3",
+  "bpm": 122.8578872680664,
+  "rms": 0.1292680948972702,
+  "dynamic_complexity": 4.480101108551025,
+  "danceability": 0.9980737566947937,
+  "mood": {
+   "happy": 0.5683070421218872,
+   "sad": 0.9587647318840027,
+   "aggressive": 0.024906737729907036,
+   "relaxed": 0.8676270842552185,
+   "party": 0.15287549793720245
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.8693307042121887
+   ],
+   [
+    "Electronic---Garage House",
+    0.6287676692008972
+   ],
+   [
+    "Electronic---Deep House",
+    0.3790154457092285
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/093_Belabouche - Shes So Tight.mp3",
+  "bpm": 111.34376525878906,
+  "rms": 0.2257128208875656,
+  "dynamic_complexity": 3.57197642326355,
+  "danceability": 0.9977239370346069,
+  "mood": {
+   "happy": 0.8549817204475403,
+   "sad": 0.9101422429084778,
+   "aggressive": 0.022431060671806335,
+   "relaxed": 0.842972457408905,
+   "party": 0.034240759909152985
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.31581681966781616
+   ],
+   [
+    "Electronic---Disco",
+    0.25066858530044556
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.15213675796985626
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/094_Carl Finlow - Definition.mp3",
+  "bpm": 128.04818725585938,
+  "rms": 0.1923387199640274,
+  "dynamic_complexity": 4.364212512969971,
+  "danceability": 0.9926051497459412,
+  "mood": {
+   "happy": 0.6072309613227844,
+   "sad": 0.9323734045028687,
+   "aggressive": 0.06281054764986038,
+   "relaxed": 0.8110572695732117,
+   "party": 0.06786348670721054
+  },
+  "genres": [
+   [
+    "Electronic---Broken Beat",
+    0.194929301738739
+   ],
+   [
+    "Electronic---House",
+    0.14855994284152985
+   ],
+   [
+    "Electronic---Freestyle",
+    0.14795924723148346
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/095_Chicago '87 - Last Drink.mp3",
+  "bpm": 89.9998779296875,
+  "rms": 0.154384583234787,
+  "dynamic_complexity": 5.346282958984375,
+  "danceability": 0.9769213199615479,
+  "mood": {
+   "happy": 0.3945390284061432,
+   "sad": 0.8392852544784546,
+   "aggressive": 0.013809440657496452,
+   "relaxed": 0.3781779706478119,
+   "party": 0.21285368502140045
+  },
+  "genres": [
+   [
+    "Electronic---Vaporwave",
+    0.5063722133636475
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.38074323534965515
+   ],
+   [
+    "Electronic---Disco",
+    0.34660986065864563
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/096_Chris Brann - Way Past The Clouds.mp3",
+  "bpm": 118.22441864013672,
+  "rms": 0.19224759936332703,
+  "dynamic_complexity": 4.131062984466553,
+  "danceability": 0.9738262891769409,
+  "mood": {
+   "happy": 0.2589568793773651,
+   "sad": 0.9040276408195496,
+   "aggressive": 0.0972791239619255,
+   "relaxed": 0.5574378371238708,
+   "party": 0.26140353083610535
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.3657851219177246
+   ],
+   [
+    "Electronic---Future Jazz",
+    0.25045332312583923
+   ],
+   [
+    "Electronic---Deep House",
+    0.17716434597969055
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/097_Chris Korda & the Church of Euthanasia - Victim of leisure.mp3",
+  "bpm": 140.04884338378906,
+  "rms": 0.1207774206995964,
+  "dynamic_complexity": 5.12824821472168,
+  "danceability": 0.926812469959259,
+  "mood": {
+   "happy": 0.6966620683670044,
+   "sad": 0.8684625625610352,
+   "aggressive": 0.1512266844511032,
+   "relaxed": 0.7237628102302551,
+   "party": 0.2228635549545288
+  },
+  "genres": [
+   [
+    "Electronic---Synth-pop",
+    0.2059108465909958
+   ],
+   [
+    "Electronic---Electro",
+    0.12970052659511566
+   ],
+   [
+    "Electronic---Chiptune",
+    0.10668586939573288
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/098_Circulation-Green (Mix 1).mp3",
+  "bpm": 129.99713134765625,
+  "rms": 0.1429915875196457,
+  "dynamic_complexity": 4.250168800354004,
+  "danceability": 0.9996652603149414,
+  "mood": {
+   "happy": 0.14127960801124573,
+   "sad": 0.9483011960983276,
+   "aggressive": 0.10982859134674072,
+   "relaxed": 0.6271239519119263,
+   "party": 0.0647268146276474
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.23284301161766052
+   ],
+   [
+    "Electronic---House",
+    0.20087870955467224
+   ],
+   [
+    "Electronic---Euro House",
+    0.13801655173301697
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/099_Curtis Hairston-I Want You (All Tonight).mp3",
+  "bpm": 114.60655975341797,
+  "rms": 0.12190277874469757,
+  "dynamic_complexity": 5.772890090942383,
+  "danceability": 0.995800793170929,
+  "mood": {
+   "happy": 0.917315661907196,
+   "sad": 0.9249491095542908,
+   "aggressive": 0.01233017910271883,
+   "relaxed": 0.931766927242279,
+   "party": 0.009603635407984257
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.6395877003669739
+   ],
+   [
+    "Funk / Soul---Boogie",
+    0.5242726802825928
+   ],
+   [
+    "Electronic---Disco",
+    0.5184807777404785
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/100_Dance Classics, vol. 41 - 06 - Déjà - You And Me Tonight (12 Inch Mix).mp3",
+  "bpm": 110.63566589355469,
+  "rms": 0.15933117270469666,
+  "dynamic_complexity": 5.407139778137207,
+  "danceability": 0.9925751090049744,
+  "mood": {
+   "happy": 0.8297128081321716,
+   "sad": 0.9165818691253662,
+   "aggressive": 0.02302309311926365,
+   "relaxed": 0.8823836445808411,
+   "party": 0.061605311930179596
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.4049643576145172
+   ],
+   [
+    "Electronic---House",
+    0.25865575671195984
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.2381921261548996
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/101_Deep Forest - Kokerikero.mp3",
+  "bpm": 133.9270782470703,
+  "rms": 0.16793863475322723,
+  "dynamic_complexity": 4.509457111358643,
+  "danceability": 0.9856539368629456,
+  "mood": {
+   "happy": 0.6245859265327454,
+   "sad": 0.906358540058136,
+   "aggressive": 0.0744023248553276,
+   "relaxed": 0.7102117538452148,
+   "party": 0.08639128506183624
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.28137972950935364
+   ],
+   [
+    "Electronic---Downtempo",
+    0.12527930736541748
+   ],
+   [
+    "Electronic---Electro",
+    0.11515265703201294
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/102_Dj Rasoul-True Science.mp3",
+  "bpm": 121.44989776611328,
+  "rms": 0.148982971906662,
+  "dynamic_complexity": 4.026057243347168,
+  "danceability": 0.9976789355278015,
+  "mood": {
+   "happy": 0.24481600522994995,
+   "sad": 0.9506025314331055,
+   "aggressive": 0.10439477860927582,
+   "relaxed": 0.8263099789619446,
+   "party": 0.08233258873224258
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4533999562263489
+   ],
+   [
+    "Electronic---Deep House",
+    0.2426520437002182
+   ],
+   [
+    "Electronic---Techno",
+    0.13677875697612762
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/103_Dj.Booth - Overseas.mp3",
+  "bpm": 131.96018981933594,
+  "rms": 0.16821980476379395,
+  "dynamic_complexity": 4.923608303070068,
+  "danceability": 0.9978164434432983,
+  "mood": {
+   "happy": 0.07634629309177399,
+   "sad": 0.977517306804657,
+   "aggressive": 0.3891086280345917,
+   "relaxed": 0.9204307198524475,
+   "party": 0.019290827214717865
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.25931021571159363
+   ],
+   [
+    "Electronic---Electro",
+    0.23264937102794647
+   ],
+   [
+    "Electronic---House",
+    0.16468513011932373
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/104_Etienne -Delphus.mp3",
+  "bpm": 126.93852233886719,
+  "rms": 0.14422805607318878,
+  "dynamic_complexity": 6.712919235229492,
+  "danceability": 0.9911043643951416,
+  "mood": {
+   "happy": 0.07727445662021637,
+   "sad": 0.9376202821731567,
+   "aggressive": 0.07158409804105759,
+   "relaxed": 0.48575952649116516,
+   "party": 0.4327358901500702
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.36341798305511475
+   ],
+   [
+    "Electronic---Tech House",
+    0.20626401901245117
+   ],
+   [
+    "Electronic---House",
+    0.20444054901599884
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/105_Fata Morgana - Bugbear (PMT's Naughty Children Mix).mp3",
+  "bpm": 128.4595947265625,
+  "rms": 0.13220834732055664,
+  "dynamic_complexity": 7.014113903045654,
+  "danceability": 0.9940467476844788,
+  "mood": {
+   "happy": 0.17135848104953766,
+   "sad": 0.9145895838737488,
+   "aggressive": 0.20426835119724274,
+   "relaxed": 0.5713270902633667,
+   "party": 0.1525374799966812
+  },
+  "genres": [
+   [
+    "Electronic---Progressive House",
+    0.3319894075393677
+   ],
+   [
+    "Electronic---House",
+    0.2789255380630493
+   ],
+   [
+    "Electronic---Progressive Breaks",
+    0.20108217000961304
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/106_Fatnotronic - 7 8 E 1.mp3",
+  "bpm": 95.9900894165039,
+  "rms": 0.16554772853851318,
+  "dynamic_complexity": 5.389647483825684,
+  "danceability": 0.9683657288551331,
+  "mood": {
+   "happy": 0.8027563691139221,
+   "sad": 0.9022843837738037,
+   "aggressive": 0.029234180226922035,
+   "relaxed": 0.6917672157287598,
+   "party": 0.17771440744400024
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.2364237904548645
+   ],
+   [
+    "Funk / Soul---Disco",
+    0.18113990128040314
+   ],
+   [
+    "Electronic---Downtempo",
+    0.17759273946285248
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/107_Giraffi Dog - 351 Nation.mp3",
+  "bpm": 119.99002838134766,
+  "rms": 0.1280646026134491,
+  "dynamic_complexity": 3.6975700855255127,
+  "danceability": 0.9817151427268982,
+  "mood": {
+   "happy": 0.10357716679573059,
+   "sad": 0.8477413654327393,
+   "aggressive": 0.049380604177713394,
+   "relaxed": 0.4229792654514313,
+   "party": 0.36259394884109497
+  },
+  "genres": [
+   [
+    "Electronic---Ambient",
+    0.24274878203868866
+   ],
+   [
+    "Electronic---Deep House",
+    0.13867850601673126
+   ],
+   [
+    "Electronic---Downtempo",
+    0.1154598519206047
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/108_Gosub - I Know You Know.mp3",
+  "bpm": 130.70297241210938,
+  "rms": 0.14584574103355408,
+  "dynamic_complexity": 3.4710705280303955,
+  "danceability": 0.9914257526397705,
+  "mood": {
+   "happy": 0.5930867791175842,
+   "sad": 0.9771719574928284,
+   "aggressive": 0.15164463222026825,
+   "relaxed": 0.9608102440834045,
+   "party": 0.00984929595142603
+  },
+  "genres": [
+   [
+    "Electronic---Freestyle",
+    0.6833764910697937
+   ],
+   [
+    "Electronic---Electro",
+    0.49995875358581543
+   ],
+   [
+    "Electronic---House",
+    0.22571168839931488
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/109_Gus Pirelli -Meet In The Middle.mp3",
+  "bpm": 115.9677505493164,
+  "rms": 0.10425029695034027,
+  "dynamic_complexity": 5.788482666015625,
+  "danceability": 0.9944894909858704,
+  "mood": {
+   "happy": 0.7553700804710388,
+   "sad": 0.9142248034477234,
+   "aggressive": 0.013872487470507622,
+   "relaxed": 0.8798352479934692,
+   "party": 0.06280751526355743
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.2849215865135193
+   ],
+   [
+    "Electronic---Disco",
+    0.21111446619033813
+   ],
+   [
+    "Electronic---House",
+    0.18053044378757477
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/110_Guy From Downstairs - Satou Tool.mp3",
+  "bpm": 127.00521087646484,
+  "rms": 0.17527110874652863,
+  "dynamic_complexity": 5.646642684936523,
+  "danceability": 0.9986649751663208,
+  "mood": {
+   "happy": 0.09311562776565552,
+   "sad": 0.9636821746826172,
+   "aggressive": 0.15077131986618042,
+   "relaxed": 0.8481420874595642,
+   "party": 0.10104243457317352
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.3239254057407379
+   ],
+   [
+    "Electronic---Electro",
+    0.28647100925445557
+   ],
+   [
+    "Electronic---Minimal Techno",
+    0.22642482817173004
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/111_International Anything - A1 Like This Girl VINYL ONLY.mp3",
+  "bpm": 121.99128723144531,
+  "rms": 0.17816093564033508,
+  "dynamic_complexity": 6.400461196899414,
+  "danceability": 0.9993915557861328,
+  "mood": {
+   "happy": 0.6169505715370178,
+   "sad": 0.9670825600624084,
+   "aggressive": 0.1354299634695053,
+   "relaxed": 0.9001177549362183,
+   "party": 0.07329235970973969
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.32074645161628723
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.2697701156139374
+   ],
+   [
+    "Electronic---Disco",
+    0.18825304508209229
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/112_JKriv - Horizonte (JKriv rework).mp3",
+  "bpm": 101.91593933105469,
+  "rms": 0.15860915184020996,
+  "dynamic_complexity": 6.060030937194824,
+  "danceability": 0.9501736760139465,
+  "mood": {
+   "happy": 0.3610685467720032,
+   "sad": 0.848704993724823,
+   "aggressive": 0.022267872467637062,
+   "relaxed": 0.3337080478668213,
+   "party": 0.4918021857738495
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.3731573820114136
+   ],
+   [
+    "Electronic---Downtempo",
+    0.3357783555984497
+   ],
+   [
+    "Electronic---Deep House",
+    0.32129940390586853
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/113_Jamie Leather - Voice of Reason.mp3",
+  "bpm": 129.0095977783203,
+  "rms": 0.19600869715213776,
+  "dynamic_complexity": 3.777923583984375,
+  "danceability": 0.9968246817588806,
+  "mood": {
+   "happy": 0.22112999856472015,
+   "sad": 0.972590446472168,
+   "aggressive": 0.25483188033103943,
+   "relaxed": 0.8897945284843445,
+   "party": 0.016299227252602577
+  },
+  "genres": [
+   [
+    "Electronic---Progressive Breaks",
+    0.5188342928886414
+   ],
+   [
+    "Electronic---Progressive House",
+    0.299688458442688
+   ],
+   [
+    "Electronic---Breaks",
+    0.13457925617694855
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/114_Junes - Cafe Nostalgia.mp3",
+  "bpm": 128.05690002441406,
+  "rms": 0.1697830855846405,
+  "dynamic_complexity": 7.270172119140625,
+  "danceability": 0.9898989200592041,
+  "mood": {
+   "happy": 0.1544189155101776,
+   "sad": 0.9559619426727295,
+   "aggressive": 0.07299850136041641,
+   "relaxed": 0.6837371587753296,
+   "party": 0.0917457789182663
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.3480105996131897
+   ],
+   [
+    "Electronic---Techno",
+    0.2310847043991089
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.21201929450035095
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/115_KADENZA - Let's Do It (Original 12'' Mix).mp3",
+  "bpm": 103.8994369506836,
+  "rms": 0.12331756949424744,
+  "dynamic_complexity": 5.663536071777344,
+  "danceability": 0.9857291579246521,
+  "mood": {
+   "happy": 0.8156073689460754,
+   "sad": 0.8995118737220764,
+   "aggressive": 0.019020499661564827,
+   "relaxed": 0.7574596405029297,
+   "party": 0.0746380165219307
+  },
+  "genres": [
+   [
+    "Electronic---Disco",
+    0.2255304455757141
+   ],
+   [
+    "Funk / Soul---Soul",
+    0.20233334600925446
+   ],
+   [
+    "Electronic---House",
+    0.18385569751262665
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/116_Keep It Confidential (Eugene Tambourine Edit).mp3",
+  "bpm": 123.03472137451172,
+  "rms": 0.15019725263118744,
+  "dynamic_complexity": 4.501582622528076,
+  "danceability": 0.980446457862854,
+  "mood": {
+   "happy": 0.8718873262405396,
+   "sad": 0.9288159012794495,
+   "aggressive": 0.0061903479509055614,
+   "relaxed": 0.8797757029533386,
+   "party": 0.04248965531587601
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.47971832752227783
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.45483216643333435
+   ],
+   [
+    "Funk / Soul---Boogie",
+    0.34444957971572876
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/117_Kosh - Null 212 www.my-free-mp3.net .mp3",
+  "bpm": 133.7369842529297,
+  "rms": 0.11304070800542831,
+  "dynamic_complexity": 4.829897403717041,
+  "danceability": 0.9949682354927063,
+  "mood": {
+   "happy": 0.267168253660202,
+   "sad": 0.9639288187026978,
+   "aggressive": 0.13614757359027863,
+   "relaxed": 0.8437781929969788,
+   "party": 0.03437568247318268
+  },
+  "genres": [
+   [
+    "Electronic---Breakbeat",
+    0.6155160665512085
+   ],
+   [
+    "Electronic---Techno",
+    0.3418506681919098
+   ],
+   [
+    "Electronic---Bleep",
+    0.3411928713321686
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/118_Kosh - Null 212.mp3",
+  "bpm": 133.7369842529297,
+  "rms": 0.11304070800542831,
+  "dynamic_complexity": 4.829897403717041,
+  "danceability": 0.9949682354927063,
+  "mood": {
+   "happy": 0.267168253660202,
+   "sad": 0.9639288187026978,
+   "aggressive": 0.13614757359027863,
+   "relaxed": 0.8437781929969788,
+   "party": 0.03437568247318268
+  },
+  "genres": [
+   [
+    "Electronic---Breakbeat",
+    0.6155160665512085
+   ],
+   [
+    "Electronic---Techno",
+    0.3418506681919098
+   ],
+   [
+    "Electronic---Bleep",
+    0.3411928713321686
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/119_Louis La Roche - F.U.B.A.R.mp3",
+  "bpm": 111.43929290771484,
+  "rms": 0.15694017708301544,
+  "dynamic_complexity": 7.789041996002197,
+  "danceability": 0.9893219470977783,
+  "mood": {
+   "happy": 0.6628663539886475,
+   "sad": 0.9495541453361511,
+   "aggressive": 0.1979110687971115,
+   "relaxed": 0.8981385827064514,
+   "party": 0.025478113442659378
+  },
+  "genres": [
+   [
+    "Electronic---Nu-Disco",
+    0.2287311851978302
+   ],
+   [
+    "Electronic---House",
+    0.2083667665719986
+   ],
+   [
+    "Electronic---Vaporwave",
+    0.19420118629932404
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/120_Lucien N Luciano - Blind Behaviour.mp3",
+  "bpm": 120.00751495361328,
+  "rms": 0.20034922659397125,
+  "dynamic_complexity": 3.482323169708252,
+  "danceability": 0.9965851902961731,
+  "mood": {
+   "happy": 0.11629130691289902,
+   "sad": 0.9555492997169495,
+   "aggressive": 0.0614747628569603,
+   "relaxed": 0.6235597133636475,
+   "party": 0.1066986545920372
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.2436414361000061
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.1831175982952118
+   ],
+   [
+    "Electronic---Deep House",
+    0.17580607533454895
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/121_Luis Radio - Eyes Of The Drums (Eyes Of The Drums).mp3",
+  "bpm": 123.70165252685547,
+  "rms": 0.1203479915857315,
+  "dynamic_complexity": 5.151643753051758,
+  "danceability": 0.9836245775222778,
+  "mood": {
+   "happy": 0.18035484850406647,
+   "sad": 0.943213164806366,
+   "aggressive": 0.1136118620634079,
+   "relaxed": 0.7807575464248657,
+   "party": 0.044347118586301804
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5182332396507263
+   ],
+   [
+    "Electronic---Deep House",
+    0.3391284644603729
+   ],
+   [
+    "Electronic---Tribal House",
+    0.3317902386188507
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/122_M.A.D. (7) - Free (Bassline Mix).mp3",
+  "bpm": 134.1242218017578,
+  "rms": 0.1665300875902176,
+  "dynamic_complexity": 4.352187633514404,
+  "danceability": 0.9917693734169006,
+  "mood": {
+   "happy": 0.4177182912826538,
+   "sad": 0.9665117263793945,
+   "aggressive": 0.41350695490837097,
+   "relaxed": 0.9237324595451355,
+   "party": 0.02893231064081192
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.24011629819869995
+   ],
+   [
+    "Electronic---Breakbeat",
+    0.18685606122016907
+   ],
+   [
+    "Electronic---Techno",
+    0.17225052416324615
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/123_MFSB & The Salsoul Orchestra - Love Is The message (Danny Krivit Re-Edit).mp3",
+  "bpm": 117.54528045654297,
+  "rms": 0.10489147901535034,
+  "dynamic_complexity": 4.6203532218933105,
+  "danceability": 0.9586517810821533,
+  "mood": {
+   "happy": 0.7126134634017944,
+   "sad": 0.7309386134147644,
+   "aggressive": 0.01943710632622242,
+   "relaxed": 0.6499440670013428,
+   "party": 0.25080859661102295
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.39331939816474915
+   ],
+   [
+    "Electronic---House",
+    0.2833048701286316
+   ],
+   [
+    "Electronic---Disco",
+    0.2798972725868225
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/124_Mark Thibideau - Silent Waiting.mp3",
+  "bpm": 123.46886444091797,
+  "rms": 0.14691440761089325,
+  "dynamic_complexity": 3.395611524581909,
+  "danceability": 0.9922511577606201,
+  "mood": {
+   "happy": 0.01466469094157219,
+   "sad": 0.9511917233467102,
+   "aggressive": 0.09098781645298004,
+   "relaxed": 0.29503920674324036,
+   "party": 0.40482577681541443
+  },
+  "genres": [
+   [
+    "Electronic---Dub Techno",
+    0.39140406250953674
+   ],
+   [
+    "Electronic---Techno",
+    0.3576412796974182
+   ],
+   [
+    "Electronic---Ambient",
+    0.21419242024421692
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/125_Masters Of The Universe-Check It Out (Hit 'N' Run Mix).mp3",
+  "bpm": 125.04680633544922,
+  "rms": 0.14544826745986938,
+  "dynamic_complexity": 3.3141534328460693,
+  "danceability": 0.9999217391014099,
+  "mood": {
+   "happy": 0.6032131910324097,
+   "sad": 0.9728801846504211,
+   "aggressive": 0.018225593492388725,
+   "relaxed": 0.8912731409072876,
+   "party": 0.3754335939884186
+  },
+  "genres": [
+   [
+    "Electronic---Italo House",
+    0.517144501209259
+   ],
+   [
+    "Electronic---House",
+    0.3147495687007904
+   ],
+   [
+    "Electronic---Euro House",
+    0.26729732751846313
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/126_Mato Grosso - Thunder (Digital Boy Remix).mp3",
+  "bpm": 123.96076965332031,
+  "rms": 0.09100334346294403,
+  "dynamic_complexity": 3.922623872756958,
+  "danceability": 0.9844693541526794,
+  "mood": {
+   "happy": 0.2218126803636551,
+   "sad": 0.9315013885498047,
+   "aggressive": 0.08528896421194077,
+   "relaxed": 0.709140956401825,
+   "party": 0.49678608775138855
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4802377223968506
+   ],
+   [
+    "Electronic---Techno",
+    0.2858213484287262
+   ],
+   [
+    "Electronic---Euro House",
+    0.18950824439525604
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/127_Morane-The Trick (Think On Air).mp3",
+  "bpm": 129.98483276367188,
+  "rms": 0.13704171776771545,
+  "dynamic_complexity": 3.454906940460205,
+  "danceability": 0.9940424561500549,
+  "mood": {
+   "happy": 0.7014695405960083,
+   "sad": 0.8731104135513306,
+   "aggressive": 0.06063595786690712,
+   "relaxed": 0.6909375786781311,
+   "party": 0.1604211926460266
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.2374349683523178
+   ],
+   [
+    "Electronic---Euro House",
+    0.08648861199617386
+   ],
+   [
+    "Electronic---UK Garage",
+    0.08140847086906433
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/128_Oolon - Double Vision.mp3",
+  "bpm": 133.9786834716797,
+  "rms": 0.13921412825584412,
+  "dynamic_complexity": 5.1085205078125,
+  "danceability": 0.9933679103851318,
+  "mood": {
+   "happy": 0.4892190992832184,
+   "sad": 0.9687330722808838,
+   "aggressive": 0.48120248317718506,
+   "relaxed": 0.9087965488433838,
+   "party": 0.019782552495598793
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.18171192705631256
+   ],
+   [
+    "Electronic---Techno",
+    0.15852244198322296
+   ],
+   [
+    "Electronic---Breaks",
+    0.14175225794315338
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/129_Paolo Rocco & Pijynman 'V12'.mp3",
+  "bpm": 128.0203857421875,
+  "rms": 0.1672675460577011,
+  "dynamic_complexity": 5.343410015106201,
+  "danceability": 0.9996240139007568,
+  "mood": {
+   "happy": 0.050126221030950546,
+   "sad": 0.974366307258606,
+   "aggressive": 0.09804639965295792,
+   "relaxed": 0.7097495794296265,
+   "party": 0.11634524911642075
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.31374654173851013
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.28351306915283203
+   ],
+   [
+    "Electronic---Minimal",
+    0.2706890106201172
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/130_Plush-Free And Easy.mp3",
+  "bpm": 114.63572692871094,
+  "rms": 0.1419965922832489,
+  "dynamic_complexity": 6.458339691162109,
+  "danceability": 0.9887625575065613,
+  "mood": {
+   "happy": 0.8015876412391663,
+   "sad": 0.8928347229957581,
+   "aggressive": 0.021612154319882393,
+   "relaxed": 0.9123099446296692,
+   "party": 0.029233135282993317
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.7019549608230591
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.6451677083969116
+   ],
+   [
+    "Electronic---Disco",
+    0.5136411786079407
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/131_RER - Quadrobeijos (master).mp3",
+  "bpm": 110.00672912597656,
+  "rms": 0.21119332313537598,
+  "dynamic_complexity": 3.168231725692749,
+  "danceability": 0.9989926815032959,
+  "mood": {
+   "happy": 0.12074124813079834,
+   "sad": 0.9303128123283386,
+   "aggressive": 0.04072439298033714,
+   "relaxed": 0.512831449508667,
+   "party": 0.24832624197006226
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.37677258253097534
+   ],
+   [
+    "Electronic---House",
+    0.2659505605697632
+   ],
+   [
+    "Electronic---Downtempo",
+    0.19633075594902039
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/132_RER - Sunday (master).mp3",
+  "bpm": 87.03289031982422,
+  "rms": 0.136452779173851,
+  "dynamic_complexity": 4.593429088592529,
+  "danceability": 0.9347460865974426,
+  "mood": {
+   "happy": 0.09033094346523285,
+   "sad": 0.7715848684310913,
+   "aggressive": 0.028618106618523598,
+   "relaxed": 0.1420469582080841,
+   "party": 0.8978914022445679
+  },
+  "genres": [
+   [
+    "Hip Hop---Instrumental",
+    0.5198198556900024
+   ],
+   [
+    "Hip Hop---Jazzy Hip-Hop",
+    0.2889064848423004
+   ],
+   [
+    "Hip Hop---Boom Bap",
+    0.1556728184223175
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/133_Random Factor - Broken Mirror.mp3",
+  "bpm": 119.94998168945312,
+  "rms": 0.1650957316160202,
+  "dynamic_complexity": 5.174117565155029,
+  "danceability": 0.9981979131698608,
+  "mood": {
+   "happy": 0.5052660703659058,
+   "sad": 0.9540123343467712,
+   "aggressive": 0.17132727801799774,
+   "relaxed": 0.89748615026474,
+   "party": 0.04748325049877167
+  },
+  "genres": [
+   [
+    "Electronic---Electro",
+    0.2472056746482849
+   ],
+   [
+    "Electronic---House",
+    0.24704493582248688
+   ],
+   [
+    "Electronic---Freestyle",
+    0.20037028193473816
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/134_Raphael Saadiq feat. Q-Tip - Get Involved (Jean Tonique Edit).mp3",
+  "bpm": 106.0198745727539,
+  "rms": 0.22682856023311615,
+  "dynamic_complexity": 4.035340309143066,
+  "danceability": 0.9964011311531067,
+  "mood": {
+   "happy": 0.5204604268074036,
+   "sad": 0.9187332391738892,
+   "aggressive": 0.03612794727087021,
+   "relaxed": 0.6127684116363525,
+   "party": 0.07514458149671555
+  },
+  "genres": [
+   [
+    "Electronic---Nu-Disco",
+    0.24775193631649017
+   ],
+   [
+    "Electronic---Vaporwave",
+    0.2123320996761322
+   ],
+   [
+    "Electronic---House",
+    0.17967194318771362
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/135_Rasmus Faber & Alf Tumble Ft. Candi Staton - Wilder Side(AfroDrums Agenda Mix).mp3",
+  "bpm": 120.00292205810547,
+  "rms": 0.16118662059307098,
+  "dynamic_complexity": 3.6115126609802246,
+  "danceability": 0.9912867546081543,
+  "mood": {
+   "happy": 0.1983766257762909,
+   "sad": 0.9342576861381531,
+   "aggressive": 0.015129150822758675,
+   "relaxed": 0.5484718084335327,
+   "party": 0.38765236735343933
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.5143008232116699
+   ],
+   [
+    "Electronic---House",
+    0.39474496245384216
+   ],
+   [
+    "Electronic---Downtempo",
+    0.13772733509540558
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/136_Remus - Descent.mp3",
+  "bpm": 125.96656799316406,
+  "rms": 0.14869672060012817,
+  "dynamic_complexity": 3.150479793548584,
+  "danceability": 0.9991768598556519,
+  "mood": {
+   "happy": 0.021549560129642487,
+   "sad": 0.965338408946991,
+   "aggressive": 0.052785228937864304,
+   "relaxed": 0.6396704316139221,
+   "party": 0.09347208589315414
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.4424247145652771
+   ],
+   [
+    "Electronic---Tech House",
+    0.2904914319515228
+   ],
+   [
+    "Electronic---Minimal",
+    0.22827930748462677
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/137_Ruriko Ohgami-Fuwari Fuwafuwa.mp3",
+  "bpm": 92.62671661376953,
+  "rms": 0.19732999801635742,
+  "dynamic_complexity": 5.652953624725342,
+  "danceability": 0.8445649147033691,
+  "mood": {
+   "happy": 0.825958251953125,
+   "sad": 0.5047135353088379,
+   "aggressive": 0.005294817965477705,
+   "relaxed": 0.1606357842683792,
+   "party": 0.26447588205337524
+  },
+  "genres": [
+   [
+    "Pop---City Pop",
+    0.14135947823524475
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.13283392786979675
+   ],
+   [
+    "Jazz---Jazz-Funk",
+    0.11914993822574615
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/138_S. Moreira - Just A Little Beat.mp3",
+  "bpm": 126.00970458984375,
+  "rms": 0.11633254587650299,
+  "dynamic_complexity": 4.049906253814697,
+  "danceability": 0.9818824529647827,
+  "mood": {
+   "happy": 0.21524259448051453,
+   "sad": 0.8835271000862122,
+   "aggressive": 0.08311276137828827,
+   "relaxed": 0.6405291557312012,
+   "party": 0.1731410026550293
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.26897192001342773
+   ],
+   [
+    "Electronic---House",
+    0.26537400484085083
+   ],
+   [
+    "Electronic---Broken Beat",
+    0.17786328494548798
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/139_Sucescovici - Fiasco Total.mp3",
+  "bpm": 123.99610137939453,
+  "rms": 0.11866997182369232,
+  "dynamic_complexity": 6.07532262802124,
+  "danceability": 0.9855932593345642,
+  "mood": {
+   "happy": 0.06970549374818802,
+   "sad": 0.9520037770271301,
+   "aggressive": 0.1247091293334961,
+   "relaxed": 0.7730491161346436,
+   "party": 0.3462226688861847
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.6831092238426208
+   ],
+   [
+    "Electronic---Tech House",
+    0.30295437574386597
+   ],
+   [
+    "Electronic---Minimal",
+    0.17763227224349976
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/140_TC80-Phrase [Cabaret 007].mp3",
+  "bpm": 121.73445129394531,
+  "rms": 0.1110452264547348,
+  "dynamic_complexity": 6.922549247741699,
+  "danceability": 0.9967300295829773,
+  "mood": {
+   "happy": 0.12538771331310272,
+   "sad": 0.9335446357727051,
+   "aggressive": 0.08339236676692963,
+   "relaxed": 0.6921072006225586,
+   "party": 0.20935514569282532
+  },
+  "genres": [
+   [
+    "Electronic---Minimal Techno",
+    0.3106081783771515
+   ],
+   [
+    "Electronic---Deep House",
+    0.2112225890159607
+   ],
+   [
+    "Electronic---House",
+    0.2045576423406601
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/141_Tecmania Rebel - Funky N.Y. City.mp3",
+  "bpm": 130.2390594482422,
+  "rms": 0.10031293332576752,
+  "dynamic_complexity": 5.06776237487793,
+  "danceability": 0.9621608257293701,
+  "mood": {
+   "happy": 0.3381558954715729,
+   "sad": 0.9018926620483398,
+   "aggressive": 0.13054896891117096,
+   "relaxed": 0.765830934047699,
+   "party": 0.12688961625099182
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.3802518844604492
+   ],
+   [
+    "Electronic---Techno",
+    0.2562181353569031
+   ],
+   [
+    "Electronic---Euro House",
+    0.151521697640419
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/142_The Ron Honey Experience - Nitedrive.mp3",
+  "bpm": 129.87892150878906,
+  "rms": 0.16974428296089172,
+  "dynamic_complexity": 3.666688919067383,
+  "danceability": 0.9919253587722778,
+  "mood": {
+   "happy": 0.03291236236691475,
+   "sad": 0.9690149426460266,
+   "aggressive": 0.042697299271821976,
+   "relaxed": 0.6768267154693604,
+   "party": 0.11938036978244781
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.3757598400115967
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.3602251708507538
+   ],
+   [
+    "Electronic---Minimal",
+    0.26641276478767395
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/143_Tiago Walter & Tom Ries - Pacific Export.mp3",
+  "bpm": 129.9620361328125,
+  "rms": 0.18879303336143494,
+  "dynamic_complexity": 5.375275135040283,
+  "danceability": 0.9982727766036987,
+  "mood": {
+   "happy": 0.18694227933883667,
+   "sad": 0.9609482288360596,
+   "aggressive": 0.15905477106571198,
+   "relaxed": 0.8243427276611328,
+   "party": 0.04292517155408859
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.2726912796497345
+   ],
+   [
+    "Electronic---House",
+    0.25980302691459656
+   ],
+   [
+    "Electronic---Minimal Techno",
+    0.1995682567358017
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/144_Try To Say (Original Mix).mp3",
+  "bpm": 120.95345306396484,
+  "rms": 0.10679424554109573,
+  "dynamic_complexity": 2.5305397510528564,
+  "danceability": 0.988932192325592,
+  "mood": {
+   "happy": 0.04265104979276657,
+   "sad": 0.898902952671051,
+   "aggressive": 0.08739437907934189,
+   "relaxed": 0.4927866756916046,
+   "party": 0.4897923469543457
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.29148250818252563
+   ],
+   [
+    "Electronic---Deep House",
+    0.2861873209476471
+   ],
+   [
+    "Electronic---Techno",
+    0.2794617712497711
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/145_Various - Ahmed Fakroun - Nisyan.mp3",
+  "bpm": 97.98255920410156,
+  "rms": 0.07473201304674149,
+  "dynamic_complexity": 4.853801250457764,
+  "danceability": 0.7854365110397339,
+  "mood": {
+   "happy": 0.8501617908477783,
+   "sad": 0.7662220597267151,
+   "aggressive": 0.025174567475914955,
+   "relaxed": 0.677990734577179,
+   "party": 0.563616156578064
+  },
+  "genres": [
+   [
+    "Latin---Cumbia",
+    0.10031949728727341
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.09464838355779648
+   ],
+   [
+    "Rock---Pop Rock",
+    0.06482762098312378
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/146_Vista - Look To The Future.mp3",
+  "bpm": 121.8820571899414,
+  "rms": 0.10082007199525833,
+  "dynamic_complexity": 5.364187240600586,
+  "danceability": 0.9993664622306824,
+  "mood": {
+   "happy": 0.402909517288208,
+   "sad": 0.9611568450927734,
+   "aggressive": 0.08563480526208878,
+   "relaxed": 0.81004798412323,
+   "party": 0.33612746000289917
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4484466314315796
+   ],
+   [
+    "Electronic---Italo House",
+    0.28190991282463074
+   ],
+   [
+    "Electronic---Techno",
+    0.2418154925107956
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/147_Voilaaa – Le Disco Des Capitales.mp3",
+  "bpm": 117.50384521484375,
+  "rms": 0.18018566071987152,
+  "dynamic_complexity": 3.584575653076172,
+  "danceability": 0.9940524101257324,
+  "mood": {
+   "happy": 0.69378262758255,
+   "sad": 0.9251107573509216,
+   "aggressive": 0.059024348855018616,
+   "relaxed": 0.8179126977920532,
+   "party": 0.03202180564403534
+  },
+  "genres": [
+   [
+    "Funk / Soul---Disco",
+    0.3516623377799988
+   ],
+   [
+    "Electronic---Disco",
+    0.253481924533844
+   ],
+   [
+    "Funk / Soul---Funk",
+    0.209951251745224
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/148_contact-feel-the-magic-the-food-mix.mp3",
+  "bpm": 128.12843322753906,
+  "rms": 0.14771831035614014,
+  "dynamic_complexity": 3.47434401512146,
+  "danceability": 0.9949100017547607,
+  "mood": {
+   "happy": 0.3696874678134918,
+   "sad": 0.9448800086975098,
+   "aggressive": 0.1243090033531189,
+   "relaxed": 0.8125170469284058,
+   "party": 0.09323541074991226
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.45261523127555847
+   ],
+   [
+    "Electronic---Deep House",
+    0.25391966104507446
+   ],
+   [
+    "Electronic---Tribal House",
+    0.197090283036232
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/149_project sandro - blazer^!100bpm^.mp3",
+  "bpm": 99.9940185546875,
+  "rms": 0.197581484913826,
+  "dynamic_complexity": 3.8400285243988037,
+  "danceability": 0.9881319403648376,
+  "mood": {
+   "happy": 0.5909220576286316,
+   "sad": 0.886839747428894,
+   "aggressive": 0.028087010607123375,
+   "relaxed": 0.563652753829956,
+   "party": 0.21546722948551178
+  },
+  "genres": [
+   [
+    "Electronic---Nu-Disco",
+    0.24147459864616394
+   ],
+   [
+    "Electronic---House",
+    0.18738554418087006
+   ],
+   [
+    "Electronic---Downtempo",
+    0.17380216717720032
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning/150_topo - ba ba go, go (1983).mp3",
+  "bpm": 99.32484436035156,
+  "rms": 0.1500205546617508,
+  "dynamic_complexity": 4.414391994476318,
+  "danceability": 0.9943038821220398,
+  "mood": {
+   "happy": 0.670525312423706,
+   "sad": 0.9531271457672119,
+   "aggressive": 0.2679332494735718,
+   "relaxed": 0.868455708026886,
+   "party": 0.023272981867194176
+  },
+  "genres": [
+   [
+    "Electronic---Electro",
+    0.31445395946502686
+   ],
+   [
+    "Hip Hop---Electro",
+    0.22861401736736298
+   ],
+   [
+    "Children's---Educational",
+    0.08997762203216553
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/001_DJ Atlance - Liquid Sunshine (Original Mix).mp3",
+  "bpm": 127.00546264648438,
+  "rms": 0.25781819224357605,
+  "dynamic_complexity": 3.498370409011841,
+  "danceability": 0.9983406662940979,
+  "mood": {
+   "happy": 0.43930256366729736,
+   "sad": 0.9553744196891785,
+   "aggressive": 0.06732770055532455,
+   "relaxed": 0.856445848941803,
+   "party": 0.07308118045330048
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5567463040351868
+   ],
+   [
+    "Electronic---Deep House",
+    0.28107601404190063
+   ],
+   [
+    "Electronic---Tech House",
+    0.171654611825943
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/002_Mike.D - Masa Encefalica (Surrender Discipline Remix).mp3",
+  "bpm": 127.01055145263672,
+  "rms": 0.25719985365867615,
+  "dynamic_complexity": 2.4616541862487793,
+  "danceability": 0.99991774559021,
+  "mood": {
+   "happy": 0.05644535273313522,
+   "sad": 0.9733827114105225,
+   "aggressive": 0.07476368546485901,
+   "relaxed": 0.7276976704597473,
+   "party": 0.15889325737953186
+  },
+  "genres": [
+   [
+    "Electronic---Deep Techno",
+    0.2934761345386505
+   ],
+   [
+    "Electronic---Tech House",
+    0.273280531167984
+   ],
+   [
+    "Electronic---Deep House",
+    0.2457372099161148
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/003_ANOTR - Don't Mind Ya Weight.mp3",
+  "bpm": 125.98956298828125,
+  "rms": 0.25012800097465515,
+  "dynamic_complexity": 7.822441577911377,
+  "danceability": 0.9897921085357666,
+  "mood": {
+   "happy": 0.10717490315437317,
+   "sad": 0.967722475528717,
+   "aggressive": 0.1910335123538971,
+   "relaxed": 0.8192348480224609,
+   "party": 0.05920334532856941
+  },
+  "genres": [
+   [
+    "Electronic---Tech House",
+    0.38374653458595276
+   ],
+   [
+    "Electronic---Minimal Techno",
+    0.3526926040649414
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.2813035249710083
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/004_Luke Dean - Coast2coast (Original Mix) 132.mp3",
+  "bpm": 131.99830627441406,
+  "rms": 0.1960357427597046,
+  "dynamic_complexity": 4.5856499671936035,
+  "danceability": 0.9969710111618042,
+  "mood": {
+   "happy": 0.5208098292350769,
+   "sad": 0.9575946927070618,
+   "aggressive": 0.11813649535179138,
+   "relaxed": 0.8881643414497375,
+   "party": 0.16456365585327148
+  },
+  "genres": [
+   [
+    "Electronic---Speed Garage",
+    0.41906416416168213
+   ],
+   [
+    "Electronic---House",
+    0.3490186929702759
+   ],
+   [
+    "Electronic---UK Garage",
+    0.24085022509098053
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/005_Goutham & Jeremy - Revival.mp3",
+  "bpm": 129.968505859375,
+  "rms": 0.25750187039375305,
+  "dynamic_complexity": 4.453433036804199,
+  "danceability": 0.9997111558914185,
+  "mood": {
+   "happy": 0.5350126624107361,
+   "sad": 0.9706950783729553,
+   "aggressive": 0.04158003628253937,
+   "relaxed": 0.8683981895446777,
+   "party": 0.05484861508011818
+  },
+  "genres": [
+   [
+    "Electronic---UK Garage",
+    0.4991256594657898
+   ],
+   [
+    "Electronic---Speed Garage",
+    0.4932912290096283
+   ],
+   [
+    "Electronic---House",
+    0.4466201961040497
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/006_01 Roulade Records - Occibel - Coton Dancefloor.mp3",
+  "bpm": 127.0315933227539,
+  "rms": 0.2547057569026947,
+  "dynamic_complexity": 4.28882360458374,
+  "danceability": 0.9969092011451721,
+  "mood": {
+   "happy": 0.15264448523521423,
+   "sad": 0.9424380660057068,
+   "aggressive": 0.16450735926628113,
+   "relaxed": 0.6629133820533752,
+   "party": 0.030806785449385643
+  },
+  "genres": [
+   [
+    "Electronic---Progressive House",
+    0.3608277142047882
+   ],
+   [
+    "Electronic---House",
+    0.2289356142282486
+   ],
+   [
+    "Electronic---Tech House",
+    0.142388716340065
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/007_02-ocsav - salt ache city (original mix).mp3",
+  "bpm": 128.01612854003906,
+  "rms": 0.23211106657981873,
+  "dynamic_complexity": 3.2833642959594727,
+  "danceability": 0.9958792328834534,
+  "mood": {
+   "happy": 0.09739382565021515,
+   "sad": 0.9773544669151306,
+   "aggressive": 0.3722515404224396,
+   "relaxed": 0.8905398845672607,
+   "party": 0.01700558513402939
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.4173651933670044
+   ],
+   [
+    "Electronic---Tech House",
+    0.3241318166255951
+   ],
+   [
+    "Electronic---Progressive House",
+    0.21484321355819702
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/008_Jungle - All Of The Time (Chris Stussy Edit).mp3",
+  "bpm": 129.95816040039062,
+  "rms": 0.24759246408939362,
+  "dynamic_complexity": 4.461757183074951,
+  "danceability": 0.9971117377281189,
+  "mood": {
+   "happy": 0.44249632954597473,
+   "sad": 0.9743324518203735,
+   "aggressive": 0.07880901545286179,
+   "relaxed": 0.9165771007537842,
+   "party": 0.01709846779704094
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.6523845791816711
+   ],
+   [
+    "Electronic---Ghetto House",
+    0.27774959802627563
+   ],
+   [
+    "Electronic---Deep House",
+    0.21747379004955292
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/009_Dj Vas - Cream.mp3",
+  "bpm": 113.22817993164062,
+  "rms": 0.22450537979602814,
+  "dynamic_complexity": 3.994934558868408,
+  "danceability": 0.9595304727554321,
+  "mood": {
+   "happy": 0.16324682533740997,
+   "sad": 0.7731947898864746,
+   "aggressive": 0.0518294982612133,
+   "relaxed": 0.23637372255325317,
+   "party": 0.7277235984802246
+  },
+  "genres": [
+   [
+    "Electronic---Downtempo",
+    0.14710141718387604
+   ],
+   [
+    "Funk / Soul---Neo Soul",
+    0.10353559255599976
+   ],
+   [
+    "Electronic---House",
+    0.10352867096662521
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/010_Grant - Bend.mp3",
+  "bpm": 117.7690658569336,
+  "rms": 0.23811258375644684,
+  "dynamic_complexity": 4.034243106842041,
+  "danceability": 0.9774065613746643,
+  "mood": {
+   "happy": 0.032150667160749435,
+   "sad": 0.9129809141159058,
+   "aggressive": 0.019133539870381355,
+   "relaxed": 0.33199113607406616,
+   "party": 0.5439600348472595
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.5207915306091309
+   ],
+   [
+    "Electronic---Dub Techno",
+    0.35940662026405334
+   ],
+   [
+    "Electronic---House",
+    0.2720029652118683
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/011_Traumer - District.mp3",
+  "bpm": 128.04750061035156,
+  "rms": 0.2429877519607544,
+  "dynamic_complexity": 5.770432949066162,
+  "danceability": 0.9983616471290588,
+  "mood": {
+   "happy": 0.12727117538452148,
+   "sad": 0.9604581594467163,
+   "aggressive": 0.15749616920948029,
+   "relaxed": 0.7634304761886597,
+   "party": 0.1254885196685791
+  },
+  "genres": [
+   [
+    "Electronic---Deep Techno",
+    0.3427635729312897
+   ],
+   [
+    "Electronic---Techno",
+    0.2700112462043762
+   ],
+   [
+    "Electronic---Dub Techno",
+    0.26235467195510864
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/012_10. AIKON - Legends (Original Mix).mp3",
+  "bpm": 119.93383026123047,
+  "rms": 0.29750022292137146,
+  "dynamic_complexity": 4.579293727874756,
+  "danceability": 0.9991156458854675,
+  "mood": {
+   "happy": 0.29175683856010437,
+   "sad": 0.9848088026046753,
+   "aggressive": 0.4671482443809509,
+   "relaxed": 0.9320758581161499,
+   "party": 0.009454227983951569
+  },
+  "genres": [
+   [
+    "Electronic---Electro",
+    0.4283261299133301
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.2376401722431183
+   ],
+   [
+    "Electronic---Techno",
+    0.16849462687969208
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/013_Alena - Forget Me Nots.mp3",
+  "bpm": 115.00265502929688,
+  "rms": 0.3041262924671173,
+  "dynamic_complexity": 2.9934747219085693,
+  "danceability": 0.9764499068260193,
+  "mood": {
+   "happy": 0.7024418115615845,
+   "sad": 0.8547077775001526,
+   "aggressive": 0.04504483938217163,
+   "relaxed": 0.5755172967910767,
+   "party": 0.162161722779274
+  },
+  "genres": [
+   [
+    "Electronic---Nu-Disco",
+    0.41436126828193665
+   ],
+   [
+    "Electronic---Disco",
+    0.20069801807403564
+   ],
+   [
+    "Electronic---House",
+    0.18469764292240143
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/014_Shane D, Jacqueline Gilbert - Keep The Fire Burning (Original Mix).mp3",
+  "bpm": 126.00447082519531,
+  "rms": 0.28085511922836304,
+  "dynamic_complexity": 3.864293336868286,
+  "danceability": 0.9968308806419373,
+  "mood": {
+   "happy": 0.8213794827461243,
+   "sad": 0.9686894416809082,
+   "aggressive": 0.08447519689798355,
+   "relaxed": 0.9329414367675781,
+   "party": 0.029493510723114014
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.8213034868240356
+   ],
+   [
+    "Electronic---Deep House",
+    0.3334716856479645
+   ],
+   [
+    "Electronic---Garage House",
+    0.2970198392868042
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/015_Cocoon - Time Change (Original Mix).mp3",
+  "bpm": 122.98670959472656,
+  "rms": 0.24867650866508484,
+  "dynamic_complexity": 4.528354167938232,
+  "danceability": 0.9451966881752014,
+  "mood": {
+   "happy": 0.554746150970459,
+   "sad": 0.8692644834518433,
+   "aggressive": 0.02389276586472988,
+   "relaxed": 0.5260460376739502,
+   "party": 0.349128782749176
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.3384361267089844
+   ],
+   [
+    "Electronic---House",
+    0.3025449812412262
+   ],
+   [
+    "Electronic---Jazzdance",
+    0.1402905434370041
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/016_Luke Dean - Silly People.mp3",
+  "bpm": 129.99728393554688,
+  "rms": 0.2787703275680542,
+  "dynamic_complexity": 5.272058486938477,
+  "danceability": 0.9937583208084106,
+  "mood": {
+   "happy": 0.5283744931221008,
+   "sad": 0.9544334411621094,
+   "aggressive": 0.17651139199733734,
+   "relaxed": 0.8845681548118591,
+   "party": 0.08613498508930206
+  },
+  "genres": [
+   [
+    "Electronic---Speed Garage",
+    0.4210948944091797
+   ],
+   [
+    "Electronic---House",
+    0.3752415180206299
+   ],
+   [
+    "Electronic---UK Garage",
+    0.3475942015647888
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/017_Lauren Lo Sung - Tom & Jerry.mp3",
+  "bpm": 127.99544525146484,
+  "rms": 0.2802804410457611,
+  "dynamic_complexity": 3.4087696075439453,
+  "danceability": 0.999872624874115,
+  "mood": {
+   "happy": 0.15098173916339874,
+   "sad": 0.9832282066345215,
+   "aggressive": 0.15627381205558777,
+   "relaxed": 0.8373665809631348,
+   "party": 0.024946661666035652
+  },
+  "genres": [
+   [
+    "Electronic---Deep Techno",
+    0.40310442447662354
+   ],
+   [
+    "Electronic---Deep House",
+    0.29790446162223816
+   ],
+   [
+    "Electronic---Tech House",
+    0.29603949189186096
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/018_Fort Romeau - Dada Pt. 2 (Niv Ast Remix).mp3",
+  "bpm": 119.98263549804688,
+  "rms": 0.29245370626449585,
+  "dynamic_complexity": 3.727867841720581,
+  "danceability": 0.9972938299179077,
+  "mood": {
+   "happy": 0.12903699278831482,
+   "sad": 0.9637405872344971,
+   "aggressive": 0.17561155557632446,
+   "relaxed": 0.64027339220047,
+   "party": 0.07963140308856964
+  },
+  "genres": [
+   [
+    "Electronic---Nu-Disco",
+    0.28371116518974304
+   ],
+   [
+    "Electronic---Techno",
+    0.13023881614208221
+   ],
+   [
+    "Electronic---Progressive House",
+    0.12526020407676697
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/019_JIZZ - She Likes To Dance.mp3",
+  "bpm": 126.97901916503906,
+  "rms": 0.271135151386261,
+  "dynamic_complexity": 4.401447296142578,
+  "danceability": 0.997858464717865,
+  "mood": {
+   "happy": 0.09011492133140564,
+   "sad": 0.9791547656059265,
+   "aggressive": 0.34418296813964844,
+   "relaxed": 0.8065601587295532,
+   "party": 0.08377675712108612
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.326521635055542
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.276777982711792
+   ],
+   [
+    "Electronic---Minimal",
+    0.26310238242149353
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/020_Slugg - Ex Bitch (Original Mix).mp3",
+  "bpm": 129.00621032714844,
+  "rms": 0.28444406390190125,
+  "dynamic_complexity": 4.03049373626709,
+  "danceability": 0.9999191761016846,
+  "mood": {
+   "happy": 0.39903026819229126,
+   "sad": 0.9750859141349792,
+   "aggressive": 0.10297121107578278,
+   "relaxed": 0.9102269411087036,
+   "party": 0.014818429946899414
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.396298348903656
+   ],
+   [
+    "Electronic---Tech House",
+    0.3146814703941345
+   ],
+   [
+    "Electronic---Minimal Techno",
+    0.2304840385913849
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/022_Philip Budny - Eclipses.mp3",
+  "bpm": 118.98739624023438,
+  "rms": 0.252907395362854,
+  "dynamic_complexity": 3.4855759143829346,
+  "danceability": 0.9963089823722839,
+  "mood": {
+   "happy": 0.12163007259368896,
+   "sad": 0.8983075618743896,
+   "aggressive": 0.031905002892017365,
+   "relaxed": 0.3547440469264984,
+   "party": 0.47359511256217957
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.39534619450569153
+   ],
+   [
+    "Electronic---House",
+    0.3487505316734314
+   ],
+   [
+    "Electronic---Downtempo",
+    0.10981117933988571
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/023_01 Berg Audio - Janeret - Scape (Original Mix).mp3",
+  "bpm": 127.00399017333984,
+  "rms": 0.2699962854385376,
+  "dynamic_complexity": 5.48345947265625,
+  "danceability": 0.9952885508537292,
+  "mood": {
+   "happy": 0.022683842107653618,
+   "sad": 0.9822206497192383,
+   "aggressive": 0.09967806935310364,
+   "relaxed": 0.727999746799469,
+   "party": 0.04526543989777565
+  },
+  "genres": [
+   [
+    "Electronic---Deep Techno",
+    0.5325354933738708
+   ],
+   [
+    "Electronic---Dub Techno",
+    0.4533364474773407
+   ],
+   [
+    "Electronic---Techno",
+    0.35606443881988525
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/024_Across Boundaries, Chris Stussy, Locklead - Da Resurrection (Original Mix).mp3",
+  "bpm": 131.02615356445312,
+  "rms": 0.25385782122612,
+  "dynamic_complexity": 3.8556272983551025,
+  "danceability": 0.9742879271507263,
+  "mood": {
+   "happy": 0.11210785806179047,
+   "sad": 0.9599876999855042,
+   "aggressive": 0.1757587343454361,
+   "relaxed": 0.8173767328262329,
+   "party": 0.06541985273361206
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.3781109154224396
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.3071327209472656
+   ],
+   [
+    "Electronic---House",
+    0.20748575031757355
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/025_Expansion - Deborah Aime La Bagarre (Original Mix).mp3",
+  "bpm": 131.004150390625,
+  "rms": 0.2448740452528,
+  "dynamic_complexity": 3.4091174602508545,
+  "danceability": 0.9968767166137695,
+  "mood": {
+   "happy": 0.3158841133117676,
+   "sad": 0.9718011021614075,
+   "aggressive": 0.31135234236717224,
+   "relaxed": 0.9131019711494446,
+   "party": 0.01451065018773079
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.32345104217529297
+   ],
+   [
+    "Electronic---Techno",
+    0.2187119424343109
+   ],
+   [
+    "Electronic---Progressive House",
+    0.19226017594337463
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/026_The Scumfrog - Fled's Fonk.mp3",
+  "bpm": 125.49414825439453,
+  "rms": 0.2965777814388275,
+  "dynamic_complexity": 4.872732639312744,
+  "danceability": 0.9988547563552856,
+  "mood": {
+   "happy": 0.28907036781311035,
+   "sad": 0.9700630307197571,
+   "aggressive": 0.535625696182251,
+   "relaxed": 0.9329277276992798,
+   "party": 0.019690541550517082
+  },
+  "genres": [
+   [
+    "Electronic---Electro",
+    0.2205704003572464
+   ],
+   [
+    "Electronic---House",
+    0.20492656528949738
+   ],
+   [
+    "Electronic---Big Beat",
+    0.11590944230556488
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/027_2. J.m. Aboga - Deeply In Danger (Ekkohaus Remix).mp3",
+  "bpm": 125.01132202148438,
+  "rms": 0.2827710807323456,
+  "dynamic_complexity": 3.46951961517334,
+  "danceability": 0.999879002571106,
+  "mood": {
+   "happy": 0.061767999082803726,
+   "sad": 0.9750016331672668,
+   "aggressive": 0.06323990225791931,
+   "relaxed": 0.7330646514892578,
+   "party": 0.09635462611913681
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.3220083713531494
+   ],
+   [
+    "Electronic---Deep Techno",
+    0.30176857113838196
+   ],
+   [
+    "Electronic---House",
+    0.2904033362865448
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/028_Max Dean - Can't Slow Down.mp3",
+  "bpm": 128.4538116455078,
+  "rms": 0.2869071960449219,
+  "dynamic_complexity": 3.71870756149292,
+  "danceability": 0.9997559189796448,
+  "mood": {
+   "happy": 0.1409095972776413,
+   "sad": 0.9729078412055969,
+   "aggressive": 0.19944077730178833,
+   "relaxed": 0.8064945340156555,
+   "party": 0.06629671901464462
+  },
+  "genres": [
+   [
+    "Electronic---Deep Techno",
+    0.2893945574760437
+   ],
+   [
+    "Electronic---Techno",
+    0.2681681215763092
+   ],
+   [
+    "Electronic---House",
+    0.24101275205612183
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/029_Chris Stussy - Desire.mp3",
+  "bpm": 133.92825317382812,
+  "rms": 0.27645057439804077,
+  "dynamic_complexity": 4.440742015838623,
+  "danceability": 0.9998294115066528,
+  "mood": {
+   "happy": 0.29522719979286194,
+   "sad": 0.9609866738319397,
+   "aggressive": 0.15592829883098602,
+   "relaxed": 0.8241503238677979,
+   "party": 0.018320957198739052
+  },
+  "genres": [
+   [
+    "Electronic---Techno",
+    0.24316442012786865
+   ],
+   [
+    "Electronic---House",
+    0.2406052201986313
+   ],
+   [
+    "Electronic---Trance",
+    0.20466507971286774
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/030_Dance Forever (Extended Mix) - Maison Blanche.mp3",
+  "bpm": 124.17655944824219,
+  "rms": 0.2845006585121155,
+  "dynamic_complexity": 3.6077165603637695,
+  "danceability": 0.9955248236656189,
+  "mood": {
+   "happy": 0.30587244033813477,
+   "sad": 0.9554327726364136,
+   "aggressive": 0.06627689301967621,
+   "relaxed": 0.771730899810791,
+   "party": 0.07313627004623413
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.4775468409061432
+   ],
+   [
+    "Electronic---Deep House",
+    0.3373982608318329
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.2789163589477539
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/031_Seeing Double - Dance MF.mp3",
+  "bpm": 128.05360412597656,
+  "rms": 0.29984360933303833,
+  "dynamic_complexity": 4.934103965759277,
+  "danceability": 0.9997717142105103,
+  "mood": {
+   "happy": 0.2373550832271576,
+   "sad": 0.9755234122276306,
+   "aggressive": 0.4846251606941223,
+   "relaxed": 0.8736982345581055,
+   "party": 0.0061769019812345505
+  },
+  "genres": [
+   [
+    "Electronic---Tribal House",
+    0.4052894413471222
+   ],
+   [
+    "Electronic---Tech House",
+    0.3141719102859497
+   ],
+   [
+    "Electronic---House",
+    0.24611373245716095
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/032_2. Dixie Yure - My Babe Is So Funk (Original Mix).mp3",
+  "bpm": 117.98699951171875,
+  "rms": 0.2639463543891907,
+  "dynamic_complexity": 4.221871376037598,
+  "danceability": 0.9775944352149963,
+  "mood": {
+   "happy": 0.25613486766815186,
+   "sad": 0.9172224402427673,
+   "aggressive": 0.059799063950777054,
+   "relaxed": 0.6948938369750977,
+   "party": 0.3418637216091156
+  },
+  "genres": [
+   [
+    "Electronic---Deep House",
+    0.4605535566806793
+   ],
+   [
+    "Electronic---House",
+    0.44456079602241516
+   ],
+   [
+    "Electronic---Nu-Disco",
+    0.22729404270648956
+   ]
+  ]
+ },
+ {
+  "path": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon/033_Stussko - Spacefunk EP - 01 - spacefunk.mp3",
+  "bpm": 126.97757720947266,
+  "rms": 0.2946722209453583,
+  "dynamic_complexity": 4.750392913818359,
+  "danceability": 0.9986435770988464,
+  "mood": {
+   "happy": 0.0884072482585907,
+   "sad": 0.9732767939567566,
+   "aggressive": 0.13466420769691467,
+   "relaxed": 0.7461367845535278,
+   "party": 0.09701076149940491
+  },
+  "genres": [
+   [
+    "Electronic---Deep Techno",
+    0.38218075037002563
+   ],
+   [
+    "Electronic---Tech House",
+    0.2534085512161255
+   ],
+   [
+    "Electronic---Minimal Techno",
+    0.24987289309501648
    ]
   ]
  }

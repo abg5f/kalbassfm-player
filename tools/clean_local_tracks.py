@@ -26,10 +26,10 @@ from mutagen import File as MFile
 from mutagen.id3 import ID3, APIC
 
 DEFAULT_ROOTS = [
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\1_morning",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\2_afternoon",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\3_evening",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\4_night",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\1_morning",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\2_afternoon",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\3_evening",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night",
 ]
 arg_roots = [a for a in sys.argv[1:] if not a.startswith('--')]
 ROOTS = arg_roots if arg_roots else DEFAULT_ROOTS
@@ -189,9 +189,12 @@ def main():
             if APPLY and changed_tag:
                 audio.save()
 
-        # Nom de fichier
+        # Nom de fichier (le prefixe NNN_ de position, s'il existe, est preserve
+        # tel quel -- clean() remplace les "_" par des espaces et le casserait sinon)
         stem, ext = os.path.splitext(fname)
-        new_stem = clean(stem)
+        pos_match = re.match(r'^(\d{3}_)(.*)$', stem)
+        pos_prefix, stem_to_clean = pos_match.groups() if pos_match else ('', stem)
+        new_stem = pos_prefix + clean(stem_to_clean)
         new_path = path
         if new_stem and new_stem != stem:
             candidate = os.path.join(os.path.dirname(path), new_stem + ext)

@@ -21,10 +21,10 @@ from essentia.standard import (
 
 MODELS_DIR = os.path.expanduser("~/kalbassfm-analysis/models")
 ROOTS = [
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/1_morning",
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/2_afternoon",
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/3_evening",
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/4_night",
+    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning",
+    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon",
+    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/3_evening",
+    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/4_night",
 ]
 OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metadata.json")
 
@@ -100,6 +100,13 @@ def analyze(path):
     }
 
 
+def normalize_path(path):
+    """Normalise un chemin WSL (/mnt/c/...) ou Windows (C:\\...) vers une forme
+    Windows comparable, pour que la verification "deja analyse" fonctionne
+    quel que soit le format sous lequel un chemin a ete stocke precedemment."""
+    return os.path.normcase(path.replace("/mnt/c", "C:").replace("/", "\\"))
+
+
 def main():
     files = []
     for root in ROOTS:
@@ -112,13 +119,14 @@ def main():
     results = []
     if os.path.exists(OUTPUT):
         results = json.load(open(OUTPUT, encoding="utf-8"))
-    done_paths = {r["path"] for r in results}
+    done_paths = {normalize_path(r["path"]) for r in results}
 
     for i, path in enumerate(files):
-        if path in done_paths:
+        if normalize_path(path) in done_paths:
             continue
         try:
             r = analyze(path)
+            r["path"] = path.replace("/mnt/c", "C:").replace("/", "\\")
             results.append(r)
             print(
                 f"[{i + 1}/{len(files)}] OK {os.path.basename(path)} "

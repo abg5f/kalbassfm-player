@@ -8,9 +8,14 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
 3. Analyse Essentia (energie, bpm, genre, mood, danceability)
 4. Classe le morceau dans le creneau (morning/afternoon/evening/night) dont
    la courbe d'energie cible est la plus proche
-5. Deplace le fichier nettoye dans New_prog/<creneau>/
+5. Ajoute le fichier nettoye a la fin de New_prog/<creneau>/ (numero de
+   position suivant disponible) SANS toucher aux fichiers deja en place --
+   seuls les nouveaux morceaux ont besoin d'etre re-uploades en SFTP.
 6. Ajoute le resultat a metadata.json
-7. Regenere automatiquement l'ordre de New_prog (build_rotation.py + export_rotation.py)
+
+Pour un rebrassage complet de l'ordre (meilleure alternance energie/genre sur
+tout le creneau, au prix d'un renommage en cascade -> tout reuploader en
+SFTP), lancer manuellement build_rotation.py puis export_rotation.py.
 
 Les fichiers illisibles/en erreur sont deplaces dans _incoming/_failed/ et
 n'interrompent pas le traitement des autres.
@@ -24,6 +29,7 @@ A executer dans le venv WSL (~/essentia-env), ou via triage.bat :
     python3 "/mnt/c/Users/ph.dufourcq/Documents/0_Claude Code/3_Radiofm/tools/triage_new_tracks.py"
 """
 import os
+import re
 import sys
 import json
 import html
@@ -61,8 +67,6 @@ ENERGY_CURVES = {
 }
 
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
-BUILD_ROTATION = os.path.join(TOOLS_DIR, "build_rotation.py")
-EXPORT_ROTATION = os.path.join(TOOLS_DIR, "export_rotation.py")
 REPORT_PATH = os.path.join(TOOLS_DIR, "triage_report.html")
 
 
@@ -193,6 +197,21 @@ def classify_slot(energy):
     return min(ENERGY_CURVES, key=lambda slot: abs(energy - midpoint(ENERGY_CURVES[slot])))
 
 
+POSITION_RE = re.compile(r"^(\d{3})_")
+
+
+def next_position(slot_folder):
+    """Prochain numero de position libre dans un creneau (max existant + 1),
+    pour ajouter un morceau en fin de liste sans renommer les autres."""
+    best = 0
+    if os.path.isdir(slot_folder):
+        for fname in os.listdir(slot_folder):
+            m = POSITION_RE.match(fname)
+            if m:
+                best = max(best, int(m.group(1)))
+    return best + 1
+
+
 def clean_tags_and_filename(path):
     """Nettoie tags/nom de fichier in place, retourne le nouveau chemin."""
     from mutagen import File as MFile
@@ -312,10 +331,14 @@ def process_file(path, existing_metadata, dup_index, report):
 
     slot = classify_slot(energy)
     dest_dir = SLOT_FOLDERS[slot]
-    dest_path = os.path.join(dest_dir, os.path.basename(cleaned_path))
+    pos = next_position(dest_dir)
+    dest_path = os.path.join(dest_dir, f"{pos:03d}_{os.path.basename(cleaned_path)}")
     shutil.move(cleaned_path, dest_path)
 
-    result["path"] = dest_path
+    # Stocke le chemin au format Windows dans metadata.json : coherent avec
+    # analyze_essentia.py et build_rotation.py, evite les doublons causes par
+    # un melange de formats WSL (/mnt/c/...) et Windows (C:\...) dans le JSON.
+    result["path"] = wsl_to_windows(dest_path)
     print(
         f"[OK] -> {slot} (energie={energy:.2f} bpm={result['bpm']:.0f} "
         f"genre={result['genres'][0][0]})"
@@ -367,19 +390,11 @@ def main():
                 pass
 
     print(f"\n{ok_count}/{len(files)} morceaux integres, {dup_count} doublon(s) ignore(s).")
-
     if ok_count:
-        print("\nRegeneration de New_prog...")
-        tools_win = wsl_to_windows(TOOLS_DIR)
-        result = subprocess.run(
-            ["cmd.exe", "/c", "python", f"{tools_win}\\build_rotation.py",
-             "&&", "python", f"{tools_win}\\export_rotation.py"],
-            check=False, capture_output=True, text=True,
-            encoding="cp1252", errors="replace",
+        print(
+            "Les nouveaux morceaux ont ete ajoutes en fin de creneau (aucun fichier "
+            "existant renomme) -> tu peux uploader uniquement les nouveaux fichiers en SFTP."
         )
-        print(result.stdout)
-        if result.returncode != 0:
-            print(f"[ERREUR] Regeneration echouee (code {result.returncode}): {result.stderr}")
 
     report.render(finished=True)
 

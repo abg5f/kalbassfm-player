@@ -1,0 +1,5 @@
+.claude/
+.planning/
+Jingles/
+tools/__pycache__/
+tools/triage_report.html
