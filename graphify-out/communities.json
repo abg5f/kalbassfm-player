@@ -3,7 +3,7 @@
     {
       "id": "player-frontend",
       "label": "Player / Frontend",
-      "members": ["index.html", "sw.js", "manifest.webmanifest", "PWAFeature", "EqualizerFeature", "ReactionsFeature", "TopFiveFeature", "ProgrammeGrid", "NowPlayingAPI"]
+      "members": ["index.html", "sw.js", "manifest.webmanifest", "PWAFeature", "EqualizerFeature", "ReactionsFeature", "TopFiveFeature", "ChatFeature", "ContactPopup", "ProgrammeGrid", "NowPlayingAPI"]
     },
     {
       "id": "infra-streaming",
@@ -12,8 +12,8 @@
     },
     {
       "id": "serverless-api",
-      "label": "Serverless / API (vote temps réel connecté) + vote playlist planifié",
-      "members": ["api/reactions.js", "VercelKV", "TopFiveFeature", "VotingSystemPlan"]
+      "label": "Serverless / API (vote + chat temps réel connectés) + vote playlist planifié",
+      "members": ["api/reactions.js", "api/chat.js", "VercelKV", "TopFiveFeature", "ChatFeature", "VotingSystemPlan"]
     },
     {
       "id": "tooling-pipeline",

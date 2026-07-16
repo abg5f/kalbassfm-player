@@ -1,8 +1,19 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-16
+> Dernière mise à jour : 2026-07-17
 
-## État actuel (2026-07-16)
+## État actuel (2026-07-17)
+
+- ✅ **Store Upstash Redis confirmé connecté et fonctionnel** — vote 🔥 en direct testé via navigateur preview sur le vrai domaine de prod (`kalbassfm-player.vercel.app`) : incrément persistant, POST 200, comportement confirmé
+- ✅ **Vote 🔥 changé en votes libres et illimités** — décision explicite de l'utilisateur, revient sur la limite "1 vote/morceau/auditeur" initiale : plus de `SADD voters:<id>` côté serveur, chaque clic incrémente. Le panneau Top 5 poll désormais toutes les 4s (au lieu de 30s) + re-poll immédiat après chaque vote pour un effet "jauge qui monte en direct"
+- ✅ **Panneau Top 5 ouvert par défaut** (`<details open>`)
+- ✅ **Chat live anonyme ajouté** — nouvelle fonction serverless `api/chat.js` (même squelette que `api/reactions.js` : Upstash Redis REST, repli gracieux `{enabled:false}`). Pseudo auto-généré (`Auditeur-XXXX`, `localStorage kfm_client_id`), pas de login. Liste Redis `chat:messages` (LPUSH/LTRIM à 100), rate-limit serveur 1 message/3s/auditeur via clé Redis à expiration (`SET ... EX 3 NX`), poll toutes les 3s. **Liens bloqués (anti-autopromo)** : regex de détection (`http(s)://`, `www.`, domaines type `truc.com`) appliquée côté client (retour immédiat, pas de cooldown consommé) ET côté serveur (le vrai point d'application, avant même le rate-limit). Échappement systématique via `textContent` (jamais `innerHTML`) pour empêcher toute injection HTML dans les messages
+- ✅ **Bandeau ticker jaune défilant supprimé** — CSS (`.ticker`/`.ticker-inner`/`@keyframes ticker`) et JS (`TICKER_MSG`) nettoyés ; le panneau Chat live occupe désormais son emplacement, ouvert par défaut (`<details open>`)
+- ✅ **Popup de contact ajouté** — "Owned by Lupari" dans le footer n'ouvre plus directement un `mailto:`, mais un modal (`#contactModal`, fermeture par clic sur le fond ou Échap) proposant email ou Instagram (`@luparimusic`)
+- ✅ **15 jingles intégrés nativement dans AzuraCast** (Media → Playlists, type "Une fois tous les x titres" 10-15, Mode Jingle activé pour masquer les métadonnées) — guidé pas à pas via captures d'écran de l'utilisateur, aucune modification de code nécessaire (hors du pipeline Python, cf. décisions)
+- ⏳ **Vérification live du chat en conditions réelles (deux navigateurs différents) pas encore faite dans cette session** — code vérifié en preview locale (repli gracieux, blocage de lien, cooldown) mais pas testé avec le vrai store Redis en prod
+
+## État antérieur (2026-07-16)
 
 - ✅ **Système de vote 🔥 par morceau opérationnel de bout en bout, store Redis connecté** — `api/reactions.js` réécrit : vote libre et illimité (plus de limite 1/morceau/auditeur, retirée à la demande explicite de l'utilisateur), classement Top 5 (sorted set Redis `ZINCRBY`/`ZRANGE`), panneau `#topPanel`/`#topList` dans `index.html` avec jauges proportionnelles, poll toutes les 4s + re-poll immédiat après chaque vote. **Upstash for Redis connecté au projet Vercel le 2026-07-16** (via Vercel Storage → Marketplace → Upstash for Redis, région Washington D.C., plan Free, Production+Preview) — les variables `KV_REST_API_URL`/`KV_REST_API_TOKEN` sont en place. Redeploy déclenché ; vérification live en direct (vote → Top 5 qui se peuple) pas encore confirmée dans cette session
 - ✅ **Diversification de la rotation enrichie** — `tools/build_rotation.py` : mini-mouvements sinusoïdaux d'énergie superposés à la rampe linéaire par créneau (respirations façon set DJ), quota minoritaire garantissant qu'une famille rare apparaît au moins une fois par quart de créneau, deux nouvelles familles de style de premier rang **Reggae/Dub** et **Jungle/DnB** (au même titre que House/Techno/Garage/Disco-Funk), garde-fou `enforce_family_limit` désormais bidirectionnel (recherche avant ET arrière) avec jusqu'à 5 passes
@@ -64,6 +75,11 @@
 | **Jingles gérés nativement dans AzuraCast (Media → Playlists), pas dans le pipeline Python** | Le pipeline (`build_rotation.py`/`export_rotation.py`) réécrit intégralement les playlists de créneaux à chaque export ; des jingles insérés "en dur" seraient perdus/décalés à chaque régénération. La fonctionnalité native "Une fois tous les x titres" + Mode Jingle est stable indépendamment de ça |
 | **Upstash for Redis (Marketplace) au lieu de l'ancien "Vercel KV" natif** | Vercel a migré son offre de storage clé-valeur vers des providers Marketplace ; Upstash for Redis expose la même API REST (`KV_REST_API_URL`/`KV_REST_API_TOKEN`) que le code attendait déjà, donc compatible sans changement de code |
 | **Reggae/Dub et Jungle/DnB en familles de style de premier rang (pas des sous-genres génériques)** | Demande explicite : ces styles doivent être traités "au même titre que" House/Techno pour la contrainte anti-monotonie (max 2 consécutifs, quota minoritaire), pas relégués en famille résiduelle |
+| **Chat live : polling 3s + Redis, pas de WebSocket/SSE/service tiers (Pusher, Ably...)** | Vercel Functions sont sans état et de courte durée, pas adaptées aux connexions persistantes ; un chat "quasi temps réel" par polling est largement suffisant pour un chat d'accompagnement radio et réutilise 100% l'infra déjà en place |
+| **Chat live : pseudo auto-généré non modifiable, pas de champ à remplir** | Décision explicite de l'utilisateur (choix "recommandé" en plan mode) — zéro friction, cohérent avec le pattern `clientId` déjà utilisé pour le vote |
+| **Chat live : modération basique uniquement (rate-limit + longueur), pas de filtre de mots interdits au lancement** | Décision explicite de l'utilisateur — à ajouter plus tard si besoin, sans changer l'architecture |
+| **Liens bloqués dans le chat (anti-autopromo), validation dupliquée client + serveur** | Le client donne un retour instantané sans round-trip réseau ; le serveur est le seul point d'application réel (un client malveillant peut contourner le JS du navigateur) |
+| **Bandeau ticker supprimé et remplacé par le chat (pas juste ajouté ailleurs)** | Demande explicite de l'utilisateur — le chat prend la place la plus visible du player plutôt que d'être relégué en panneau repliable au même niveau que Historique/Top 5 |
 
 ## En cours / TODOs
 
@@ -77,8 +93,9 @@
 - [ ] **Système de vote pour changer de style/playlist (planifié, pas codé)** — plan complet écrit dans `C:\Users\ph.dufourcq\.claude\plans\wild-cooking-book.md` : playlists candidates par genre, vote côté public (20 votes → bascule vers la playlist gagnante pendant 2h puis retour à la grille normale), anti-abus 1 vote/navigateur. Nécessite avant codage : créer les playlists genre + clé API AzuraCast (dashboard → My API Keys) + nouvelle fonction `api/vote.js` calquée sur `api/reactions.js` + panneau front dans `index.html`. Rien n'est implémenté à ce stade.
 - [ ] **Graphe graphify construit manuellement (pas de CLI `graphify` installé)** — `graphify-out/` créé via lecture directe du repo (pas de commande `graphify update`/`graphify god-nodes` disponible dans l'environnement). À relancer via `/graphify` après changements significatifs ; si le CLI est installé un jour, préférer `graphify update .` à une reconstruction manuelle.
 - [ ] **SACEM** — formulaire webradio à remplir (frais mentionnés dans les posts de lancement, pas encore fait)
-- [x] **Connecter un store Upstash/KV à Vercel** — fait le 2026-07-16 (Upstash for Redis, Production+Preview). Reste à confirmer en live que le vote persiste bien et que le Top 5 se peuple après le redeploy
-- [ ] **Vérifier en direct le fonctionnement du vote/Top 5 une fois le redeploy Vercel terminé** — voter sur un morceau, confirmer que le compteur persiste après reload, que le Top 5 se peuple et se trie, capture finale du rendu des jauges
+- [x] **Connecter un store Upstash/KV à Vercel** — fait le 2026-07-16, confirmé fonctionnel le 2026-07-17 (vote testé en direct sur le domaine de prod, incrément persistant)
+- [x] **Vérifier en direct le fonctionnement du vote une fois le redeploy Vercel terminé** — fait le 2026-07-17 sur `kalbassfm-player.vercel.app`
+- [ ] **Vérifier en direct le chat live avec deux navigateurs différents en conditions réelles** — code vérifié en preview locale (repli gracieux, blocage de lien, cooldown) mais pas testé avec le vrai store Redis en prod dans cette session ; à faire : envoyer un message depuis un navigateur, confirmer qu'il apparaît dans un autre au poll suivant (≤3s)
 - [ ] **Mettre à jour `tools/build_rotation.py` + `export_rotation.py` avec les nouveaux morceaux Reggae/Dub et Jungle/DnB une fois `triage.bat` lancé** — l'utilisateur était encore en train de télécharger ces morceaux au moment de la dernière session, le triage n'a pas encore tourné dessus
 - [ ] **Traiter les morceaux ambigus/introuvables restants** — `AI GO RYTHM - FUNK edit/edit 2`, `Retromigration - Halt & Stop`, `m - jungle remaster...` (scores faibles, jamais tranchés)
 - [ ] **Synchro hebdomadaire PC → radio** — script WinSCP + tâche planifiée Windows évoqué mais pas mis en place
@@ -101,7 +118,8 @@
 | `index.html` | Player web complet (flux, égaliseur, PWA, features live) | ✅ Live sur Vercel |
 | `manifest.webmanifest`, `sw.js` | Config PWA + service worker | ✅ Actifs |
 | `icon-192.png`, `icon-512.png`, `og-image.png` | Icônes PWA (logo Kalbass) + image de partage réseaux sociaux | ✅ |
-| `api/reactions.js` | Fonction serverless Vercel : vote libre illimité 🔥 + classement Top 5 (sorted set Redis) | ✅ Déployée, store Upstash Redis connecté (2026-07-16) |
+| `api/reactions.js` | Fonction serverless Vercel : vote libre illimité 🔥 + classement Top 5 (sorted set Redis) | ✅ Déployée, store Upstash Redis connecté et testé en direct (2026-07-16/17) |
+| `api/chat.js` | Fonction serverless Vercel : chat live anonyme (liste Redis, rate-limit serveur, blocage de liens anti-autopromo) | ✅ Déployée, pas encore testée en direct avec deux clients réels |
 | `tools/normalize_and_dedup_metadata.py` | Réparation sûre de `metadata.json` (normalise/dédoublonne/répare sans jamais supprimer une entrée irrécupérable) | ✅ Local, WSL2 |
 | `tools/dedup_metadata.py` | Ancien script de dédoublonnage (supprimait sans réparer) — conservé pour l'historique, ne plus utiliser | ⚠️ Superseded |
 | `.gitignore` | Exclut `.claude/`, `.planning/`, `Jingles/`, `tools/__pycache__/`, `tools/triage_report.html` du repo | ✅ Créé le 2026-07-16 |
@@ -128,10 +146,10 @@
 **Session notable** : une partie du travail PWA/mobile (fullscreen standalone, fix écran verrouillé) a été faite en parallèle par une autre session Claude (lancée depuis l'app mobile Claude), fusionnée sans conflit dans cette session.
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-16 (construction manuelle, pas de CLI `graphify` disponible)
+> Mis à jour le 2026-07-17 (construction manuelle, pas de CLI `graphify` disponible)
 
-God nodes (concepts centraux) : `index.html` (hub front — now-playing/vote/Top5/égaliseur/PWA), `AzuraCast` (cœur infra streaming, inclut désormais la playlist Jingles native), `api/reactions.js` (vote libre + Top 5, Upstash Redis réellement connecté depuis le 2026-07-16), `VotingSystemPlan` (feature distincte de vote de playlist par genre, toujours planifiée/non codée), `tools/build_rotation.py` (diversité de rotation : familles de style, mini-mouvements, quota minoritaire).
-Communautés détectées : 7 (Player/Frontend, Infra/Streaming, Serverless-API+vote planifié, Outillage/Pipeline musique Rekordbox, Pipeline Essentia/Rotation musicale, Planning/Business, Contexte de session).
+God nodes (concepts centraux) : `index.html` (hub front — now-playing/vote/Top5/chat live/popup contact/égaliseur/PWA), `AzuraCast` (cœur infra streaming, inclut la playlist Jingles native), `VercelKV`/Upstash Redis (un seul store alimentant trois fonctions serverless : vote, Top 5, chat live), `api/reactions.js` (vote libre + Top 5), `api/chat.js` (chat live anonyme + anti-autopromo, nouveau le 2026-07-17), `VotingSystemPlan` (feature distincte de vote de playlist par genre, toujours planifiée/non codée), `tools/build_rotation.py` (diversité de rotation : familles de style, mini-mouvements, quota minoritaire).
+Communautés détectées : 7 (Player/Frontend, Infra/Streaming, Serverless-API vote+chat connectés, Outillage/Pipeline musique Rekordbox, Pipeline Essentia/Rotation musicale, Planning/Business, Contexte de session).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

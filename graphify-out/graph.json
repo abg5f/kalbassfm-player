@@ -38,7 +38,10 @@
     { "id": "iTunesSearchAPI", "label": "iTunes Search API", "type": "infra", "summary": "API gratuite sans clé utilisée par clean_local_tracks.py pour retrouver de vraies pochettes d'album (remplace les logos de sites pirates)." },
     { "id": "SACEM", "label": "SACEM (licensing)", "type": "concept", "summary": "Déclaration légale de diffusion webradio en Martinique, recherchée dans STATE.md/PROJECT.md, toujours TODO au niveau opérationnel (CONTEXT.md)." },
     { "id": "VotingSystemPlan", "label": "Système de vote playlist (planifié)", "type": "planned-feature", "summary": "Plan (2026-07-08, wild-cooking-book.md) : playlists candidates par genre, vote public jusqu'à 20 votes, bascule 2h via AzuraCastAdminAPI, puis retour grille normale. Pas encore codé." },
-    { "id": "GitHubRepo", "label": "abg5f/kalbassfm-player (GitHub)", "type": "infra", "summary": "Dépôt Git source du player, connecté à Vercel pour déploiement auto sur push." }
+    { "id": "GitHubRepo", "label": "abg5f/kalbassfm-player (GitHub)", "type": "infra", "summary": "Dépôt Git source du player, connecté à Vercel pour déploiement auto sur push." },
+    { "id": "api/chat.js", "label": "api/chat.js", "type": "file", "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur via cle chat:rate:<clientId> (SET EX 3 NX), refuse tout message contenant un lien (regex LINK_RE) avant même le rate-limit — anti-autopromo. Même squelette/repli que api/reactions.js." },
+    { "id": "ChatFeature", "label": "Chat live", "type": "feature", "summary": "Panneau #chatPanel dans index.html, place a l'emplacement de l'ancien bandeau ticker (supprime), ouvert par defaut. Pseudo anonyme auto-genere (Auditeur-XXXX, localStorage kfm_client_id), poll toutes les 3s, cooldown client 3s apres envoi, validation anti-lien cote client (retour immediat) + cote serveur (application reelle)." },
+    { "id": "ContactPopup", "label": "Popup contact (Owned by Lupari)", "type": "feature", "summary": "Remplace le lien mailto direct du footer par un bouton ouvrant une modale (#contactModal) avec deux choix : email (mailto) ou Instagram @luparimusic. Fermeture par clic sur le fond ou touche Echap." }
   ],
   "edges": [
     { "source": "index.html", "target": "NowPlayingAPI", "relation": "poll toutes les 8s", "weight": 3 },
@@ -92,6 +95,12 @@
     { "source": "tools/normalize_and_dedup_metadata.py", "target": "tools/analyze_essentia.py", "relation": "répare le metadata.json produit par", "weight": 2 },
     { "source": "JinglesFeature", "target": "AzuraCast", "relation": "configurée nativement dans", "weight": 2 },
     { "source": "JinglesFeature", "target": "tools/build_rotation.py", "relation": "indépendante de (pas de collision au ré-export)", "weight": 1 },
-    { "source": "VercelKV", "target": "TopFiveFeature", "relation": "rend fonctionnel le classement partagé de", "weight": 2 }
+    { "source": "VercelKV", "target": "TopFiveFeature", "relation": "rend fonctionnel le classement partagé de", "weight": 2 },
+    { "source": "index.html", "target": "ChatFeature", "relation": "implémente l'UI de", "weight": 2 },
+    { "source": "ChatFeature", "target": "api/chat.js", "relation": "poll GET / envoie POST sur", "weight": 3 },
+    { "source": "api/chat.js", "target": "VercelKV", "relation": "lit/écrit via REST", "weight": 3 },
+    { "source": "api/chat.js", "target": "Vercel", "relation": "déployée sur", "weight": 2 },
+    { "source": "index.html", "target": "ContactPopup", "relation": "implémente l'UI de", "weight": 1 },
+    { "source": "ChatFeature", "target": "VotingSystemPlan", "relation": "confirme la faisabilité du pattern polling+Redis retenu par", "weight": 1 }
   ]
 }
