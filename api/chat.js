@@ -9,7 +9,12 @@
    Structure Redis :
    - liste "chat:messages"       : JSON {id, nick, text, ts} par entree, LPUSH + LTRIM a 99
    - cle "chat:rate:<clientId>"  : pose avec EX 3 NX, bloque l'envoi suivant pendant 3s
+
+   Anti-autopromo : tout message contenant un lien (http(s)://, www., ou un
+   domaine du type "motacle.com") est refuse avant meme le rate-limit — pas
+   de bannissement, juste un refus systematique des liens dans le chat.
 */
+const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|me|tv|info|biz|xyz|gg|app|shop))/i;
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -43,6 +48,7 @@ export default async function handler(req, res) {
   const text = (body.text || '').toString().trim().slice(0, 200);
 
   if (!clientId || !text) return res.status(200).json({ enabled: true, ok: false });
+  if (LINK_RE.test(text)) return res.status(200).json({ enabled: true, ok: false, blocked: 'link' });
 
   try {
     const lockJ = await kv('set', `chat:rate:${clientId}`, '1', 'EX', '3', 'NX');

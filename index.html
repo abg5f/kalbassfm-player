@@ -287,26 +287,6 @@
       100% { opacity: 0; transform: translateY(-46px) scale(1.5); }
     }
 
-    /* ── Ticker ── */
-    .ticker {
-      border-bottom: 3px solid var(--border);
-      background: var(--accent);
-      overflow: hidden;
-      padding: 7px 0;
-    }
-    .ticker-inner {
-      display: inline-block;
-      white-space: nowrap;
-      font-family: 'Space Mono', monospace;
-      font-size: .62rem;
-      font-weight: 700;
-      color: var(--bg);
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      animation: ticker 80s linear infinite;
-    }
-    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
     /* ── Controls ── */
     .controls {
       padding: 18px;
@@ -577,6 +557,12 @@
     .chat-send { flex-shrink: 0; }
     .chat-send:disabled { opacity: .4; cursor: default; }
     .chat-send:disabled:hover { border-color: var(--track); color: var(--fg); }
+    .chat-error {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      color: #E0322F;
+      margin-top: 8px;
+    }
 
     /* ── Footer ── */
     .footer {
@@ -824,11 +810,20 @@
       </div>
     </div>
 
-    <div class="ticker" aria-label="KALBASS FM — la webradio 100% électronique des Caraïbes, 24/7">
-      <div class="ticker-inner" aria-hidden="true">
-        <span id="tickerText"></span><span id="tickerText2"></span>
+    <details class="panel" id="chatPanel" open>
+      <summary>
+        <span class="panel-summary-label">Chat live</span>
+        <span class="chev">›</span>
+      </summary>
+      <div class="panel-body">
+        <div class="chat-list" id="chatList"></div>
+        <p class="chat-error" id="chatError" style="display:none"></p>
+        <form class="chat-form" id="chatForm">
+          <input class="chat-input" id="chatInput" type="text" maxlength="200" placeholder="Un message..." autocomplete="off" aria-label="Message du chat">
+          <button class="chip chat-send" id="chatSend" type="submit">Envoyer</button>
+        </form>
       </div>
-    </div>
+    </details>
 
     <div class="controls">
       <button class="btn-ghost" disabled aria-label="Piste précédente (non disponible en direct)">
@@ -877,20 +872,6 @@
       </summary>
       <div class="panel-body">
         <div id="topList"></div>
-      </div>
-    </details>
-
-    <details class="panel" id="chatPanel">
-      <summary>
-        <span class="panel-summary-label">Chat live</span>
-        <span class="chev">›</span>
-      </summary>
-      <div class="panel-body">
-        <div class="chat-list" id="chatList"></div>
-        <form class="chat-form" id="chatForm">
-          <input class="chat-input" id="chatInput" type="text" maxlength="200" placeholder="Un message..." autocomplete="off" aria-label="Message du chat">
-          <button class="chip chat-send" id="chatSend" type="submit">Envoyer</button>
-        </form>
       </div>
     </details>
 
@@ -969,6 +950,7 @@
   const chatForm  = document.getElementById('chatForm');
   const chatInput = document.getElementById('chatInput');
   const chatSend  = document.getElementById('chatSend');
+  const chatError = document.getElementById('chatError');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
   document.title = CONFIG.stationName + ' — FM Caraïbes';
@@ -1062,10 +1044,6 @@
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
     if (playing) startViz(); else stopViz();
   }
-
-  const TICKER_MSG = 'KALBASS FM ★ LA WEBRADIO 100% ÉLECTRONIQUE DES CARAÏBES ★ 24/7 ★ HOUSE · DISCO · TECH HOUSE · TECHNO ★ ';
-  document.getElementById('tickerText').textContent  = TICKER_MSG.repeat(3);
-  document.getElementById('tickerText2').textContent = TICKER_MSG.repeat(3);
 
   /* ── Flux ── */
   let corsOk = true;
@@ -1277,20 +1255,34 @@
   pollChat();
   setInterval(pollChat, 3000);
 
+  // Refuse les liens dans le chat (anti-autopromo) — meme regle que api/chat.js,
+  // verifiee cote client pour un retour immediat sans attendre le serveur.
+  const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|me|tv|info|biz|xyz|gg|app|shop))/i;
+  let chatErrorTimer = null;
+  function showChatError(msg) {
+    chatError.textContent = msg;
+    chatError.style.display = 'block';
+    clearTimeout(chatErrorTimer);
+    chatErrorTimer = setTimeout(() => { chatError.style.display = 'none'; }, 4000);
+  }
+
   let chatCooldown = false;
   chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text || chatCooldown) return;
+    if (LINK_RE.test(text)) { showChatError('Les liens ne sont pas autorisés dans le chat.'); return; }
     chatCooldown = true;
     chatSend.disabled = true;
     chatInput.value = '';
     try {
-      await fetch('/api/chat', {
+      const r = await fetch('/api/chat', {
         method: 'POST', cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId, nick: chatNick, text }),
       });
+      const j = await r.json();
+      if (j.blocked === 'link') showChatError('Les liens ne sont pas autorisés dans le chat.');
       pollChat();
     } catch {}
     setTimeout(() => { chatCooldown = false; chatSend.disabled = false; }, 3000);
