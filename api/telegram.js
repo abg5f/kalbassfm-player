@@ -59,8 +59,42 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? '✅ Message envoye dans le chat live.' : '❌ Echec de l\'envoi (store non configure ?).');
   }
 
+  if (text === '/jingle') {
+    const r = await triggerJingle();
+    return sendMessage(token, chatId, r.message);
+  }
+
+  if (text.startsWith('/ban')) {
+    const id = text.slice(4).trim();
+    if (!id) return sendMessage(token, chatId, 'Usage : /ban <clientId> (copie-le depuis une notification de chat)');
+    const ok = await setBanned(id, true);
+    return sendMessage(token, chatId, ok ? `🔨 Banni : ${id}` : '❌ Echec (store non configure ?).');
+  }
+
+  if (text.startsWith('/unban')) {
+    const id = text.slice(6).trim();
+    if (!id) return sendMessage(token, chatId, 'Usage : /unban <clientId>');
+    const ok = await setBanned(id, false);
+    return sendMessage(token, chatId, ok ? `✅ Debanni : ${id}` : '❌ Echec (store non configure ?).');
+  }
+
+  if (text === '/pause_chat') {
+    const ok = await setPaused(true);
+    return sendMessage(token, chatId, ok ? '⏸ Chat en pause — plus personne ne peut poster.' : '❌ Echec (store non configure ?).');
+  }
+
+  if (text === '/resume_chat') {
+    const ok = await setPaused(false);
+    return sendMessage(token, chatId, ok ? '▶️ Chat réactivé.' : '❌ Echec (store non configure ?).');
+  }
+
   return sendMessage(token, chatId,
-    'Commandes disponibles :\n/skip — passer au morceau suivant\n/msg <texte> — envoyer un message admin dans le chat live');
+    'Commandes disponibles :\n' +
+    '/skip — passer au morceau suivant\n' +
+    '/msg <texte> — envoyer un message admin dans le chat live\n' +
+    '/jingle — declencher un jingle (best effort)\n' +
+    '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
+    '/pause_chat / /resume_chat — couper/reactiver le chat');
 }
 
 async function handleCallback(token, cb) {
@@ -73,6 +107,11 @@ async function handleCallback(token, cb) {
     const id = data.slice(4);
     await markDeleted(id);
     await answerCallback(token, cb.id, 'Supprimé ✅');
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('ban:')) {
+    const id = data.slice(4);
+    await setBanned(id, true);
+    await answerCallback(token, cb.id, 'Banni ✅');
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
@@ -88,6 +127,38 @@ async function skipSong() {
     headers: { 'X-API-Key': apiKey },
   });
   return { ok: r.ok, status: r.status };
+}
+
+// Best effort : AzuraCast n'a pas d'API "jouer immediatement", seule l'API
+// Requests existe (queue le morceau, pas instantane, peut refuser un jingle
+// rejoue trop recemment). Necessite "Autoriser les demandes" active sur la
+// playlist Jingles dans AzuraCast.
+async function triggerJingle() {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  try {
+    const listRes = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/requests`, {
+      headers: apiKey ? { 'X-API-Key': apiKey } : {},
+    });
+    if (!listRes.ok) return { message: `Echec de la liste des demandes (${listRes.status}).` };
+    const list = await listRes.json();
+    const jingles = (Array.isArray(list) ? list : []).filter((r) => {
+      const song = r.song || {};
+      const hay = `${song.title || ''} ${song.artist || ''}`.toLowerCase();
+      return hay.includes('jingle');
+    });
+    if (!jingles.length) {
+      return { message: 'Aucun jingle trouvable — vérifie que la playlist Jingles autorise les demandes dans AzuraCast.' };
+    }
+    const pick = jingles[Math.floor(Math.random() * jingles.length)];
+    const subRes = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/request/${encodeURIComponent(pick.request_id)}`, {
+      method: 'POST',
+      headers: apiKey ? { 'X-API-Key': apiKey } : {},
+    });
+    const sub = await subRes.json().catch(() => ({}));
+    return { message: sub.message || (subRes.ok ? '🎙 Jingle demandé.' : `Echec (${subRes.status}).`) };
+  } catch {
+    return { message: '❌ Erreur réseau vers AzuraCast.' };
+  }
 }
 
 /* ---- Redis (memes cles que api/chat.js) ---- */
@@ -112,6 +183,21 @@ async function markDeleted(id) {
   const kv = kvClient();
   if (!kv || !id) return;
   await kv('hset', 'chat:deleted', id, '1');
+}
+
+async function setBanned(clientId, banned) {
+  const kv = kvClient();
+  if (!kv || !clientId) return false;
+  await kv(banned ? 'sadd' : 'srem', 'chat:banned', clientId);
+  return true;
+}
+
+async function setPaused(paused) {
+  const kv = kvClient();
+  if (!kv) return false;
+  if (paused) await kv('set', 'chat:paused', '1');
+  else await kv('del', 'chat:paused');
+  return true;
 }
 
 /* ---- Telegram ---- */

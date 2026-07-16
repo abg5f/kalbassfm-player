@@ -56,6 +56,18 @@ export default async function handler(req, res) {
   const text = (body.text || '').toString().trim().slice(0, 200);
 
   if (!clientId || !text) return res.status(200).json({ enabled: true, ok: false });
+
+  try {
+    const [pausedJ, bannedJ] = await Promise.all([
+      kv('get', 'chat:paused'),
+      kv('sismember', 'chat:banned', clientId),
+    ]);
+    if (pausedJ.result) return res.status(200).json({ enabled: true, ok: false, paused: true });
+    if (bannedJ.result) return res.status(200).json({ enabled: true, ok: false, banned: true });
+  } catch {
+    return res.status(200).json({ enabled: false, ok: false });
+  }
+
   if (LINK_RE.test(text)) return res.status(200).json({ enabled: true, ok: false, blocked: 'link' });
 
   try {
@@ -65,18 +77,24 @@ export default async function handler(req, res) {
     const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
-    await notifyTelegram(msg);
+    await notifyTelegram(msg, clientId);
     return res.status(200).json({ enabled: true, ok: true });
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
   }
 }
 
-// Relaie chaque nouveau message vers l'admin Telegram avec un bouton de
-// suppression inline — permet de moderer sans passer par le dashboard.
-// No-op silencieux si le bot n'est pas configure ou en cas d'erreur reseau :
-// la publication du message dans le chat ne doit jamais en dependre.
-async function notifyTelegram(msg) {
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+// Relaie chaque nouveau message vers l'admin Telegram avec des boutons inline
+// "Supprimer" / "Bannir" (par clientId, le meme identifiant que le rate-limit
+// ci-dessus — le pseudo affiche est falsifiable par le client, pas le clientId
+// utilise ailleurs comme source de verite). No-op silencieux si le bot n'est
+// pas configure ou en cas d'erreur reseau : la publication du message dans le
+// chat ne doit jamais en dependre.
+async function notifyTelegram(msg, clientId) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
@@ -86,8 +104,12 @@ async function notifyTelegram(msg) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: `${msg.nick}: ${msg.text}`,
-        reply_markup: { inline_keyboard: [[{ text: '🗑 Supprimer', callback_data: 'del:' + msg.id }]] },
+        parse_mode: 'HTML',
+        text: `${escapeHtml(msg.nick)}: ${escapeHtml(msg.text)}\n<code>${escapeHtml(clientId)}</code>`,
+        reply_markup: { inline_keyboard: [[
+          { text: '🗑 Supprimer', callback_data: 'del:' + msg.id },
+          { text: '🔨 Bannir', callback_data: 'ban:' + clientId },
+        ]] },
       }),
     });
   } catch {}
