@@ -122,10 +122,27 @@
         display: flex;
         flex-direction: column;
         border-left: 3px solid var(--border);
+        /* height:0 + min-height:100% : la colonne remplit la ligne de grille
+           sans jamais la dimensionner — c'est la colonne principale qui fixe
+           la hauteur, et le chat scrolle dans l'espace restant. */
+        height: 0;
+        min-height: 100%;
       }
-      #chatPanel { display: flex; flex-direction: column; min-height: 0; border-bottom: none; }
-      #chatPanel .panel-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-      .chat-list { max-height: 50vh; }
+      #chatPanel { border-bottom: none; }
+      /* Chrome enveloppe le contenu d'un <details> dans le pseudo-element
+         ::details-content : c'est lui qu'il faut etirer, sinon .panel-body
+         vit hors de la chaine flex et deborde de la colonne sans scroll.
+         La liste prend alors exactement l'espace disponible de la colonne et
+         scrolle dedans (selecteur .sidebar-col .chat-list : la regle de base
+         `.chat-list { max-height: 260px }` est declaree plus bas et gagnerait
+         sinon). Navigateurs sans ::details-content : repli sur ce cap 260px
+         de base — liste plus courte mais toujours scrollable, jamais rognee. */
+      @supports selector(::details-content) {
+        #chatPanel[open] { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        #chatPanel::details-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        #chatPanel .panel-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        .sidebar-col .chat-list { flex: 1; min-height: 120px; max-height: none; }
+      }
     }
 
     /* App installée (standalone / fullscreen) : plein écran bord-à-bord,
@@ -1336,6 +1353,8 @@
       });
       const j = await r.json();
       if (j.blocked === 'link') showChatError('Les liens ne sont pas autorisés dans le chat.');
+      else if (j.banned) showChatError('Tu ne peux plus poster de messages dans ce chat.');
+      else if (j.paused) showChatError('Le chat est temporairement en pause.');
       pollChat();
     } catch {}
     setTimeout(() => { chatCooldown = false; chatSend.disabled = false; }, 3000);
