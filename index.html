@@ -274,7 +274,6 @@
       color: var(--accent);
     }
     .chip-fire.pop { animation: pop 340ms ease; }
-    .chip-fire.voted { background: var(--accent); color: var(--bg); }
     @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
     .fire-float {
       position: fixed;
@@ -1025,25 +1024,11 @@
     }
   });
 
-  /* ── Réactions 🔥 = vote (compteur partagé via /api/reactions, sinon local) ── */
-  const REACTED = new Set(JSON.parse(localStorage.getItem('kfm_reacted') || '[]'));
-  function saveReacted() { localStorage.setItem('kfm_reacted', JSON.stringify([...REACTED].slice(-200))); }
-
-  // Identifiant anonyme persistant, pour limiter chaque auditeur a 1 vote par
-  // morceau cote serveur (au-dela du simple hint visuel local REACTED).
-  function getVoterId() {
-    let v = localStorage.getItem('kfm_voter_id');
-    if (!v) {
-      v = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
-      localStorage.setItem('kfm_voter_id', v);
-    }
-    return v;
-  }
-  const voterId = getVoterId();
-
+  /* ── Réactions 🔥 = vote (compteur partagé via /api/reactions, sinon local) ──
+     Votes libres : pas de limite, chacun peut voter plusieurs fois pour faire
+     monter un morceau dans le classement. */
   async function loadReactions(id) {
     reactBtn.disabled = false;
-    reactBtn.classList.toggle('voted', REACTED.has(id));
     if (!id) { reactCount.textContent = '0'; return; }
     try {
       const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), { cache: 'no-store' });
@@ -1054,25 +1039,24 @@
   }
   reactBtn.addEventListener('click', async (e) => {
     const id = current.songId;
-    if (!id || REACTED.has(id)) return; // 1 vote par morceau par auditeur
+    if (!id) return;
     reactCount.textContent = (parseInt(reactCount.textContent, 10) || 0) + 1;
     reactBtn.classList.remove('pop'); void reactBtn.offsetWidth; reactBtn.classList.add('pop');
-    reactBtn.classList.add('voted');
     // petit 🔥 qui s'envole
     const f = document.createElement('div');
     f.className = 'fire-float'; f.textContent = '🔥';
     f.style.left = e.clientX - 8 + 'px'; f.style.top = e.clientY - 12 + 'px';
     document.body.appendChild(f); setTimeout(() => f.remove(), 900);
-    REACTED.add(id); saveReacted();
     try {
       const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), {
         method: 'POST', cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, voterId, title: current.title, artist: current.artist, art: current.art }),
+        body: JSON.stringify({ id, title: current.title, artist: current.artist, art: current.art }),
       });
       const j = await r.json();
       if (j.enabled && typeof j.count === 'number') reactCount.textContent = j.count;
     } catch {}
+    pollTop();
   });
 
   /* ── Top 5 des votes ── */
@@ -1111,7 +1095,7 @@
     }
   }
   pollTop();
-  setInterval(pollTop, 30000);
+  setInterval(pollTop, 4000);
 
   /* ── Historique ── */
   function renderHistory(hist) {

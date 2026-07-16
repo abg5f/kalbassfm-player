@@ -5,10 +5,12 @@
    Sans store configure, renvoie { enabled:false } et le front bascule
    en mode local — jamais d'erreur visible.
 
+   Votes libres : pas de limite par auditeur, chacun peut voter autant de
+   fois qu'il veut pour faire monter un morceau dans le classement.
+
    Structure Redis :
    - sorted set "leaderboard"  : score = nombre de votes, membre = id du morceau
    - hash "meta:<id>"          : title / artist / art du morceau (pour le Top 5)
-   - set "voters:<id>"         : ids anonymes des auditeurs ayant deja vote pour ce morceau
 */
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -58,33 +60,23 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---- POST : voter pour un morceau (1 vote / morceau / auditeur) ----
+  // ---- POST : voter pour un morceau (votes libres, sans limite) ----
   const body = req.body || {};
-  const rawVoter = (body.voterId || req.query.voterId || '').toString();
-  const voterId = rawVoter.slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, '') || null;
   const title = (body.title || '').toString().slice(0, 200);
   const artist = (body.artist || '').toString().slice(0, 200);
   const art = (body.art || '').toString().slice(0, 500);
 
   try {
-    let alreadyVoted = false;
-    if (voterId) {
-      const sj = await kv('sadd', `voters:${id}`, voterId);
-      alreadyVoted = sj.result === 0;
-    }
-
-    if (!alreadyVoted) {
-      await kv('zincrby', 'leaderboard', '1', id);
-      const fields = [];
-      if (title) fields.push('title', title);
-      if (artist) fields.push('artist', artist);
-      if (art) fields.push('art', art);
-      if (fields.length) await kv('hset', `meta:${id}`, ...fields);
-    }
+    await kv('zincrby', 'leaderboard', '1', id);
+    const fields = [];
+    if (title) fields.push('title', title);
+    if (artist) fields.push('artist', artist);
+    if (art) fields.push('art', art);
+    if (fields.length) await kv('hset', `meta:${id}`, ...fields);
 
     const j = await kv('zscore', 'leaderboard', id);
     const count = parseInt(j.result ?? 0, 10) || 0;
-    return res.status(200).json({ enabled: true, count, alreadyVoted });
+    return res.status(200).json({ enabled: true, count });
   } catch {
     return res.status(200).json({ enabled: false, count: 0 });
   }
