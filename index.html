@@ -630,6 +630,53 @@
     }
     .donate-link:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--border); }
     .donate-link:active { transform: translate(4px, 4px); box-shadow: none; }
+    button.donate-link { font-family: 'Space Mono', monospace; }
+
+    /* ── Popup de contact ── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal-box {
+      position: relative;
+      background: var(--card);
+      border: 3px solid var(--border);
+      box-shadow: 5px 5px 0 var(--accent);
+      padding: 22px 20px 20px;
+      max-width: 320px;
+      width: 100%;
+    }
+    .modal-title {
+      font-weight: 700;
+      font-size: .82rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .modal-actions .donate-link { text-align: center; }
+    .modal-close {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 6px;
+    }
 
     /* ── Bandeau d'installation (mobile) ── */
     .install-toast {
@@ -823,7 +870,7 @@
       </div>
     </details>
 
-    <details class="panel" id="topPanel">
+    <details class="panel" id="topPanel" open>
       <summary>
         <span class="panel-summary-label">Top 5 🔥</span>
         <span class="chev">›</span>
@@ -855,11 +902,22 @@
       </div>
       <div class="footer-donate">
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
-        <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">Owned by Lupari</a>
+        <button type="button" class="donate-link" id="ownedByBtn">Owned by Lupari</button>
       </div>
     </div>
 
   </main>
+
+  <div class="modal-backdrop" id="contactModal" role="dialog" aria-modal="true" aria-label="Contacter Lupari">
+    <div class="modal-box">
+      <button class="modal-close" id="contactModalClose" aria-label="Fermer">✕</button>
+      <div class="modal-title">Contacter Lupari</div>
+      <div class="modal-actions">
+        <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">✉ Envoyer un email</a>
+        <a href="https://www.instagram.com/luparimusic/" target="_blank" rel="noopener noreferrer" class="donate-link">📷 Instagram @luparimusic</a>
+      </div>
+    </div>
+  </div>
 
   <div class="install-toast" id="installToast" role="dialog" aria-label="Installer KALBASS FM">
     <div class="install-toast-icon" aria-hidden="true">📻</div>
@@ -1410,6 +1468,14 @@
 
   document.getElementById('installToastClose').addEventListener('click', dismissInstallToast);
   document.getElementById('installToastLater').addEventListener('click', dismissInstallToast);
+
+  /* ── Popup de contact ("Owned by Lupari") ── */
+  const contactModal = document.getElementById('contactModal');
+  function closeContactModal() { contactModal.classList.remove('show'); }
+  document.getElementById('ownedByBtn').addEventListener('click', () => contactModal.classList.add('show'));
+  document.getElementById('contactModalClose').addEventListener('click', closeContactModal);
+  contactModal.addEventListener('click', (e) => { if (e.target === contactModal) closeContactModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContactModal(); });
 
   // iOS et certains navigateurs mobiles ne declenchent jamais beforeinstallprompt :
   // on programme un affichage de repli independant de l'evenement natif.
