@@ -341,6 +341,15 @@
     }
     .chip-fire.pop { animation: pop 340ms ease; }
     @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+    .chip-fire.capped { opacity: .6; }
+    .chip-fire.shake { animation: shake 380ms ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
     .fire-float {
       position: fixed;
       pointer-events: none;
@@ -1308,23 +1317,42 @@
   });
 
   /* ── Réactions 🔥 = vote (compteur partagé via /api/reactions, sinon local) ──
-     Plafonné à 10 votes / auditeur / morceau côté serveur (clientId anonyme,
-     même identifiant que le chat) — évite les chiffres qui grimpent à l'infini
-     en spammant le bouton, tout en gardant le vote libre en dessous du plafond. */
+     Le total affiché reste celui de tous les auditeurs (utile pour le Top 5),
+     mais le serveur plafonne à 10 la contribution d'un seul clientId par
+     morceau. Le front suit sa propre part (yourVotes, renvoyée par l'API) pour
+     bloquer visuellement LE BOUTON dès que CET auditeur atteint son quota —
+     sans quoi les clics restent optimistiquement incrémentés à l'écran même
+     une fois le serveur passé en mode "capped", ce qui donnait l'impression
+     que le plafond ne servait à rien. */
+  const MAX_VOTES_PER_USER = 10;
+  let yourVotes = 0;
+  function applyCappedState() {
+    reactBtn.classList.toggle('capped', yourVotes >= MAX_VOTES_PER_USER);
+  }
   async function loadReactions(id) {
     reactBtn.disabled = false;
-    if (!id) { reactCount.textContent = '0'; return; }
+    yourVotes = 0;
+    if (!id) { reactCount.textContent = '0'; applyCappedState(); return; }
     try {
-      const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), { cache: 'no-store' });
+      const r = await fetch('/api/reactions?id=' + encodeURIComponent(id) + '&clientId=' + encodeURIComponent(clientId), { cache: 'no-store' });
       const j = await r.json();
       reactCount.textContent = j.count ?? 0;
+      yourVotes = j.yourVotes || 0;
     } catch { reactCount.textContent = reactCount.textContent || '0'; }
     reactBtn.classList.toggle('chip-fire', true);
+    applyCappedState();
   }
   reactBtn.addEventListener('click', async (e) => {
     const id = current.songId;
     if (!id) return;
+    if (yourVotes >= MAX_VOTES_PER_USER) {
+      reactBtn.classList.remove('shake'); void reactBtn.offsetWidth; reactBtn.classList.add('shake');
+      showToast('🔥 10 max per track — that\'s enough love! 😉');
+      return;
+    }
     reactCount.textContent = (parseInt(reactCount.textContent, 10) || 0) + 1;
+    yourVotes += 1;
+    applyCappedState();
     reactBtn.classList.remove('pop'); void reactBtn.offsetWidth; reactBtn.classList.add('pop');
     // petit 🔥 qui s'envole
     const f = document.createElement('div');
@@ -1338,6 +1366,9 @@
         body: JSON.stringify({ id, title: current.title, artist: current.artist, art: current.art, clientId }),
       });
       const j = await r.json();
+      if (typeof j.yourVotes === 'number') yourVotes = j.yourVotes;
+      applyCappedState();
+      if (j.capped) showToast('🔥 10 max per track — that\'s enough love! 😉');
       if (j.enabled && typeof j.count === 'number') reactCount.textContent = j.count;
     } catch {}
     pollTop();
@@ -1641,8 +1672,10 @@
     streakBadge.innerHTML = '🔥 <b>' + s.current + '-day</b> streak' + (s.longest > s.current ? ' · best ' + s.longest : '');
     streakBadge.classList.add('show');
   }
+  // Toast generique (bandeau bas d'ecran) : reutilise par le streak ET par le
+  // plafond de votes 🔥, ce n'est qu'un composant d'affichage partage.
   let streakToastTimer = null;
-  function showStreakToast(text) {
+  function showToast(text) {
     streakToast.textContent = text;
     streakToast.classList.add('show');
     clearTimeout(streakToastTimer);
@@ -1654,7 +1687,7 @@
     if (hit && s.lastMilestone !== hit.n) {
       s.lastMilestone = hit.n;
       saveStreak(s);
-      showStreakToast(hit.emoji + ' ' + hit.n + '-day streak! Respect 🙌');
+      showToast(hit.emoji + ' ' + hit.n + '-day streak! Respect 🙌');
     }
   }
   function markStreakDay() {

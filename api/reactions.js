@@ -65,15 +65,20 @@ export default async function handler(req, res) {
   const rawId = (req.query.id || (req.body && req.body.id) || '').toString();
   const id = rawId.slice(0, 120).replace(/[^a-zA-Z0-9_-]/g, '_') || 'unknown';
 
-  // ---- GET ?id=... : score actuel d'un morceau ----
+  // ---- GET ?id=...[&clientId=...] : score du morceau + votes de cet auditeur ----
   if (req.method === 'GET') {
     try {
       const epoch = await getEpoch(kv);
-      const j = await kv('zscore', `leaderboard:${epoch}`, id);
+      const clientId = (req.query.clientId || '').toString().slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, '') || null;
+      const [j, uj] = await Promise.all([
+        kv('zscore', `leaderboard:${epoch}`, id),
+        clientId ? kv('hget', `votes:${epoch}:${id}`, clientId) : Promise.resolve({ result: 0 }),
+      ]);
       const count = parseInt(j.result ?? 0, 10) || 0;
-      return res.status(200).json({ enabled: true, count });
+      const yourVotes = parseInt(uj.result ?? 0, 10) || 0;
+      return res.status(200).json({ enabled: true, count, yourVotes });
     } catch {
-      return res.status(200).json({ enabled: false, count: 0 });
+      return res.status(200).json({ enabled: false, count: 0, yourVotes: 0 });
     }
   }
 
@@ -105,7 +110,7 @@ export default async function handler(req, res) {
       await kv('hincrby', votesKey, clientId, '-1'); // annule le vote en trop
       const j = await kv('zscore', `leaderboard:${epoch}`, id);
       const count = parseInt(j.result ?? 0, 10) || 0;
-      return res.status(200).json({ enabled: true, count, capped: true });
+      return res.status(200).json({ enabled: true, count, capped: true, yourVotes: MAX_VOTES_PER_USER });
     }
     await kv('expire', votesKey, '2592000'); // 30 jours, borne la croissance
 
@@ -123,7 +128,7 @@ export default async function handler(req, res) {
 
     const j = await kv('zscore', `leaderboard:${epoch}`, id);
     const count = parseInt(j.result ?? 0, 10) || 0;
-    return res.status(200).json({ enabled: true, count });
+    return res.status(200).json({ enabled: true, count, yourVotes: userCount });
   } catch {
     return res.status(200).json({ enabled: false, count: 0 });
   }
