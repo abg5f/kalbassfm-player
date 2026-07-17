@@ -3,3 +3,6 @@
 Jingles/
 tools/__pycache__/
 tools/triage_report.html
+tools/migration_report.csv
+tools/migration_sftp.txt
+tools/orphans_report.txt

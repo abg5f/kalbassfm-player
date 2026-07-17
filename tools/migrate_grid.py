@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
-"""Migration one-shot : grille 4 creneaux -> grille 6 creneaux "arc d'ambiance".
+"""Migration one-shot : grille 4 creneaux -> 8 bacs "horloge a bacs ponderes".
 
-    1_sunrise    06h-09h  Eveil doux        (ambient, downtempo, deep house lente)
-    2_groove     09h-13h  Groove solaire    (disco, funk, soul, nu-disco, house groovy)
-    3_breeze     13h-17h  Eclectique        (house, UK garage, electro mid-tempo)
-    4_sunset     17h-20h  Coucher de soleil (deep/melodic house)
-    5_club       20h-00h  Club              (tech house, techno, jungle/dnb, speed garage)
-    6_deep_night 00h-06h  Nuit profonde     (deep/minimal techno, redescente)
+Modele radio pro (FIP/Radio Meuh) : des BACS curates (genre d'abord, energie
+ensuite), une HORLOGE cote AzuraCast (playlists planifiees + poids), la variete
+quotidienne assuree par le mode Shuffled + Avoid Duplicate Artists/Titles.
+L'ordre de lecture n'est plus jamais calcule localement (plus de prefixe NNN_).
+
+    1_chill      Ambient, Downtempo, deep house lente, jungle chill
+    2_groove     Disco, Funk, Soul, Boogie, Nu-Disco, house solaire
+    3_house      House eclectique diurne, UK Garage, Electro mid-tempo
+    4_deep       House deep/melodique crepusculaire, trance douce
+    5_clubhouse  Tech house / house club, Speed Garage, Electro energique
+    6_techno     Techno, trance energique, jungle tres club (>= 0.70)
+    7_nightdub   Deep/minimal/dub techno (< 0.6)
+    8_jungle     PONCTUATION : jungle/dnb 0.45-0.70 (1 titre / 14 chansons, nuit)
 
 Usage :
     python migrate_grid.py            # dry-run : rapport seul, rien n'est deplace
-    python migrate_grid.py --apply    # deplace les fichiers + met a jour metadata.json
+    python migrate_grid.py --apply    # deplace les fichiers + metadata.json + script WinSCP
 
-Pattern dry-run/--apply habituel du projet. Garde-fou : refuse de tourner tant
-que _incoming contient encore des fichiers a traiter (triage pas fini) — la
-classification doit partir du metadata.json complet post-triage.
+Garde-fou : refuse de tourner tant que _incoming contient des fichiers a
+traiter (triage pas fini) — la classification part du metadata.json complet.
 
-La classification (genre d'abord, energie ensuite) doit rester coherente avec
-classify_slot() dans triage_new_tracks.py une fois la grille en place.
+La classification doit rester coherente avec classify_bin() dans
+triage_new_tracks.py une fois la grille en place.
 """
 import csv
 import json
@@ -29,40 +35,29 @@ import re
 ROOT = r"C:\Users\ph.dufourcq\Music\00_AZURACAST"
 NEW_PROG = os.path.join(ROOT, "New_prog")
 INCOMING = os.path.join(ROOT, "_incoming")
-METADATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metadata.json")
-REPORT_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "migration_report.csv")
+TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+METADATA = os.path.join(TOOLS_DIR, "metadata.json")
+REPORT_CSV = os.path.join(TOOLS_DIR, "migration_report.csv")
+SFTP_SCRIPT = os.path.join(TOOLS_DIR, "migration_sftp.txt")
 
 OLD_SLOTS = ["1_morning", "2_afternoon", "3_evening", "4_night"]
-NEW_SLOTS = ["1_sunrise", "2_groove", "3_breeze", "4_sunset", "5_club", "6_deep_night"]
 
-# Courbes (debut, fin) sur 0-1 — memes valeurs a reporter dans build_rotation.py
-# et triage_new_tracks.py au moment de la bascule.
-NEW_CURVES = {
-    "1_sunrise":    (0.15, 0.40),
-    "2_groove":     (0.35, 0.60),
-    "3_breeze":     (0.45, 0.65),
-    "4_sunset":     (0.50, 0.70),
-    "5_club":       (0.65, 0.90),
-    "6_deep_night": (0.70, 0.25),
-}
-
-# Seuils de la classification multi-criteres — ajustables si un creneau
-# ressort anorexique au dry-run.
-JUNGLE_CLUB_ENERGY = 0.55   # jungle/dnb : >= -> club, sinon deep_night
-GARAGE_CLUB_ENERGY = 0.60   # garage : >= (ou speed garage) -> club, sinon breeze
-TECHNO_CLUB_ENERGY = 0.60   # techno : >= -> club, sinon deep_night
-HOUSE_SUNRISE_MAX  = 0.35   # house : < -> sunrise
-HOUSE_DAY_MAX      = 0.55   # house : < -> groove/breeze (selon mood)
-HOUSE_SUNSET_MAX   = 0.68   # house : < -> sunset, sinon club
-HOUSE_GROOVE_MOOD  = 0.50   # house diurne : (happy+party)/2 >= -> groove, sinon breeze
+from classify_bins import (  # source de verite unique de la grille  # noqa: E402
+    NEW_BINS, ROTATION_BINS,
+    top_genre, compute_energies, compute_cutoffs, classify_bin,
+)
 
 PREFIX_RE = re.compile(r"^\d{3}_")
 AUDIO_EXTS = {".mp3", ".wav", ".flac", ".aiff", ".m4a", ".ogg"}
-FALLBACK_DURATION_S = 6 * 60  # si mutagen ne sait pas lire la duree
+FALLBACK_DURATION_S = 6 * 60
+
+# Prefixe distant pour le script WinSCP (racine media AzuraCast vue du SFTP).
+# A adapter si l'arborescence serveur differe.
+REMOTE_PREFIX = "/"
 
 
 def incoming_pending():
-    """Fichiers audio encore a traiter a la racine de _incoming (hors _duplicates/_failed)."""
+    """Fichiers audio encore a traiter a la racine de _incoming."""
     if not os.path.isdir(INCOMING):
         return 0
     count = 0
@@ -71,62 +66,6 @@ def incoming_pending():
         if os.path.isfile(p) and os.path.splitext(name)[1].lower() in AUDIO_EXTS:
             count += 1
     return count
-
-
-def top_genre(genres):
-    """Sous-genre Discogs du genre le mieux score ("Categorie---Sous-genre")."""
-    if not genres:
-        return ""
-    label = genres[0][0] if isinstance(genres[0], (list, tuple)) else str(genres[0])
-    return label.split("---")[-1].strip()
-
-
-def compute_energies(tracks):
-    """Energie 0-1 par morceau — meme formule que build_rotation.py :
-    0.5*rms normalise + 0.3*bpm normalise + 0.2*mood party."""
-    def norm(values):
-        lo, hi = min(values), max(values)
-        span = (hi - lo) or 1.0
-        return [(v - lo) / span for v in values]
-
-    rms_n = norm([t.get("rms", 0.0) for t in tracks])
-    bpm_n = norm([t.get("bpm", 0.0) for t in tracks])
-    energies = []
-    for t, r, b in zip(tracks, rms_n, bpm_n):
-        party = (t.get("mood") or {}).get("party", 0.0)
-        energies.append(0.5 * r + 0.3 * b + 0.2 * party)
-    return energies
-
-
-def classify(subgenre, energy, mood):
-    """Regles genre-d'abord, energie-ensuite de la grille arc d'ambiance."""
-    g = subgenre.lower()
-    mood = mood or {}
-
-    if any(k in g for k in ("ambient", "downtempo", "trip hop", "trip-hop")):
-        return "1_sunrise"
-    if any(k in g for k in ("disco", "funk", "soul", "boogie")):
-        return "2_groove"
-    if any(k in g for k in ("jungle", "drum n bass", "drum & bass", "drum and bass", "dnb", "d&b")):
-        return "5_club" if energy >= JUNGLE_CLUB_ENERGY else "6_deep_night"
-    if "garage" in g or "bassline" in g:
-        return "5_club" if ("speed" in g or energy >= GARAGE_CLUB_ENERGY) else "3_breeze"
-    if "techno" in g:
-        return "5_club" if energy >= TECHNO_CLUB_ENERGY else "6_deep_night"
-    if "house" in g:
-        if energy < HOUSE_SUNRISE_MAX:
-            return "1_sunrise"
-        if energy < HOUSE_DAY_MAX:
-            grooviness = (mood.get("happy", 0.0) + mood.get("party", 0.0)) / 2
-            return "2_groove" if grooviness >= HOUSE_GROOVE_MOOD else "3_breeze"
-        if energy < HOUSE_SUNSET_MAX:
-            return "4_sunset"
-        return "5_club"
-
-    # Fallback (electro, trance, synth-pop...) : milieu de courbe le plus proche.
-    def midpoint(curve):
-        return (curve[0] + curve[1]) / 2
-    return min(NEW_CURVES, key=lambda s: abs(energy - midpoint(NEW_CURVES[s])))
 
 
 def read_duration(path):
@@ -165,16 +104,20 @@ def main():
     print(f"{len(tracks)} morceaux dans metadata.json")
 
     energies = compute_energies(tracks)
+    cut = compute_cutoffs(tracks, energies)
+    print("\nSeuils calibres sur la bibliotheque (percentiles par famille) :")
+    for k in sorted(cut):
+        print(f"  {k:<18} {cut[k]:.3f}")
 
-    moves = []          # (track, energy, old_path, new_slot)
+    moves = []          # (track, energy, old_path, bin)
     missing = []
     for t, energy in zip(tracks, energies):
         path = t.get("path", "")
         if not os.path.isfile(path):
             missing.append(path)
             continue
-        slot = classify(top_genre(t.get("genres")), energy, t.get("mood"))
-        moves.append((t, energy, path, slot))
+        b = classify_bin(top_genre(t.get("genres")), energy, t.get("mood"), cut)
+        moves.append((t, energy, path, b))
 
     if missing:
         print(f"ATTENTION : {len(missing)} chemin(s) de metadata.json introuvable(s) sur disque :")
@@ -183,27 +126,42 @@ def main():
         if len(missing) > 10:
             print(f"  ... et {len(missing) - 10} autres")
 
-    # Rapport : effectifs + heures estimees par creneau
-    print("\nRepartition dans la nouvelle grille :")
-    print(f"{'creneau':<14} {'morceaux':>8} {'heures':>8}")
+    # Controle vetos : aucun techno / jungle non-chill en 1_chill / 2_groove
+    veto_violations = []
+    for t, energy, path, b in moves:
+        g = top_genre(t.get("genres")).lower()
+        if b in ("1_chill", "2_groove") and "techno" in g:
+            veto_violations.append(path)
+        if b == "2_groove" and any(k in g for k in ("jungle", "dnb", "drum")):
+            veto_violations.append(path)
+    print(f"\nControle vetos (techno/jungle en chill/groove) : "
+          f"{'OK, aucune violation' if not veto_violations else str(len(veto_violations)) + ' VIOLATION(S) !'}")
+
+    # Rapport : effectifs + heures estimees par bac
+    print("\nRepartition dans les 8 bacs :")
+    print(f"{'bac':<13} {'morceaux':>8} {'heures':>8}")
     total_h = 0.0
-    slot_counts = {s: 0 for s in NEW_SLOTS}
-    slot_hours = {s: 0.0 for s in NEW_SLOTS}
-    for t, energy, path, slot in moves:
-        slot_counts[slot] += 1
-        slot_hours[slot] += read_duration(path) / 3600
-    for s in NEW_SLOTS:
-        total_h += slot_hours[s]
-        flag = "  <-- ANOREXIQUE (< 4h)" if slot_hours[s] < 4 else ""
-        print(f"{s:<14} {slot_counts[s]:>8} {slot_hours[s]:>7.1f}h{flag}")
-    print(f"{'TOTAL':<14} {len(moves):>8} {total_h:>7.1f}h")
+    bin_counts = {b: 0 for b in NEW_BINS}
+    bin_hours = {b: 0.0 for b in NEW_BINS}
+    for t, energy, path, b in moves:
+        bin_counts[b] += 1
+        bin_hours[b] += read_duration(path) / 3600
+    for b in NEW_BINS:
+        total_h += bin_hours[b]
+        flag = ""
+        if b in ROTATION_BINS and bin_hours[b] < 4:
+            flag = "  <-- ANOREXIQUE (< 4h)"
+        elif b == "8_jungle":
+            flag = "  (ponctuation, pas de seuil)"
+        print(f"{b:<13} {bin_counts[b]:>8} {bin_hours[b]:>7.1f}h{flag}")
+    print(f"{'TOTAL':<13} {len(moves):>8} {total_h:>7.1f}h")
 
     # CSV detaille de tous les deplacements prevus
     with open(REPORT_CSV, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["ancien_chemin", "nouveau_creneau", "energie", "sous_genre"])
-        for t, energy, path, slot in moves:
-            w.writerow([path, slot, f"{energy:.3f}", top_genre(t.get("genres"))])
+        w.writerow(["ancien_chemin", "bac", "energie", "sous_genre"])
+        for t, energy, path, b in moves:
+            w.writerow([path, b, f"{energy:.3f}", top_genre(t.get("genres"))])
     print(f"\nDetail complet : {REPORT_CSV}")
 
     if not apply_mode:
@@ -212,18 +170,32 @@ def main():
 
     # ---- APPLY ----
     print("\nAPPLY : deplacement des fichiers...")
-    for s in NEW_SLOTS:
-        os.makedirs(os.path.join(NEW_PROG, s), exist_ok=True)
+    for b in NEW_BINS:
+        os.makedirs(os.path.join(NEW_PROG, b), exist_ok=True)
 
     new_paths = {}
+    sftp_lines = [f'# Script WinSCP genere par migrate_grid.py — renames cote serveur.',
+                  f'# ATTENTION : suppose que les noms de fichiers serveur = noms locaux',
+                  f'# AVANT migration. Si le serveur a d\'autres noms (vieux uploads),',
+                  f'# preferer une synchro WinSCP complete des nouveaux dossiers.',
+                  f'# Adapter REMOTE_PREFIX ({REMOTE_PREFIX}) si besoin.']
+    for b in NEW_BINS:
+        sftp_lines.append(f'mkdir "{REMOTE_PREFIX}{b}"')
     moved = 0
-    for t, energy, path, slot in moves:
-        name = PREFIX_RE.sub("", os.path.basename(path))  # retire le prefixe NNN_ obsolete
-        target = unique_target(os.path.join(NEW_PROG, slot), name)
+    for t, energy, path, b in moves:
+        old_name = os.path.basename(path)
+        name = PREFIX_RE.sub("", old_name)  # retire le prefixe NNN_ : plus d'ordre encode
+        target = unique_target(os.path.join(NEW_PROG, b), name)
         shutil.move(path, target)
         new_paths[path] = target
+        old_slot = os.path.basename(os.path.dirname(path))
+        sftp_lines.append(f'mv "{REMOTE_PREFIX}{old_slot}/{old_name}" "{REMOTE_PREFIX}{b}/{os.path.basename(target)}"')
         moved += 1
     print(f"{moved} fichiers deplaces.")
+
+    with open(SFTP_SCRIPT, "w", encoding="utf-8") as f:
+        f.write("\n".join(sftp_lines) + "\n")
+    print(f"Script WinSCP : {SFTP_SCRIPT}")
 
     # metadata.json : mise a jour des chemins
     for t in tracks:
@@ -253,8 +225,8 @@ def main():
             else:
                 print(f"CONSERVE (non vide, a verifier a la main) : {folder}")
 
-    print("\nMigration terminee. Prochaines etapes : mettre a jour build_rotation.py,")
-    print("triage_new_tracks.py, export_rotation.py puis regenerer la rotation.")
+    print("\nMigration terminee. Prochaines etapes : mettre a jour triage_new_tracks.py,")
+    print("marquer build/export superseded, puis configurer les playlists AzuraCast.")
 
 
 if __name__ == "__main__":

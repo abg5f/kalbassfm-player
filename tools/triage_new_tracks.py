@@ -6,23 +6,20 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
 2. Detecte les doublons (artiste+titre normalises) contre ce qui existe deja
    dans New_prog -> deplace vers _incoming/_duplicates/ et ignore
 3. Analyse Essentia (energie, bpm, genre, mood, danceability)
-4. Classe le morceau dans le creneau (morning/afternoon/evening/night) dont
-   la courbe d'energie cible est la plus proche
-5. Ajoute le fichier nettoye a la fin de New_prog/<creneau>/ (numero de
-   position suivant disponible) SANS toucher aux fichiers deja en place --
-   seuls les nouveaux morceaux ont besoin d'etre re-uploades en SFTP.
+4. Classe le morceau dans un des 8 BACS de la grille "horloge a bacs ponderes"
+   (classify_bins.py : genre d'abord, energie ensuite, seuils auto-calibres)
+5. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
+   PAS de prefixe d'ordre : l'ordonnancement est le travail d'AzuraCast
+   (playlists Shuffled + poids + separation artiste). Seuls les nouveaux
+   morceaux ont besoin d'etre uploades en SFTP.
 6. Ajoute le resultat a metadata.json
-
-Pour un rebrassage complet de l'ordre (meilleure alternance energie/genre sur
-tout le creneau, au prix d'un renommage en cascade -> tout reuploader en
-SFTP), lancer manuellement build_rotation.py puis export_rotation.py.
 
 Les fichiers illisibles/en erreur sont deplaces dans _incoming/_failed/ et
 n'interrompent pas le traitement des autres.
 
 Ouvre automatiquement triage_report.html dans le navigateur (auto-refresh
 2s) pour suivre l'avancement en direct : morceaux traites, repartition par
-creneau, doublons ignores, echecs.
+bac, doublons ignores, echecs.
 
 A executer dans le venv WSL (~/essentia-env), ou via triage.bat :
     source ~/essentia-env/bin/activate
@@ -42,6 +39,9 @@ sys.path.insert(0, TOOLS_DIR)
 
 import analyze_essentia  # noqa: E402  (modeles Essentia charges a l'import)
 import clean_local_tracks as clt  # noqa: E402  (fonctions clean() / itunes_lookup())
+from classify_bins import (  # noqa: E402  (source de verite unique de la grille)
+    NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_bin,
+)
 
 INCOMING = r"C:\Users\ph.dufourcq\Music\00_AZURACAST\_incoming".replace("\\", "/").replace("C:", "/mnt/c")
 FAILED = os.path.join(INCOMING, "_failed")
@@ -51,20 +51,8 @@ DUPLICATES = os.path.join(INCOMING, "_duplicates")
 # considere comme un doublon d'un morceau deja present dans New_prog.
 DUPLICATE_THRESHOLD = 0.75
 
-SLOT_FOLDERS = {
-    "1_morning": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning",
-    "2_afternoon": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon",
-    "3_evening": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/3_evening",
-    "4_night": "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/4_night",
-}
-
-# Doit rester coherent avec ENERGY_CURVES dans build_rotation.py
-ENERGY_CURVES = {
-    "1_morning": (0.20, 0.60),
-    "2_afternoon": (0.45, 0.75),
-    "3_evening": (0.55, 0.90),
-    "4_night": (0.65, 0.25),
-}
+NEW_PROG_WSL = "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog"
+SLOT_FOLDERS = {b: f"{NEW_PROG_WSL}/{b}" for b in NEW_BINS}
 
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "triage_report.html")
@@ -191,25 +179,15 @@ def norm_clip(value, lo, hi):
     return max(0.0, min(1.0, (value - lo) / (hi - lo)))
 
 
-def classify_slot(energy):
-    def midpoint(curve):
-        return (curve[0] + curve[1]) / 2
-    return min(ENERGY_CURVES, key=lambda slot: abs(energy - midpoint(ENERGY_CURVES[slot])))
-
-
-POSITION_RE = re.compile(r"^(\d{3})_")
-
-
-def next_position(slot_folder):
-    """Prochain numero de position libre dans un creneau (max existant + 1),
-    pour ajouter un morceau en fin de liste sans renommer les autres."""
-    best = 0
-    if os.path.isdir(slot_folder):
-        for fname in os.listdir(slot_folder):
-            m = POSITION_RE.match(fname)
-            if m:
-                best = max(best, int(m.group(1)))
-    return best + 1
+def unique_target(folder, name):
+    """Evite d'ecraser un fichier existant (doublon de nom) : suffixe _2, _3..."""
+    base, ext = os.path.splitext(name)
+    candidate = os.path.join(folder, name)
+    i = 2
+    while os.path.exists(candidate):
+        candidate = os.path.join(folder, f"{base}_{i}{ext}")
+        i += 1
+    return candidate
 
 
 def clean_tags_and_filename(path):
@@ -308,7 +286,7 @@ def find_duplicate(artist, title, index):
     return best_path if best_score >= DUPLICATE_THRESHOLD else None
 
 
-def process_file(path, existing_metadata, dup_index, report):
+def process_file(path, existing_metadata, cutoffs, dup_index, report):
     print(f"[TAGS] {os.path.basename(path)}")
     cleaned_path, artist, title = clean_tags_and_filename(path)
 
@@ -329,14 +307,15 @@ def process_file(path, existing_metadata, dup_index, report):
     norm_bpm = norm_clip(result["bpm"], bpm_lo, bpm_hi)
     energy = 0.5 * norm_rms + 0.3 * norm_bpm + 0.2 * result["mood"]["party"]
 
-    slot = classify_slot(energy)
+    slot = classify_bin(top_genre(result["genres"]), energy, result["mood"], cutoffs)
     dest_dir = SLOT_FOLDERS[slot]
-    pos = next_position(dest_dir)
-    dest_path = os.path.join(dest_dir, f"{pos:03d}_{os.path.basename(cleaned_path)}")
+    os.makedirs(dest_dir, exist_ok=True)
+    # Nom propre, sans prefixe d'ordre : l'ordonnancement est delegue a AzuraCast.
+    dest_path = unique_target(dest_dir, os.path.basename(cleaned_path))
     shutil.move(cleaned_path, dest_path)
 
     # Stocke le chemin au format Windows dans metadata.json : coherent avec
-    # analyze_essentia.py et build_rotation.py, evite les doublons causes par
+    # analyze_essentia.py et migrate_grid.py, evite les doublons causes par
     # un melange de formats WSL (/mnt/c/...) et Windows (C:\...) dans le JSON.
     result["path"] = wsl_to_windows(dest_path)
     print(
@@ -365,6 +344,9 @@ def main():
     print(f"  -> {len(dup_index)} morceaux existants indexes.\n")
 
     metadata = load_metadata()
+    # Seuils de classification auto-calibres sur la bibliotheque existante
+    # (percentiles par famille de genre, cf. classify_bins.py).
+    cutoffs = compute_cutoffs(metadata, compute_energies(metadata))
     report = Report(len(files))
     report.render()
     report.open_in_browser()
@@ -374,7 +356,7 @@ def main():
 
     for path in files:
         try:
-            result = process_file(path, metadata, dup_index, report)
+            result = process_file(path, metadata, cutoffs, dup_index, report)
             if result is None:
                 dup_count += 1
                 continue
@@ -392,7 +374,7 @@ def main():
     print(f"\n{ok_count}/{len(files)} morceaux integres, {dup_count} doublon(s) ignore(s).")
     if ok_count:
         print(
-            "Les nouveaux morceaux ont ete ajoutes en fin de creneau (aucun fichier "
+            "Les nouveaux morceaux ont ete deposes dans leur bac (aucun fichier "
             "existant renomme) -> tu peux uploader uniquement les nouveaux fichiers en SFTP."
         )
 

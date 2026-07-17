@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+*** SUPERSEDED (2026-07-16) — NE PLUS UTILISER ***
+Remplace par la grille "horloge a bacs ponderes" (classify_bins.py +
+migrate_grid.py) : l'ordonnancement est desormais delegue a AzuraCast
+(playlists Shuffled + poids + separation artiste), plus aucun ordre n'est
+calcule localement. Conserve uniquement pour l'historique.
+
 Construit un ordre de lecture par creneau (morning/afternoon/evening/night) a
 partir de metadata.json (sortie de analyze_essentia.py), pour casser la
 redondance de style facon FIP/Radio Meuh :

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+*** SUPERSEDED (2026-07-16) — NE PLUS UTILISER ***
+Remplace par la grille "horloge a bacs ponderes" : plus aucun prefixe d'ordre
+NNN_ dans les noms de fichiers, l'ordonnancement est delegue a AzuraCast
+(playlists Shuffled + poids + separation artiste). Conserve pour l'historique.
+
 Applique l'ordre calcule par build_rotation.py directement dans New_prog :
 renomme les fichiers en place (prefixe 001_, 002_, ...) pour figer le nouvel
 ordre de lecture. New_prog est la bibliotheque de reference, il n'y a plus
