@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>KALBASSFM — FM Caraïbes</title>
-  <meta name="description" content="KALBASS FM — la webradio 100% électronique des Caraïbes. House, disco, tech house, techno. 24h/24, 7j/7.">
+  <title>KALBASSFM — Caribbean FM</title>
+  <meta name="description" content="KALBASS FM — the 100% electronic webradio from the Caribbean. House, disco, tech house, techno. 24/7.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="KALBASS FM">
-  <meta property="og:title" content="KALBASS FM — La webradio 100% électronique des Caraïbes">
-  <meta property="og:description" content="House · Disco · Tech House · Techno — en direct 24h/24, 7j/7. Appuyez sur play. 🌴🎧">
+  <meta property="og:title" content="KALBASS FM — The 100% electronic webradio from the Caribbean">
+  <meta property="og:description" content="House · Disco · Tech House · Techno — live 24/7. Press play. 🌴🎧">
   <meta property="og:url" content="https://kalbassfm-player.vercel.app/">
   <meta property="og:image" content="https://kalbassfm-player.vercel.app/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="KALBASS FM — La webradio 100% électronique des Caraïbes">
-  <meta name="twitter:description" content="House · Disco · Tech House · Techno — en direct 24h/24, 7j/7.">
+  <meta name="twitter:title" content="KALBASS FM — The 100% electronic webradio from the Caribbean">
+  <meta name="twitter:description" content="House · Disco · Tech House · Techno — live 24/7.">
   <meta name="twitter:image" content="https://kalbassfm-player.vercel.app/og-image.png">
   <meta name="theme-color" content="#0D0D0D">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -573,7 +573,9 @@
 
     /* ── Chat live ── */
     .chat-list {
-      max-height: 260px;
+      /* Hauteur FIXE (pas max-height) : l'arrivee de nouveaux messages ne doit
+         jamais agrandir la fenetre du chat — ils scrollent dedans. */
+      height: 260px;
       overflow-y: auto;
       display: flex;
       flex-direction: column-reverse;
@@ -604,6 +606,8 @@
       font-size: .74rem;
       word-break: break-word;
     }
+    /* Messages admin (bot Telegram, flag serveur) : texte en gras */
+    .chat-item-admin .chat-text { font-weight: 700; }
     .chat-form {
       display: flex;
       gap: 8px;
@@ -824,7 +828,7 @@
 </head>
 <body>
 
-  <main class="card" role="main" aria-label="Lecteur KALBASSFM">
+  <main class="card" role="main" aria-label="KALBASSFM player">
 
     <div class="header">
       <h1 class="logo">
@@ -842,12 +846,12 @@
         <span id="stationName">KALBASSFM</span>
       </h1>
       <div class="header-actions">
-        <button class="btn-install-icon" id="headerInstallBtn" aria-label="Installer l'application KALBASS FM" title="Installer l'app">
+        <button class="btn-install-icon" id="headerInstallBtn" aria-label="Install the KALBASS FM app" title="Install the app">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M12 3v12M7 10l5 5 5-5M5 20h14"/>
           </svg>
         </button>
-        <svg class="badge-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drapeau de la Martinique">
+        <svg class="badge-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flag of Martinique">
           <rect width="900" height="300" fill="#00A551"/>
           <rect y="300" width="900" height="300" fill="#231F20"/>
           <polygon points="0,0 450,300 0,600" fill="#ED1C24"/>
@@ -856,7 +860,7 @@
     </div>
 
     <div class="main-col">
-    <div class="artwork" id="artwork" role="img" aria-label="Artwork de la piste en cours">
+    <div class="artwork" id="artwork" role="img" aria-label="Current track artwork">
       <div class="visualizer stopped" id="visualizer" aria-hidden="true"></div>
     </div>
 
@@ -871,20 +875,20 @@
       <p class="track-artist" id="trackArtist">— ARTIST</p>
 
       <div class="actions-row" id="actionsRow" style="display:none">
-        <button class="chip chip-fire" id="reactBtn" aria-label="J'aime ce morceau">🔥 <span id="reactCount">0</span></button>
-        <button class="chip" id="shareBtn" aria-label="Partager le morceau">↗ Partager</button>
+        <button class="chip chip-fire" id="reactBtn" aria-label="Like this track">🔥 <span id="reactCount">0</span></button>
+        <button class="chip" id="shareBtn" aria-label="Share this track">↗ Share</button>
         <a class="chip" id="findYT" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
       </div>
     </div>
 
     <div class="controls">
-      <button class="btn-ghost" disabled aria-label="Piste précédente (non disponible en direct)">
+      <button class="btn-ghost" disabled aria-label="Previous track (not available on live radio)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
           <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
         </svg>
       </button>
 
-      <button class="btn-play" id="btnPlay" aria-label="Lecture" aria-pressed="false">
+      <button class="btn-play" id="btnPlay" aria-label="Play" aria-pressed="false">
         <svg id="icPlay" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
@@ -893,7 +897,7 @@
         </svg>
       </button>
 
-      <button class="btn-ghost" disabled aria-label="Piste suivante (non disponible en direct)">
+      <button class="btn-ghost" disabled aria-label="Next track (not available on live radio)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
           <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
         </svg>
@@ -904,12 +908,12 @@
       <span class="vol-label">VOL</span>
       <input type="range" id="volSlider" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       <span class="vol-label" id="volVal">80</span>
-      <button class="sleep-btn" id="sleepBtn" aria-label="Minuteur de sommeil">💤 OFF</button>
+      <button class="sleep-btn" id="sleepBtn" aria-label="Sleep timer">💤 OFF</button>
     </div>
 
     <details class="panel" id="histPanel">
       <summary>
-        <span class="panel-summary-label">Historique <span class="hist-preview" id="histPreview"></span></span>
+        <span class="panel-summary-label">History <span class="hist-preview" id="histPreview"></span></span>
         <span class="chev">›</span>
       </summary>
       <div class="panel-body">
@@ -921,15 +925,15 @@
     <div class="sidebar-col">
     <details class="panel" id="chatPanel" open>
       <summary>
-        <span class="panel-summary-label">Chat live</span>
+        <span class="panel-summary-label">Live chat</span>
         <span class="chev">›</span>
       </summary>
       <div class="panel-body">
         <div class="chat-list" id="chatList"></div>
         <p class="chat-error" id="chatError" style="display:none"></p>
         <form class="chat-form" id="chatForm">
-          <input class="chat-input" id="chatInput" type="text" maxlength="200" placeholder="Un message..." autocomplete="off" aria-label="Message du chat">
-          <button class="chip chat-send" id="chatSend" type="submit">Envoyer</button>
+          <input class="chat-input" id="chatInput" type="text" maxlength="200" placeholder="Say something..." autocomplete="off" aria-label="Chat message">
+          <button class="chip chat-send" id="chatSend" type="submit">Send</button>
         </form>
       </div>
     </details>
@@ -946,10 +950,10 @@
     </div>
 
     <div class="footer">
-      <span class="footer-text">// FM CARAÏBES</span>
+      <span class="footer-text">// CARIBBEAN FM</span>
       <div class="footer-status">
         <span class="logo-dot" style="width:5px;height:5px;" aria-hidden="true"></span>
-        <span id="footerStatus">EN ATTENTE</span>
+        <span id="footerStatus">STANDBY</span>
       </div>
       <div class="footer-donate">
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
@@ -959,30 +963,30 @@
 
   </main>
 
-  <div class="modal-backdrop" id="contactModal" role="dialog" aria-modal="true" aria-label="Contacter Lupari">
+  <div class="modal-backdrop" id="contactModal" role="dialog" aria-modal="true" aria-label="Contact Lupari">
     <div class="modal-box">
-      <button class="modal-close" id="contactModalClose" aria-label="Fermer">✕</button>
-      <div class="modal-title">Contacter Lupari</div>
+      <button class="modal-close" id="contactModalClose" aria-label="Close">✕</button>
+      <div class="modal-title">Contact Lupari</div>
       <div class="modal-actions">
-        <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">✉ Envoyer un email</a>
+        <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">✉ Send an email</a>
         <a href="https://www.instagram.com/luparimusic/" target="_blank" rel="noopener noreferrer" class="donate-link">📷 Instagram @luparimusic</a>
       </div>
     </div>
   </div>
 
-  <div class="install-toast" id="installToast" role="dialog" aria-label="Installer KALBASS FM">
+  <div class="install-toast" id="installToast" role="dialog" aria-label="Install KALBASS FM">
     <div class="install-toast-icon" aria-hidden="true">📻</div>
     <div class="install-toast-body">
-      <div class="install-toast-title">Installez KALBASS FM</div>
+      <div class="install-toast-title">Install KALBASS FM</div>
       <div class="install-toast-text" id="installToastText">
-        Profitez d'un accès direct depuis votre écran d'accueil, sans navigateur.
+        Enjoy direct access from your home screen, no browser needed.
       </div>
       <div class="install-toast-actions">
-        <button class="install-toast-cta" id="installToastCta" style="display:none">Installer</button>
-        <button class="install-toast-later" id="installToastLater">Plus tard</button>
+        <button class="install-toast-cta" id="installToastCta" style="display:none">Install</button>
+        <button class="install-toast-later" id="installToastLater">Later</button>
       </div>
     </div>
-    <button class="install-toast-close" id="installToastClose" aria-label="Fermer">✕</button>
+    <button class="install-toast-close" id="installToastClose" aria-label="Close">✕</button>
   </div>
 
   <audio id="audio" preload="none"></audio>
@@ -1023,7 +1027,7 @@
   const chatError = document.getElementById('chatError');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
-  document.title = CONFIG.stationName + ' — FM Caraïbes';
+  document.title = CONFIG.stationName + ' — Caribbean FM';
   audio.volume = parseFloat(volSlider.value);
 
   let current = { title: '', artist: '', art: '', songId: '' };
@@ -1100,15 +1104,15 @@
     playing = state === 'playing';
     btnPlay.classList.toggle('loading', state === 'loading');
     btnPlay.setAttribute('aria-pressed', playing);
-    btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Lecture');
+    btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     icPlay.style.display  = playing ? 'none'  : 'block';
     icPause.style.display = playing ? 'block' : 'none';
     viz.classList.toggle('stopped', !playing);
     const map = {
-      playing: { text: 'EN DIRECT' },
-      paused:  { text: 'EN PAUSE' },
-      loading: { text: 'CONNEXION...' },
-      error:   { text: 'ERREUR' },
+      playing: { text: 'ON AIR' },
+      paused:  { text: 'PAUSED' },
+      loading: { text: 'CONNECTING...' },
+      error:   { text: 'ERROR' },
     };
     footerSt.textContent = (map[state] || map.paused).text;
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
@@ -1168,7 +1172,7 @@
     const art = current.art;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: current.title || 'KALBASS FM',
-      artist: current.artist || 'La webradio électronique des Caraïbes',
+      artist: current.artist || 'The Caribbean electronic webradio',
       album: 'KALBASS FM',
       artwork: art ? [
         { src: art, sizes: '256x256', type: 'image/jpeg' },
@@ -1192,7 +1196,7 @@
   }
   shareBtn.addEventListener('click', async () => {
     const label = current.title ? `${current.artist} – ${current.title}` : 'KALBASS FM';
-    const text = `🎧 J'écoute ${label} sur KALBASS FM — la webradio 100% électronique des Caraïbes !`;
+    const text = `🎧 Listening to ${label} on KALBASS FM — the 100% electronic webradio from the Caribbean!`;
     const url = 'https://kalbassfm-player.vercel.app/';
     if (navigator.share) {
       try { await navigator.share({ title: 'KALBASS FM', text, url }); } catch {}
@@ -1239,7 +1243,7 @@
   /* ── Top 5 des votes ── */
   function renderTop(top) {
     if (!Array.isArray(top) || !top.length) {
-      topList.innerHTML = '<p class="prog-note">Pas encore de votes.</p>';
+      topList.innerHTML = '<p class="prog-note">No votes yet.</p>';
       return;
     }
     const maxCount = top[0].count || 1;
@@ -1268,7 +1272,7 @@
       if (!j.enabled) throw new Error('disabled');
       renderTop(j.top);
     } catch {
-      topList.innerHTML = '<p class="prog-note">Classement bientôt disponible.</p>';
+      topList.innerHTML = '<p class="prog-note">Chart coming soon.</p>';
     }
   }
   pollTop();
@@ -1284,7 +1288,7 @@
     return v;
   }
   const clientId = getClientId();
-  const chatNick = 'Auditeur-' + (parseInt(clientId.replace(/[^0-9]/g, '').slice(0, 8) || '0', 10) % 9000 + 1000);
+  const chatNick = 'Listener-' + (parseInt(clientId.replace(/[^0-9]/g, '').slice(0, 8) || '0', 10) % 9000 + 1000);
 
   function formatChatTime(ts) {
     const d = new Date(ts);
@@ -1292,17 +1296,18 @@
   }
   function renderChat(messages) {
     if (!Array.isArray(messages) || !messages.length) {
-      chatList.innerHTML = '<p class="prog-note">Aucun message pour l\'instant.</p>';
+      chatList.innerHTML = '<p class="prog-note">No messages yet.</p>';
       return;
     }
     chatList.innerHTML = '';
     messages.forEach((m) => {
       const el = document.createElement('div');
-      el.className = 'chat-item';
+      // m.admin est pose exclusivement cote serveur (bot Telegram) — fiable.
+      el.className = m.admin ? 'chat-item chat-item-admin' : 'chat-item';
       const head = document.createElement('div');
       head.className = 'chat-item-head';
       const nick = document.createElement('span');
-      nick.className = 'chat-nick'; nick.textContent = m.nick || 'Auditeur';
+      nick.className = 'chat-nick'; nick.textContent = m.nick || 'Listener';
       const time = document.createElement('span');
       time.className = 'chat-time'; time.textContent = formatChatTime(m.ts);
       head.appendChild(nick); head.appendChild(time);
@@ -1319,7 +1324,7 @@
       if (!j.enabled) throw new Error('disabled');
       renderChat(j.messages);
     } catch {
-      chatList.innerHTML = '<p class="prog-note">Chat bientôt disponible.</p>';
+      chatList.innerHTML = '<p class="prog-note">Chat coming soon.</p>';
     }
   }
   pollChat();
@@ -1341,7 +1346,7 @@
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text || chatCooldown) return;
-    if (LINK_RE.test(text)) { showChatError('Les liens ne sont pas autorisés dans le chat.'); return; }
+    if (LINK_RE.test(text)) { showChatError('Links are not allowed in the chat.'); return; }
     chatCooldown = true;
     chatSend.disabled = true;
     chatInput.value = '';
@@ -1352,9 +1357,9 @@
         body: JSON.stringify({ clientId, nick: chatNick, text }),
       });
       const j = await r.json();
-      if (j.blocked === 'link') showChatError('Les liens ne sont pas autorisés dans le chat.');
-      else if (j.banned) showChatError('Tu ne peux plus poster de messages dans ce chat.');
-      else if (j.paused) showChatError('Le chat est temporairement en pause.');
+      if (j.blocked === 'link') showChatError('Links are not allowed in the chat.');
+      else if (j.banned) showChatError('You can no longer post messages in this chat.');
+      else if (j.paused) showChatError('The chat is temporarily paused.');
       pollChat();
     } catch {}
     setTimeout(() => { chatCooldown = false; chatSend.disabled = false; }, 3000);
@@ -1363,7 +1368,7 @@
   /* ── Historique ── */
   function renderHistory(hist) {
     if (!Array.isArray(hist) || !hist.length) {
-      historyList.innerHTML = '<p class="prog-note">Rien pour l\'instant.</p>';
+      historyList.innerHTML = '<p class="prog-note">Nothing yet.</p>';
       histPreview.textContent = '';
       return;
     }
@@ -1395,7 +1400,7 @@
       // Auditeurs
       const lc = d.listeners && (d.listeners.current ?? d.listeners.total);
       if (typeof lc === 'number' && lc > 0) {
-        listenersCount.textContent = lc + (lc > 1 ? ' EN LIGNE' : ' EN LIGNE');
+        listenersCount.textContent = lc + ' ONLINE';
         listenersEl.classList.add('show');
       } else listenersEl.classList.remove('show');
 
@@ -1514,17 +1519,17 @@
 
     if (isIOS()) {
       toastText.innerHTML =
-        'Appuyez sur <svg class="install-toast-share-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg> ' +
-        'puis « Sur l\'écran d\'accueil » pour une meilleure expérience.';
+        'Tap <svg class="install-toast-share-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg> ' +
+        'then \'Add to Home Screen\' for the best experience.';
       toastCta.style.display = 'none';
     } else if (deferredPrompt) {
-      toastText.textContent = 'Accès direct depuis votre écran d\'accueil, sans navigateur, même écran verrouillé.';
+      toastText.textContent = 'Direct access from your home screen, no browser, even with the screen locked.';
       toastCta.style.display = '';
-      toastCta.textContent = 'Installer';
+      toastCta.textContent = 'Install';
       toastCta.onclick = () => promptInstall();
     } else {
       // Navigateur mobile sans evenement beforeinstallprompt (Firefox Android, etc.)
-      toastText.textContent = 'Ouvrez le menu de votre navigateur puis « Ajouter à l\'écran d\'accueil » pour une meilleure expérience.';
+      toastText.textContent = 'Open your browser menu and choose \'Add to Home Screen\' for the best experience.';
       toastCta.style.display = 'none';
     }
     toast.classList.add('show');

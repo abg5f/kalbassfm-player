@@ -48,7 +48,7 @@ async function handleMessage(token, message) {
 
   if (text === '/skip') {
     const r = await skipSong();
-    if (r.ok) await postAdminMessage('⏭ Un admin a passé le morceau en cours.');
+    if (r.ok) await postAdminMessage('⏭ An admin skipped the current track.');
     return sendMessage(token, chatId, r.ok ? '⏭ Morceau suivant lance.' : `Echec du skip (${r.status}).`);
   }
 
@@ -173,7 +173,9 @@ function kvClient() {
 async function postAdminMessage(text) {
   const kv = kvClient();
   if (!kv) return false;
-  const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: '📻 KALBASSFM', text: text.slice(0, 200), ts: Date.now() };
+  // admin:true est pose UNIQUEMENT ici (cote serveur) — le front l'utilise pour
+  // mettre le message en valeur, un client ne peut pas le forger.
+  const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: '📻 KALBASSFM', text: text.slice(0, 200), ts: Date.now(), admin: true };
   await kv('lpush', 'chat:messages', JSON.stringify(msg));
   await kv('ltrim', 'chat:messages', '0', '99');
   return true;
