@@ -133,11 +133,16 @@ async function skipSong() {
 // Requests existe (queue le morceau, pas instantane, peut refuser un jingle
 // rejoue trop recemment). Necessite "Autoriser les demandes" active sur la
 // playlist Jingles dans AzuraCast.
+// AzuraCast refuse les demandes envoyees sans User-Agent credible (detection
+// anti-robots/crawlers cote SubmitAction) — un appel serveur sans navigateur
+// derriere doit donc se presenter comme tel.
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
 async function triggerJingle() {
   const apiKey = process.env.AZURACAST_API_KEY;
   try {
     const listRes = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/requests`, {
-      headers: apiKey ? { 'X-API-Key': apiKey } : {},
+      headers: { 'User-Agent': BROWSER_UA, ...(apiKey ? { 'X-API-Key': apiKey } : {}) },
     });
     if (!listRes.ok) return { message: `Echec de la liste des demandes (${listRes.status}).` };
     const list = await listRes.json();
@@ -155,7 +160,7 @@ async function triggerJingle() {
     const pick = jingles[Math.floor(Math.random() * jingles.length)];
     const subRes = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/request/${encodeURIComponent(pick.request_id)}`, {
       method: 'POST',
-      headers: apiKey ? { 'X-API-Key': apiKey } : {},
+      headers: { 'User-Agent': BROWSER_UA, ...(apiKey ? { 'X-API-Key': apiKey } : {}) },
     });
     const sub = await subRes.json().catch(() => ({}));
     return { message: sub.message || (subRes.ok ? '🎙 Jingle demandé.' : `Echec (${subRes.status}).`) };
