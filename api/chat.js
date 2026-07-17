@@ -23,14 +23,14 @@ const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|
 // pendant la fenetre de tir (15 premieres minutes de l'heure), l'annonce est
 // simplement sautee — personne n'aurait ete la pour la lire.
 const ANNOUNCEMENTS = [
-  { h: 6,  key: 'sunrise',   text: '🌅 6AM — Sunrise: ambient, downtempo & mellow grooves to open the day' },
-  { h: 9,  key: 'groove',    text: '☀️ 9AM — Solar Groove: disco, funk & nu-disco until 1PM' },
-  { h: 13, key: 'breeze',    text: '🌴 1PM — Trade Winds: eclectic house all afternoon' },
-  { h: 17, key: 'sunset',    text: '🌇 5PM — Sunset: deep & melodic house for the golden hour' },
+  { h: 6,  key: 'sunrise',   text: '🌅 6AM UTC-4 — Sunrise: ambient, downtempo & mellow grooves to open the day' },
+  { h: 9,  key: 'groove',    text: '☀️ 9AM UTC-4 — Solar Groove: disco, funk & nu-disco until 1PM' },
+  { h: 13, key: 'breeze',    text: '🌴 1PM UTC-4 — Trade Winds: eclectic house all afternoon' },
+  { h: 17, key: 'sunset',    text: '🌇 5PM UTC-4 — Sunset: deep & melodic house for the golden hour' },
   { h: 18, key: 'vote',      text: '🔥 Vote for your favorite tracks — the Top 5 is yours!' },
-  { h: 20, key: 'warmup',    text: '🔥 8PM — Warm-up: tech house, slowly heating up...' },
-  { h: 23, key: 'peak',      text: '⚡ 11PM — Peak time: techno until 2AM, turn it up' },
-  { h: 2,  key: 'deepnight', text: '🌙 2AM — Deep Night: deep, minimal, dub... for the night owls' },
+  { h: 20, key: 'warmup',    text: '🔥 8PM UTC-4 — Warm-up: tech house, slowly heating up...' },
+  { h: 23, key: 'peak',      text: '⚡ 11PM UTC-4 — Peak time: techno until 2AM, turn it up' },
+  { h: 2,  key: 'deepnight', text: '🌙 2AM UTC-4 — Deep Night: deep, minimal, dub... for the night owls' },
 ];
 const ANNOUNCE_WINDOW_MIN = 15;
 
