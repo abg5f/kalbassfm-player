@@ -1670,13 +1670,23 @@
   }
   renderStreak(getStreak()); // restaure le badge au chargement, sans attendre 60s d'ecoute
 
-  let streakTimer = null;
-  function clearStreakTimer() { if (streakTimer) { clearTimeout(streakTimer); streakTimer = null; } }
-  audio.addEventListener('playing', () => {
-    if (!streakTimer) streakTimer = setTimeout(() => { streakTimer = null; markStreakDay(); }, 60000);
-  });
-  audio.addEventListener('pause', clearStreakTimer);
-  audio.addEventListener('error', clearStreakTimer);
+  // Cumul tolerant plutot qu'un chrono continu strict : une micro-coupure
+  // (ecran qui se verrouille, throttling en arriere-plan sur mobile/PWA,
+  // reconnexion reseau bref) met juste le cumul en pause au lieu de tout
+  // remettre a zero. Sans ca, un vrai 60s ininterrompu n'arrive quasiment
+  // jamais en usage reel mobile.
+  let streakAccumMs = 0;
+  let streakLastTick = null;
+  setInterval(() => {
+    const now = Date.now();
+    if (!userStopped && !audio.paused && playing) {
+      if (streakLastTick) streakAccumMs += now - streakLastTick;
+      streakLastTick = now;
+      if (streakAccumMs >= 60000) { streakAccumMs = 0; markStreakDay(); }
+    } else {
+      streakLastTick = null;
+    }
+  }, 5000);
 
   /* ── Sleep timer ── */
   const SLEEP_STEPS = [0, 15, 30, 60];
