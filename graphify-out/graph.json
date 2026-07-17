@@ -1,106 +1,750 @@
 {
   "nodes": [
-    { "id": "index.html", "label": "index.html", "type": "file", "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme." },
-    { "id": "api/reactions.js", "label": "api/reactions.js", "type": "file", "summary": "Fonction serverless Vercel : votes 🔥 libres et illimités par morceau + endpoint classement Top 5 (sorted set Redis ZINCRBY/ZRANGE), backée par Upstash Redis REST via Vercel Storage — store connecté depuis 2026-07-16." },
-    { "id": "sw.js", "label": "sw.js", "type": "file", "summary": "Service worker minimal : cache uniquement la coquille PWA (shell + icônes), jamais le flux audio ni l'API now-playing." },
-    { "id": "manifest.webmanifest", "label": "manifest.webmanifest", "type": "file", "summary": "Manifest PWA : nom KALBASS FM, icônes 192/512, mode standalone, thème sombre." },
-    { "id": "tools/import-rekordbox.ps1", "label": "import-rekordbox.ps1", "type": "file", "summary": "Script PowerShell local : matche les exports .txt Rekordbox (Titre+Artiste, tokenisation floue) aux fichiers audio de la bibliothèque, copie vers les dossiers playlists (dry-run par défaut, -Copier pour exécuter)." },
-    { "id": "tools/clean_local_tracks.py", "label": "clean_local_tracks.py", "type": "file", "summary": "Script Python local : nettoie tags ID3 et noms de fichiers, détecte les covers 'logo de site pirate' (hash partagé par >=4 artistes) et les remplace via l'API iTunes Search (dry-run/--apply)." },
-    { "id": "README.md", "label": "README.md", "type": "file", "summary": "Documentation publique du repo : fonctionnalités, stack, infra, pipeline outils, roadmap." },
-    { "id": "CONTEXT.md", "label": "CONTEXT.md", "type": "file", "summary": "Contexte de session persistant (via /save) : état actuel, décisions, TODOs, problèmes connus, infra." },
-    { "id": ".planning/PROJECT.md", "label": "PROJECT.md", "type": "doc", "summary": "Vision produit, validation marché, viabilité économique, phases 1-4 (webradio caribéenne électronique)." },
-    { "id": ".planning/ROADMAP.md", "label": "ROADMAP.md", "type": "doc", "summary": "Roadmap détaillée par phase (MVP, Growth, Expansion, Long-term), jalons, budget, critères go/no-go." },
-    { "id": ".planning/PLAN.md", "label": "PLAN.md", "type": "doc", "summary": "Plan d'exécution Phase 1 (semaines 1-8) : setup technique, contenu, lancement, stabilisation." },
-    { "id": ".planning/REQUIREMENTS.md", "label": "REQUIREMENTS.md", "type": "doc", "summary": "Exigences fonctionnelles/non-fonctionnelles MVP : streaming, interface web, scheduling, revenus, sécurité." },
-    { "id": ".planning/EXECUTION_CHECKLIST.md", "label": "EXECUTION_CHECKLIST.md", "type": "doc", "summary": "Checklist semaine par semaine de la Phase 1 : branding, licensing, VPS, AzuraCast, lancement marketing." },
-    { "id": ".planning/STATE.md", "label": "STATE.md", "type": "doc", "summary": "Mémoire projet : recherche complétée (techno, licensing SACEM, marché), décisions fondateur confirmées, timeline." },
-    { "id": "AzuraCast", "label": "AzuraCast", "type": "infra", "summary": "Plateforme de radio auto-hébergée sur le VPS : gère playlists, AutoDJ, API now-playing et API admin (playlists, station)." },
-    { "id": "Icecast", "label": "Icecast", "type": "infra", "summary": "Serveur de streaming audio utilisé par AzuraCast pour diffuser le flux HTTPS." },
-    { "id": "Liquidsoap", "label": "Liquidsoap", "type": "infra", "summary": "Moteur AutoDJ derrière AzuraCast, sélectionne les pistes selon les playlists activées/planifiées." },
-    { "id": "VPS", "label": "VPS Ubuntu (167.233.226.128)", "type": "infra", "summary": "Serveur Docker hébergeant AzuraCast/Icecast/Liquidsoap." },
-    { "id": "Vercel", "label": "Vercel", "type": "infra", "summary": "Hébergement du player statique + fonctions serverless (api/), déploiement auto sur push GitHub." },
-    { "id": "DuckDNS", "label": "DuckDNS + Let's Encrypt", "type": "infra", "summary": "Domaine gratuit kalbassfm.duckdns.org avec certificat SSL auto-renouvelé." },
-    { "id": "VercelKV", "label": "Upstash for Redis (via Vercel Storage)", "type": "infra", "summary": "Store clé-valeur REST utilisé par api/reactions.js (et prévu pour api/vote.js) ; connecté en prod (Production+Preview) le 2026-07-16, région Washington D.C., plan Free — remplace l'ancien produit natif 'Vercel KV'." },
-    { "id": "TopFiveFeature", "label": "Classement Top 5 🔥", "type": "feature", "summary": "Panneau #topPanel/#topList dans index.html : jauges proportionnelles au score, poll toutes les 4s + re-poll immédiat après chaque vote (effet 'live'). Repli 'Classement bientôt disponible.' si KV désactivé." },
-    { "id": "tools/build_rotation.py", "label": "build_rotation.py", "type": "file", "summary": "Calcule l'ordre de lecture par créneau : courbe d'énergie cible + mini-mouvements sinusoïdaux (MOVEMENTS_PER_SLOT), familles de style (House/Techno/Garage/Disco-Funk/Reggae-Dub/Jungle-DnB, max 2 consécutifs), quota minoritaire par quart de créneau, garde-fou enforce_family_limit, jonction de boucle fix_wrap_seam." },
-    { "id": "tools/analyze_essentia.py", "label": "analyze_essentia.py", "type": "file", "summary": "Analyse Essentia (BPM/énergie/genre/mood/danceability, modèles TensorFlow discogs-effnet) écrivant tools/metadata.json ; normalize_path() corrige le bug historique de mélange de formats de chemin WSL (/mnt/c/...) vs Windows (C:\\...)." },
-    { "id": "tools/dedup_metadata.py", "label": "dedup_metadata.py", "type": "file", "summary": "Ancien script de dédoublonnage de metadata.json — supprimait les entrées dont le chemin ne résolvait plus SANS tenter de réparation, a causé une perte de données réelle (260 entrées) ; superseded par normalize_and_dedup_metadata.py." },
-    { "id": "tools/normalize_and_dedup_metadata.py", "label": "normalize_and_dedup_metadata.py", "type": "file", "summary": "Script de réparation sûr de metadata.json : normalise les chemins, dédoublonne par chemin normalisé exact, répare les chemins non résolus par correspondance de nom de fichier (moins le préfixe NNN_), ne supprime jamais silencieusement une entrée irrécupérable." },
-    { "id": "JinglesFeature", "label": "Playlist Jingles AzuraCast", "type": "feature", "summary": "15 jingles audio générés (voix off), insérés nativement par AzuraCast via une playlist dédiée : type 'Une fois tous les x titres' (10-15), Mode Jingle activé (masque les métadonnées), ordre Mélangé — ne passe pas par le pipeline Python (build_rotation/export_rotation), reste stable indépendamment des régénérations de rotation." },
-    { "id": "NowPlayingAPI", "label": "AzuraCast Now Playing API", "type": "concept", "summary": "Endpoint public /api/nowplaying/{station} interrogé par index.html toutes les 8s (listeners, morceau courant, historique) — pas d'auth requise." },
-    { "id": "AzuraCastAdminAPI", "label": "AzuraCast Admin/Playlists API", "type": "concept", "summary": "API REST protégée par clé (GET /station/{id}/playlists, POST /station/{id}/playlist/{id}/toggle) — nécessaire pour le futur système de vote, jamais appelée depuis le navigateur." },
-    { "id": "ReactionsFeature", "label": "Votes 🔥", "type": "feature", "summary": "Vote libre et illimité par morceau (plus de limite 1/auditeur — retirée le 2026-07-16), optimiste côté client, réconcilié via api/reactions.js + Upstash Redis." },
-    { "id": "EqualizerFeature", "label": "Égaliseur Web Audio", "type": "feature", "summary": "Visualisation réactive au son réel via Web Audio API ; désactivée sur mobile car l'OS suspend l'AudioContext à l'écran verrouillé (le natif <audio> + Media Session survit)." },
-    { "id": "ProgrammeGrid", "label": "Grille de programme", "type": "feature", "summary": "4 créneaux horaires (Martinique UTC-4) : Disco/Funk 6-12h, Deep House 12-19h, Tech House 19-23h, Techno 23-6h — mappés 1:1 aux dossiers playlists AzuraCast." },
-    { "id": "PWAFeature", "label": "PWA installable", "type": "feature", "summary": "manifest.webmanifest + sw.js + icônes logo Kalbass, bandeau d'installation mobile (iOS spécifique), raccourci header, fullscreen standalone." },
-    { "id": "RekordboxPipeline", "label": "Pipeline Rekordbox → radio", "type": "process", "summary": "Rekordbox export .txt → import-rekordbox.ps1 (matching tokens) → clean_local_tracks.py (tags/covers) → dossiers AzuraCast via RaiDrive/SFTP Z:." },
-    { "id": "RaiDrive", "label": "RaiDrive (lecteur Z:)", "type": "infra", "summary": "Monte le SFTP AzuraCast (port 2022) en lecteur réseau Windows Z:, permet de gérer les dossiers playlists comme des dossiers locaux." },
-    { "id": "iTunesSearchAPI", "label": "iTunes Search API", "type": "infra", "summary": "API gratuite sans clé utilisée par clean_local_tracks.py pour retrouver de vraies pochettes d'album (remplace les logos de sites pirates)." },
-    { "id": "SACEM", "label": "SACEM (licensing)", "type": "concept", "summary": "Déclaration légale de diffusion webradio en Martinique, recherchée dans STATE.md/PROJECT.md, toujours TODO au niveau opérationnel (CONTEXT.md)." },
-    { "id": "VotingSystemPlan", "label": "Système de vote playlist (planifié)", "type": "planned-feature", "summary": "Plan (2026-07-08, wild-cooking-book.md) : playlists candidates par genre, vote public jusqu'à 20 votes, bascule 2h via AzuraCastAdminAPI, puis retour grille normale. Pas encore codé." },
-    { "id": "GitHubRepo", "label": "abg5f/kalbassfm-player (GitHub)", "type": "infra", "summary": "Dépôt Git source du player, connecté à Vercel pour déploiement auto sur push." },
-    { "id": "api/chat.js", "label": "api/chat.js", "type": "file", "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur via cle chat:rate:<clientId> (SET EX 3 NX), refuse tout message contenant un lien (regex LINK_RE) avant même le rate-limit — anti-autopromo. Même squelette/repli que api/reactions.js." },
-    { "id": "ChatFeature", "label": "Chat live", "type": "feature", "summary": "Panneau #chatPanel dans index.html, place a l'emplacement de l'ancien bandeau ticker (supprime), ouvert par defaut. Pseudo anonyme auto-genere (Auditeur-XXXX, localStorage kfm_client_id), poll toutes les 3s, cooldown client 3s apres envoi, validation anti-lien cote client (retour immediat) + cote serveur (application reelle)." },
-    { "id": "ContactPopup", "label": "Popup contact (Owned by Lupari)", "type": "feature", "summary": "Remplace le lien mailto direct du footer par un bouton ouvrant une modale (#contactModal) avec deux choix : email (mailto) ou Instagram @luparimusic. Fermeture par clic sur le fond ou touche Echap." }
+    {
+      "id": "index.html",
+      "label": "index.html",
+      "type": "file",
+      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme."
+    },
+    {
+      "id": "api/reactions.js",
+      "label": "api/reactions.js",
+      "type": "file",
+      "summary": "Fonction serverless Vercel : votes 🔥 libres et illimités par morceau + endpoint classement Top 5 (sorted set Redis ZINCRBY/ZRANGE), backée par Upstash Redis REST via Vercel Storage — store connecté depuis 2026-07-16."
+    },
+    {
+      "id": "sw.js",
+      "label": "sw.js",
+      "type": "file",
+      "summary": "Service worker minimal : cache uniquement la coquille PWA (shell + icônes), jamais le flux audio ni l'API now-playing."
+    },
+    {
+      "id": "manifest.webmanifest",
+      "label": "manifest.webmanifest",
+      "type": "file",
+      "summary": "Manifest PWA : nom KALBASS FM, icônes 192/512, mode standalone, thème sombre."
+    },
+    {
+      "id": "tools/import-rekordbox.ps1",
+      "label": "import-rekordbox.ps1",
+      "type": "file",
+      "summary": "Script PowerShell local : matche les exports .txt Rekordbox (Titre+Artiste, tokenisation floue) aux fichiers audio de la bibliothèque, copie vers les dossiers playlists (dry-run par défaut, -Copier pour exécuter)."
+    },
+    {
+      "id": "tools/clean_local_tracks.py",
+      "label": "clean_local_tracks.py",
+      "type": "file",
+      "summary": "Script Python local : nettoie tags ID3 et noms de fichiers, détecte les covers 'logo de site pirate' (hash partagé par >=4 artistes) et les remplace via l'API iTunes Search (dry-run/--apply)."
+    },
+    {
+      "id": "README.md",
+      "label": "README.md",
+      "type": "file",
+      "summary": "Documentation publique du repo : fonctionnalités, stack, infra, pipeline outils, roadmap."
+    },
+    {
+      "id": "CONTEXT.md",
+      "label": "CONTEXT.md",
+      "type": "file",
+      "summary": "Contexte de session persistant (via /save) : état actuel, décisions, TODOs, problèmes connus, infra."
+    },
+    {
+      "id": ".planning/PROJECT.md",
+      "label": "PROJECT.md",
+      "type": "doc",
+      "summary": "Vision produit, validation marché, viabilité économique, phases 1-4 (webradio caribéenne électronique)."
+    },
+    {
+      "id": ".planning/ROADMAP.md",
+      "label": "ROADMAP.md",
+      "type": "doc",
+      "summary": "Roadmap détaillée par phase (MVP, Growth, Expansion, Long-term), jalons, budget, critères go/no-go."
+    },
+    {
+      "id": ".planning/PLAN.md",
+      "label": "PLAN.md",
+      "type": "doc",
+      "summary": "Plan d'exécution Phase 1 (semaines 1-8) : setup technique, contenu, lancement, stabilisation."
+    },
+    {
+      "id": ".planning/REQUIREMENTS.md",
+      "label": "REQUIREMENTS.md",
+      "type": "doc",
+      "summary": "Exigences fonctionnelles/non-fonctionnelles MVP : streaming, interface web, scheduling, revenus, sécurité."
+    },
+    {
+      "id": ".planning/EXECUTION_CHECKLIST.md",
+      "label": "EXECUTION_CHECKLIST.md",
+      "type": "doc",
+      "summary": "Checklist semaine par semaine de la Phase 1 : branding, licensing, VPS, AzuraCast, lancement marketing."
+    },
+    {
+      "id": ".planning/STATE.md",
+      "label": "STATE.md",
+      "type": "doc",
+      "summary": "Mémoire projet : recherche complétée (techno, licensing SACEM, marché), décisions fondateur confirmées, timeline."
+    },
+    {
+      "id": "AzuraCast",
+      "label": "AzuraCast",
+      "type": "infra",
+      "summary": "Plateforme de radio auto-hébergée sur le VPS : gère playlists, AutoDJ, API now-playing et API admin (playlists, station)."
+    },
+    {
+      "id": "Icecast",
+      "label": "Icecast",
+      "type": "infra",
+      "summary": "Serveur de streaming audio utilisé par AzuraCast pour diffuser le flux HTTPS."
+    },
+    {
+      "id": "Liquidsoap",
+      "label": "Liquidsoap",
+      "type": "infra",
+      "summary": "Moteur AutoDJ derrière AzuraCast, sélectionne les pistes selon les playlists activées/planifiées."
+    },
+    {
+      "id": "VPS",
+      "label": "VPS Ubuntu (167.233.226.128)",
+      "type": "infra",
+      "summary": "Serveur Docker hébergeant AzuraCast/Icecast/Liquidsoap."
+    },
+    {
+      "id": "Vercel",
+      "label": "Vercel",
+      "type": "infra",
+      "summary": "Hébergement du player statique + fonctions serverless (api/), déploiement auto sur push GitHub."
+    },
+    {
+      "id": "DuckDNS",
+      "label": "DuckDNS + Let's Encrypt",
+      "type": "infra",
+      "summary": "Domaine gratuit kalbassfm.duckdns.org avec certificat SSL auto-renouvelé."
+    },
+    {
+      "id": "VercelKV",
+      "label": "Upstash for Redis (via Vercel Storage)",
+      "type": "infra",
+      "summary": "Store clé-valeur REST utilisé par api/reactions.js (et prévu pour api/vote.js) ; connecté en prod (Production+Preview) le 2026-07-16, région Washington D.C., plan Free — remplace l'ancien produit natif 'Vercel KV'."
+    },
+    {
+      "id": "TopFiveFeature",
+      "label": "Classement Top 5 🔥",
+      "type": "feature",
+      "summary": "Panneau #topPanel/#topList dans index.html : jauges proportionnelles au score, poll toutes les 4s + re-poll immédiat après chaque vote (effet 'live'). Repli 'Classement bientôt disponible.' si KV désactivé."
+    },
+    {
+      "id": "tools/build_rotation.py",
+      "label": "build_rotation.py",
+      "type": "file",
+      "summary": "SUPERSEDED (2026-07-16) : l'ordonnancement est delegue a AzuraCast (Shuffled+poids). Conserve pour l'historique. Calcule l'ordre de lecture par créneau : courbe d'énergie cible + mini-mouvements sinusoïdaux (MOVEMENTS_PER_SLOT), familles de style (House/Techno/Garage/Disco-Funk/Reggae-Dub/Jungle-DnB, max 2 consécutifs), quota minoritaire par quart de créneau, garde-fou enforce_family_limit, jonction de boucle fix_wrap_seam."
+    },
+    {
+      "id": "tools/analyze_essentia.py",
+      "label": "analyze_essentia.py",
+      "type": "file",
+      "summary": "Analyse Essentia (BPM/énergie/genre/mood/danceability, modèles TensorFlow discogs-effnet) écrivant tools/metadata.json ; normalize_path() corrige le bug historique de mélange de formats de chemin WSL (/mnt/c/...) vs Windows (C:\\...)."
+    },
+    {
+      "id": "tools/dedup_metadata.py",
+      "label": "dedup_metadata.py",
+      "type": "file",
+      "summary": "Ancien script de dédoublonnage de metadata.json — supprimait les entrées dont le chemin ne résolvait plus SANS tenter de réparation, a causé une perte de données réelle (260 entrées) ; superseded par normalize_and_dedup_metadata.py."
+    },
+    {
+      "id": "tools/normalize_and_dedup_metadata.py",
+      "label": "normalize_and_dedup_metadata.py",
+      "type": "file",
+      "summary": "Script de réparation sûr de metadata.json : normalise les chemins, dédoublonne par chemin normalisé exact, répare les chemins non résolus par correspondance de nom de fichier (moins le préfixe NNN_), ne supprime jamais silencieusement une entrée irrécupérable."
+    },
+    {
+      "id": "JinglesFeature",
+      "label": "Playlist Jingles AzuraCast",
+      "type": "feature",
+      "summary": "15 jingles audio générés (voix off), insérés nativement par AzuraCast via une playlist dédiée : type 'Une fois tous les x titres' (10-15), Mode Jingle activé (masque les métadonnées), ordre Mélangé — ne passe pas par le pipeline Python (build_rotation/export_rotation), reste stable indépendamment des régénérations de rotation."
+    },
+    {
+      "id": "NowPlayingAPI",
+      "label": "AzuraCast Now Playing API",
+      "type": "concept",
+      "summary": "Endpoint public /api/nowplaying/{station} interrogé par index.html toutes les 8s (listeners, morceau courant, historique) — pas d'auth requise."
+    },
+    {
+      "id": "AzuraCastAdminAPI",
+      "label": "AzuraCast Admin/Playlists API",
+      "type": "concept",
+      "summary": "API REST protégée par clé (GET /station/{id}/playlists, POST /station/{id}/playlist/{id}/toggle) — nécessaire pour le futur système de vote, jamais appelée depuis le navigateur."
+    },
+    {
+      "id": "ReactionsFeature",
+      "label": "Votes 🔥",
+      "type": "feature",
+      "summary": "Vote libre et illimité par morceau (plus de limite 1/auditeur — retirée le 2026-07-16), optimiste côté client, réconcilié via api/reactions.js + Upstash Redis."
+    },
+    {
+      "id": "EqualizerFeature",
+      "label": "Égaliseur Web Audio",
+      "type": "feature",
+      "summary": "Visualisation réactive au son réel via Web Audio API ; désactivée sur mobile car l'OS suspend l'AudioContext à l'écran verrouillé (le natif <audio> + Media Session survit)."
+    },
+    {
+      "id": "ProgrammeGrid",
+      "label": "Horloge a bacs ponderes (8 bacs)",
+      "type": "feature",
+      "summary": "Grille 'arc d'ambiance' remplacant les 4 creneaux (2026-07-16) : 7 fenetres horaires (Lever/Groove/Alizes/Sunset/Warm-up/Peak/Nuit profonde), chacune melant 1 bac dominant (poids 15) + 1-2 bacs invites (poids 2-4) via playlists AzuraCast Shuffled qui se chevauchent, + ponctuation jungle (1/14 chansons, 23h-6h). Separation artiste 120 min. Aucun ordre calcule localement : variete quotidienne garantie par le shuffle + poids."
+    },
+    {
+      "id": "PWAFeature",
+      "label": "PWA installable",
+      "type": "feature",
+      "summary": "manifest.webmanifest + sw.js + icônes logo Kalbass, bandeau d'installation mobile (iOS spécifique), raccourci header, fullscreen standalone."
+    },
+    {
+      "id": "RekordboxPipeline",
+      "label": "Pipeline Rekordbox → radio",
+      "type": "process",
+      "summary": "Rekordbox export .txt → import-rekordbox.ps1 (matching tokens) → clean_local_tracks.py (tags/covers) → dossiers AzuraCast via RaiDrive/SFTP Z:."
+    },
+    {
+      "id": "RaiDrive",
+      "label": "RaiDrive (lecteur Z:)",
+      "type": "infra",
+      "summary": "Monte le SFTP AzuraCast (port 2022) en lecteur réseau Windows Z:, permet de gérer les dossiers playlists comme des dossiers locaux."
+    },
+    {
+      "id": "iTunesSearchAPI",
+      "label": "iTunes Search API",
+      "type": "infra",
+      "summary": "API gratuite sans clé utilisée par clean_local_tracks.py pour retrouver de vraies pochettes d'album (remplace les logos de sites pirates)."
+    },
+    {
+      "id": "SACEM",
+      "label": "SACEM (licensing)",
+      "type": "concept",
+      "summary": "Déclaration légale de diffusion webradio en Martinique, recherchée dans STATE.md/PROJECT.md, toujours TODO au niveau opérationnel (CONTEXT.md)."
+    },
+    {
+      "id": "VotingSystemPlan",
+      "label": "Système de vote playlist (planifié)",
+      "type": "planned-feature",
+      "summary": "Plan (2026-07-08, wild-cooking-book.md) : playlists candidates par genre, vote public jusqu'à 20 votes, bascule 2h via AzuraCastAdminAPI, puis retour grille normale. Pas encore codé."
+    },
+    {
+      "id": "GitHubRepo",
+      "label": "abg5f/kalbassfm-player (GitHub)",
+      "type": "infra",
+      "summary": "Dépôt Git source du player, connecté à Vercel pour déploiement auto sur push."
+    },
+    {
+      "id": "api/chat.js",
+      "label": "api/chat.js",
+      "type": "file",
+      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur via cle chat:rate:<clientId> (SET EX 3 NX), refuse tout message contenant un lien (regex LINK_RE) avant même le rate-limit — anti-autopromo. Même squelette/repli que api/reactions.js. Depuis 2026-07-16 : moderation via bot Telegram (notification de chaque message avec boutons Supprimer/Bannir, filtre hash chat:deleted au GET, set chat:banned et flag chat:paused verifies au POST)."
+    },
+    {
+      "id": "ChatFeature",
+      "label": "Chat live",
+      "type": "feature",
+      "summary": "Panneau #chatPanel dans index.html, place a l'emplacement de l'ancien bandeau ticker (supprime), ouvert par defaut. Pseudo anonyme auto-genere (Auditeur-XXXX, localStorage kfm_client_id), poll toutes les 3s, cooldown client 3s apres envoi, validation anti-lien cote client (retour immediat) + cote serveur (application reelle). Moderation admin par bot Telegram : suppression de message, ban par clientId, pause globale du chat."
+    },
+    {
+      "id": "ContactPopup",
+      "label": "Popup contact (Owned by Lupari)",
+      "type": "feature",
+      "summary": "Remplace le lien mailto direct du footer par un bouton ouvrant une modale (#contactModal) avec deux choix : email (mailto) ou Instagram @luparimusic. Fermeture par clic sur le fond ou touche Echap."
+    },
+    {
+      "id": "tools/classify_bins.py",
+      "label": "classify_bins.py",
+      "type": "file",
+      "summary": "Source de verite unique de la grille 8 bacs : familles de genre, classification genre-d'abord/energie-ensuite, seuils AUTO-CALIBRES par percentiles au sein de chaque famille (SHARES) — s'adapte a l'evolution de la bibliotheque sans retouche. Importe par migrate_grid.py et triage_new_tracks.py."
+    },
+    {
+      "id": "tools/migrate_grid.py",
+      "label": "migrate_grid.py",
+      "type": "file",
+      "summary": "Migration one-shot 4 creneaux -> 8 bacs (dry-run/--apply, garde-fou _incoming, rapport effectifs/heures/vetos, CSV detaille, script WinSCP). Executee le 2026-07-16 : 825 fichiers migres, prefixes NNN_ retires."
+    },
+    {
+      "id": "tools/resync_metadata.py",
+      "label": "resync_metadata.py",
+      "type": "file",
+      "summary": "Reparation one-shot de metadata.json : rapproche chaque entree de son fichier reel par nom sans prefixe NNN_ (appariement 1:1 deterministe), supprime les entrees orphelines/dupliquees, liste les fichiers jamais analyses (orphans_report.txt). Executee le 2026-07-16 : 948->825 entrees saines."
+    },
+    {
+      "id": "tools/triage_new_tracks.py",
+      "label": "triage_new_tracks.py",
+      "type": "file",
+      "summary": "Pipeline d'ingestion _incoming : nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 8 bacs via classify_bins (seuils auto-calibres), depot sous nom propre (plus de prefixe d'ordre). Rapport HTML live auto-refresh."
+    },
+    {
+      "id": "api/telegram.js",
+      "label": "api/telegram.js",
+      "type": "file",
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot) : /skip (AzuraCast backend/skip + annonce dans le chat), /msg (message admin), /jingle (best-effort via API Requests), /ban /unban (set Redis chat:banned), /pause_chat /resume_chat (flag chat:paused), callbacks boutons Supprimer/Bannir. Secret webhook + chat_id unique autorise."
+    },
+    {
+      "id": "TelegramBotFeature",
+      "label": "Bot Telegram admin",
+      "type": "feature",
+      "summary": "Administration de la radio depuis Telegram : skip du morceau en cours, messages admin dans le chat live (pseudo KALBASSFM), moderation (suppression/ban depuis les notifications de chaque message), pause du chat, declenchement de jingle. Un seul admin (TELEGRAM_CHAT_ID)."
+    },
+    {
+      "id": "DesktopLayout",
+      "label": "Layout desktop du player",
+      "type": "feature",
+      "summary": "A partir de 1024px : grille CSS 2 colonnes (.main-col lecteur / .sidebar-col chat+Top5), colonnes a hauteurs independantes (height:0/min-height:100%), chat etire dans l'espace disponible via ::details-content (repli max-height 260px sinon). Mobile inchange (display:contents + order)."
+    }
   ],
   "edges": [
-    { "source": "index.html", "target": "NowPlayingAPI", "relation": "poll toutes les 8s", "weight": 3 },
-    { "source": "index.html", "target": "ReactionsFeature", "relation": "implémente l'UI de", "weight": 2 },
-    { "source": "index.html", "target": "EqualizerFeature", "relation": "implémente", "weight": 2 },
-    { "source": "index.html", "target": "ProgrammeGrid", "relation": "affiche", "weight": 1 },
-    { "source": "index.html", "target": "PWAFeature", "relation": "expose bandeau d'installation pour", "weight": 1 },
-    { "source": "ReactionsFeature", "target": "api/reactions.js", "relation": "appelle en GET/POST", "weight": 3 },
-    { "source": "api/reactions.js", "target": "VercelKV", "relation": "lit/écrit via REST", "weight": 3 },
-    { "source": "api/reactions.js", "target": "Vercel", "relation": "déployée sur", "weight": 2 },
-    { "source": "PWAFeature", "target": "manifest.webmanifest", "relation": "configurée par", "weight": 2 },
-    { "source": "PWAFeature", "target": "sw.js", "relation": "configurée par", "weight": 2 },
-    { "source": "sw.js", "target": "index.html", "relation": "met en cache la coquille de", "weight": 1 },
-    { "source": "NowPlayingAPI", "target": "AzuraCast", "relation": "exposée par", "weight": 3 },
-    { "source": "AzuraCastAdminAPI", "target": "AzuraCast", "relation": "exposée par", "weight": 2 },
-    { "source": "AzuraCast", "target": "Icecast", "relation": "diffuse via", "weight": 2 },
-    { "source": "AzuraCast", "target": "Liquidsoap", "relation": "orchestre l'AutoDJ via", "weight": 2 },
-    { "source": "AzuraCast", "target": "VPS", "relation": "hébergé sur", "weight": 3 },
-    { "source": "AzuraCast", "target": "ProgrammeGrid", "relation": "planifie les playlists selon", "weight": 2 },
-    { "source": "VPS", "target": "DuckDNS", "relation": "exposé via domaine", "weight": 1 },
-    { "source": "Vercel", "target": "GitHubRepo", "relation": "déploie automatiquement depuis", "weight": 2 },
-    { "source": "index.html", "target": "GitHubRepo", "relation": "versionné dans", "weight": 1 },
-    { "source": "RekordboxPipeline", "target": "tools/import-rekordbox.ps1", "relation": "étape 1 :", "weight": 2 },
-    { "source": "RekordboxPipeline", "target": "tools/clean_local_tracks.py", "relation": "étape 2 :", "weight": 2 },
-    { "source": "RekordboxPipeline", "target": "RaiDrive", "relation": "dépose les fichiers via", "weight": 2 },
-    { "source": "RaiDrive", "target": "AzuraCast", "relation": "monte le SFTP de", "weight": 2 },
-    { "source": "tools/clean_local_tracks.py", "target": "iTunesSearchAPI", "relation": "cherche les pochettes via", "weight": 2 },
-    { "source": "RekordboxPipeline", "target": "ProgrammeGrid", "relation": "alimente les dossiers playlists de", "weight": 2 },
-    { "source": "VotingSystemPlan", "target": "AzuraCastAdminAPI", "relation": "s'appuiera sur", "weight": 3 },
-    { "source": "VotingSystemPlan", "target": "api/reactions.js", "relation": "réutilise le pattern serverless+KV de", "weight": 2 },
-    { "source": "VotingSystemPlan", "target": "VercelKV", "relation": "stockera les votes dans", "weight": 2 },
-    { "source": "VotingSystemPlan", "target": "ProgrammeGrid", "relation": "bascule temporairement hors de", "weight": 2 },
-    { "source": "VotingSystemPlan", "target": "index.html", "relation": "ajoutera un panneau UI dans", "weight": 1 },
-    { "source": "CONTEXT.md", "target": "VotingSystemPlan", "relation": "documente le TODO", "weight": 1 },
-    { "source": "README.md", "target": "RekordboxPipeline", "relation": "documente", "weight": 1 },
-    { "source": "README.md", "target": "SACEM", "relation": "liste en roadmap", "weight": 1 },
-    { "source": ".planning/STATE.md", "target": "SACEM", "relation": "recherche le licensing", "weight": 2 },
-    { "source": ".planning/PROJECT.md", "target": "SACEM", "relation": "identifie comme exigence réglementaire", "weight": 2 },
-    { "source": ".planning/PROJECT.md", "target": ".planning/ROADMAP.md", "relation": "détaillé par", "weight": 2 },
-    { "source": ".planning/ROADMAP.md", "target": ".planning/PLAN.md", "relation": "Phase 1 détaillée dans", "weight": 2 },
-    { "source": ".planning/PLAN.md", "target": ".planning/EXECUTION_CHECKLIST.md", "relation": "opérationnalisé par", "weight": 2 },
-    { "source": ".planning/PROJECT.md", "target": ".planning/REQUIREMENTS.md", "relation": "spécifié techniquement dans", "weight": 2 },
-    { "source": ".planning/PROJECT.md", "target": "AzuraCast", "relation": "recommande comme plateforme", "weight": 2 },
-    { "source": ".planning/REQUIREMENTS.md", "target": "NowPlayingAPI", "relation": "exige l'affichage temps réel via", "weight": 1 },
-    { "source": "index.html", "target": "TopFiveFeature", "relation": "implémente l'UI de", "weight": 2 },
-    { "source": "TopFiveFeature", "target": "api/reactions.js", "relation": "poll ?top=5 sur", "weight": 3 },
-    { "source": "ReactionsFeature", "target": "TopFiveFeature", "relation": "alimente le classement de", "weight": 2 },
-    { "source": "tools/build_rotation.py", "target": "tools/analyze_essentia.py", "relation": "consomme metadata.json produit par", "weight": 3 },
-    { "source": "tools/analyze_essentia.py", "target": "RekordboxPipeline", "relation": "analyse les morceaux ingérés par", "weight": 2 },
-    { "source": "tools/normalize_and_dedup_metadata.py", "target": "tools/dedup_metadata.py", "relation": "remplace (réparation sûre vs suppression)", "weight": 2 },
-    { "source": "tools/normalize_and_dedup_metadata.py", "target": "tools/analyze_essentia.py", "relation": "répare le metadata.json produit par", "weight": 2 },
-    { "source": "JinglesFeature", "target": "AzuraCast", "relation": "configurée nativement dans", "weight": 2 },
-    { "source": "JinglesFeature", "target": "tools/build_rotation.py", "relation": "indépendante de (pas de collision au ré-export)", "weight": 1 },
-    { "source": "VercelKV", "target": "TopFiveFeature", "relation": "rend fonctionnel le classement partagé de", "weight": 2 },
-    { "source": "index.html", "target": "ChatFeature", "relation": "implémente l'UI de", "weight": 2 },
-    { "source": "ChatFeature", "target": "api/chat.js", "relation": "poll GET / envoie POST sur", "weight": 3 },
-    { "source": "api/chat.js", "target": "VercelKV", "relation": "lit/écrit via REST", "weight": 3 },
-    { "source": "api/chat.js", "target": "Vercel", "relation": "déployée sur", "weight": 2 },
-    { "source": "index.html", "target": "ContactPopup", "relation": "implémente l'UI de", "weight": 1 },
-    { "source": "ChatFeature", "target": "VotingSystemPlan", "relation": "confirme la faisabilité du pattern polling+Redis retenu par", "weight": 1 }
+    {
+      "source": "index.html",
+      "target": "NowPlayingAPI",
+      "relation": "poll toutes les 8s",
+      "weight": 3
+    },
+    {
+      "source": "index.html",
+      "target": "ReactionsFeature",
+      "relation": "implémente l'UI de",
+      "weight": 2
+    },
+    {
+      "source": "index.html",
+      "target": "EqualizerFeature",
+      "relation": "implémente",
+      "weight": 2
+    },
+    {
+      "source": "index.html",
+      "target": "ProgrammeGrid",
+      "relation": "affiche",
+      "weight": 1
+    },
+    {
+      "source": "index.html",
+      "target": "PWAFeature",
+      "relation": "expose bandeau d'installation pour",
+      "weight": 1
+    },
+    {
+      "source": "ReactionsFeature",
+      "target": "api/reactions.js",
+      "relation": "appelle en GET/POST",
+      "weight": 3
+    },
+    {
+      "source": "api/reactions.js",
+      "target": "VercelKV",
+      "relation": "lit/écrit via REST",
+      "weight": 3
+    },
+    {
+      "source": "api/reactions.js",
+      "target": "Vercel",
+      "relation": "déployée sur",
+      "weight": 2
+    },
+    {
+      "source": "PWAFeature",
+      "target": "manifest.webmanifest",
+      "relation": "configurée par",
+      "weight": 2
+    },
+    {
+      "source": "PWAFeature",
+      "target": "sw.js",
+      "relation": "configurée par",
+      "weight": 2
+    },
+    {
+      "source": "sw.js",
+      "target": "index.html",
+      "relation": "met en cache la coquille de",
+      "weight": 1
+    },
+    {
+      "source": "NowPlayingAPI",
+      "target": "AzuraCast",
+      "relation": "exposée par",
+      "weight": 3
+    },
+    {
+      "source": "AzuraCastAdminAPI",
+      "target": "AzuraCast",
+      "relation": "exposée par",
+      "weight": 2
+    },
+    {
+      "source": "AzuraCast",
+      "target": "Icecast",
+      "relation": "diffuse via",
+      "weight": 2
+    },
+    {
+      "source": "AzuraCast",
+      "target": "Liquidsoap",
+      "relation": "orchestre l'AutoDJ via",
+      "weight": 2
+    },
+    {
+      "source": "AzuraCast",
+      "target": "VPS",
+      "relation": "hébergé sur",
+      "weight": 3
+    },
+    {
+      "source": "AzuraCast",
+      "target": "ProgrammeGrid",
+      "relation": "planifie les playlists selon",
+      "weight": 2
+    },
+    {
+      "source": "VPS",
+      "target": "DuckDNS",
+      "relation": "exposé via domaine",
+      "weight": 1
+    },
+    {
+      "source": "Vercel",
+      "target": "GitHubRepo",
+      "relation": "déploie automatiquement depuis",
+      "weight": 2
+    },
+    {
+      "source": "index.html",
+      "target": "GitHubRepo",
+      "relation": "versionné dans",
+      "weight": 1
+    },
+    {
+      "source": "RekordboxPipeline",
+      "target": "tools/import-rekordbox.ps1",
+      "relation": "étape 1 :",
+      "weight": 2
+    },
+    {
+      "source": "RekordboxPipeline",
+      "target": "tools/clean_local_tracks.py",
+      "relation": "étape 2 :",
+      "weight": 2
+    },
+    {
+      "source": "RekordboxPipeline",
+      "target": "RaiDrive",
+      "relation": "dépose les fichiers via",
+      "weight": 2
+    },
+    {
+      "source": "RaiDrive",
+      "target": "AzuraCast",
+      "relation": "monte le SFTP de",
+      "weight": 2
+    },
+    {
+      "source": "tools/clean_local_tracks.py",
+      "target": "iTunesSearchAPI",
+      "relation": "cherche les pochettes via",
+      "weight": 2
+    },
+    {
+      "source": "RekordboxPipeline",
+      "target": "ProgrammeGrid",
+      "relation": "alimente les dossiers playlists de",
+      "weight": 2
+    },
+    {
+      "source": "VotingSystemPlan",
+      "target": "AzuraCastAdminAPI",
+      "relation": "s'appuiera sur",
+      "weight": 3
+    },
+    {
+      "source": "VotingSystemPlan",
+      "target": "api/reactions.js",
+      "relation": "réutilise le pattern serverless+KV de",
+      "weight": 2
+    },
+    {
+      "source": "VotingSystemPlan",
+      "target": "VercelKV",
+      "relation": "stockera les votes dans",
+      "weight": 2
+    },
+    {
+      "source": "VotingSystemPlan",
+      "target": "ProgrammeGrid",
+      "relation": "bascule temporairement hors de",
+      "weight": 2
+    },
+    {
+      "source": "VotingSystemPlan",
+      "target": "index.html",
+      "relation": "ajoutera un panneau UI dans",
+      "weight": 1
+    },
+    {
+      "source": "CONTEXT.md",
+      "target": "VotingSystemPlan",
+      "relation": "documente le TODO",
+      "weight": 1
+    },
+    {
+      "source": "README.md",
+      "target": "RekordboxPipeline",
+      "relation": "documente",
+      "weight": 1
+    },
+    {
+      "source": "README.md",
+      "target": "SACEM",
+      "relation": "liste en roadmap",
+      "weight": 1
+    },
+    {
+      "source": ".planning/STATE.md",
+      "target": "SACEM",
+      "relation": "recherche le licensing",
+      "weight": 2
+    },
+    {
+      "source": ".planning/PROJECT.md",
+      "target": "SACEM",
+      "relation": "identifie comme exigence réglementaire",
+      "weight": 2
+    },
+    {
+      "source": ".planning/PROJECT.md",
+      "target": ".planning/ROADMAP.md",
+      "relation": "détaillé par",
+      "weight": 2
+    },
+    {
+      "source": ".planning/ROADMAP.md",
+      "target": ".planning/PLAN.md",
+      "relation": "Phase 1 détaillée dans",
+      "weight": 2
+    },
+    {
+      "source": ".planning/PLAN.md",
+      "target": ".planning/EXECUTION_CHECKLIST.md",
+      "relation": "opérationnalisé par",
+      "weight": 2
+    },
+    {
+      "source": ".planning/PROJECT.md",
+      "target": ".planning/REQUIREMENTS.md",
+      "relation": "spécifié techniquement dans",
+      "weight": 2
+    },
+    {
+      "source": ".planning/PROJECT.md",
+      "target": "AzuraCast",
+      "relation": "recommande comme plateforme",
+      "weight": 2
+    },
+    {
+      "source": ".planning/REQUIREMENTS.md",
+      "target": "NowPlayingAPI",
+      "relation": "exige l'affichage temps réel via",
+      "weight": 1
+    },
+    {
+      "source": "index.html",
+      "target": "TopFiveFeature",
+      "relation": "implémente l'UI de",
+      "weight": 2
+    },
+    {
+      "source": "TopFiveFeature",
+      "target": "api/reactions.js",
+      "relation": "poll ?top=5 sur",
+      "weight": 3
+    },
+    {
+      "source": "ReactionsFeature",
+      "target": "TopFiveFeature",
+      "relation": "alimente le classement de",
+      "weight": 2
+    },
+    {
+      "source": "tools/build_rotation.py",
+      "target": "tools/analyze_essentia.py",
+      "relation": "consomme metadata.json produit par",
+      "weight": 3
+    },
+    {
+      "source": "tools/analyze_essentia.py",
+      "target": "RekordboxPipeline",
+      "relation": "analyse les morceaux ingérés par",
+      "weight": 2
+    },
+    {
+      "source": "tools/normalize_and_dedup_metadata.py",
+      "target": "tools/dedup_metadata.py",
+      "relation": "remplace (réparation sûre vs suppression)",
+      "weight": 2
+    },
+    {
+      "source": "tools/normalize_and_dedup_metadata.py",
+      "target": "tools/analyze_essentia.py",
+      "relation": "répare le metadata.json produit par",
+      "weight": 2
+    },
+    {
+      "source": "JinglesFeature",
+      "target": "AzuraCast",
+      "relation": "configurée nativement dans",
+      "weight": 2
+    },
+    {
+      "source": "JinglesFeature",
+      "target": "tools/build_rotation.py",
+      "relation": "indépendante de (pas de collision au ré-export)",
+      "weight": 1
+    },
+    {
+      "source": "VercelKV",
+      "target": "TopFiveFeature",
+      "relation": "rend fonctionnel le classement partagé de",
+      "weight": 2
+    },
+    {
+      "source": "index.html",
+      "target": "ChatFeature",
+      "relation": "implémente l'UI de",
+      "weight": 2
+    },
+    {
+      "source": "ChatFeature",
+      "target": "api/chat.js",
+      "relation": "poll GET / envoie POST sur",
+      "weight": 3
+    },
+    {
+      "source": "api/chat.js",
+      "target": "VercelKV",
+      "relation": "lit/écrit via REST",
+      "weight": 3
+    },
+    {
+      "source": "api/chat.js",
+      "target": "Vercel",
+      "relation": "déployée sur",
+      "weight": 2
+    },
+    {
+      "source": "index.html",
+      "target": "ContactPopup",
+      "relation": "implémente l'UI de",
+      "weight": 1
+    },
+    {
+      "source": "ChatFeature",
+      "target": "VotingSystemPlan",
+      "relation": "confirme la faisabilité du pattern polling+Redis retenu par",
+      "weight": 1
+    },
+    {
+      "source": "tools/migrate_grid.py",
+      "target": "tools/classify_bins.py",
+      "relation": "importe la classification de",
+      "weight": 3
+    },
+    {
+      "source": "tools/triage_new_tracks.py",
+      "target": "tools/classify_bins.py",
+      "relation": "importe la classification de",
+      "weight": 3
+    },
+    {
+      "source": "tools/classify_bins.py",
+      "target": "ProgrammeGrid",
+      "relation": "definit les bacs de",
+      "weight": 3
+    },
+    {
+      "source": "tools/migrate_grid.py",
+      "target": "ProgrammeGrid",
+      "relation": "a migre la bibliotheque vers",
+      "weight": 2
+    },
+    {
+      "source": "tools/resync_metadata.py",
+      "target": "tools/migrate_grid.py",
+      "relation": "a repare metadata.json avant",
+      "weight": 2
+    },
+    {
+      "source": "tools/triage_new_tracks.py",
+      "target": "tools/analyze_essentia.py",
+      "relation": "analyse via",
+      "weight": 3
+    },
+    {
+      "source": "tools/triage_new_tracks.py",
+      "target": "tools/clean_local_tracks.py",
+      "relation": "reutilise le nettoyage de",
+      "weight": 2
+    },
+    {
+      "source": "ProgrammeGrid",
+      "target": "tools/build_rotation.py",
+      "relation": "supersede",
+      "weight": 1
+    },
+    {
+      "source": "TelegramBotFeature",
+      "target": "api/telegram.js",
+      "relation": "implemente par",
+      "weight": 3
+    },
+    {
+      "source": "api/telegram.js",
+      "target": "VercelKV",
+      "relation": "lit/ecrit chat:banned, chat:paused, chat:messages via",
+      "weight": 2
+    },
+    {
+      "source": "api/telegram.js",
+      "target": "AzuraCastAdminAPI",
+      "relation": "appelle backend/skip et Requests via",
+      "weight": 2
+    },
+    {
+      "source": "api/chat.js",
+      "target": "TelegramBotFeature",
+      "relation": "notifie chaque message a",
+      "weight": 2
+    },
+    {
+      "source": "TelegramBotFeature",
+      "target": "ChatFeature",
+      "relation": "modere",
+      "weight": 2
+    },
+    {
+      "source": "index.html",
+      "target": "DesktopLayout",
+      "relation": "implemente",
+      "weight": 2
+    },
+    {
+      "source": "DesktopLayout",
+      "target": "ChatFeature",
+      "relation": "place en colonne laterale",
+      "weight": 1
+    },
+    {
+      "source": "DesktopLayout",
+      "target": "TopFiveFeature",
+      "relation": "place en colonne laterale",
+      "weight": 1
+    },
+    {
+      "source": "AzuraCast",
+      "target": "ProgrammeGrid",
+      "relation": "execute l'horloge via playlists Shuffled+poids",
+      "weight": 3
+    }
   ]
 }

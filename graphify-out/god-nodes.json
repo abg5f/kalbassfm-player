@@ -1,13 +1,27 @@
-{
-  "god_nodes": [
-    { "id": "index.html", "degree": 13, "reason": "Le player concentre toutes les features front (now-playing, votes, Top 5, chat live, popup contact, égaliseur, PWA, programme)." },
-    { "id": "AzuraCast", "degree": 9, "reason": "Cœur de l'infra streaming : relié à Icecast, Liquidsoap, VPS, Now Playing API, Admin API et la playlist Jingles native." },
-    { "id": "VercelKV", "degree": 7, "reason": "Store Upstash Redis connecté (Production+Preview) — alimente désormais le vote partagé, le Top 5 ET le chat live, trois fonctions serverless distinctes sur le même store." },
-    { "id": "api/reactions.js", "degree": 6, "reason": "Fonction serverless : votes libres + classement Top 5, backée par Upstash Redis." },
-    { "id": "api/chat.js", "degree": 5, "reason": "Nouvelle fonction serverless (2026-07-17) : chat live anonyme + blocage de liens anti-autopromo, même squelette que api/reactions.js." },
-    { "id": "VotingSystemPlan", "degree": 6, "reason": "Feature de vote de playlist par genre planifiée (2026-07-08), distincte du vote par morceau et du chat déjà codés — toujours pas implémentée." },
-    { "id": "tools/build_rotation.py", "degree": 6, "reason": "Logique de diversité de rotation (familles de style, mini-mouvements, quota minoritaire) — cœur de l'anti-monotonie façon FIP/Radio Meuh." },
-    { "id": "RekordboxPipeline", "degree": 5, "reason": "Processus central reliant les deux scripts locaux, RaiDrive et la grille de programme AzuraCast." },
-    { "id": "ChatFeature", "degree": 4, "reason": "Remplace le bandeau ticker (supprimé) — nouvelle zone permanente du player, ouverte par défaut." }
-  ]
-}
+[
+  {
+    "id": "index.html",
+    "degree": 12,
+    "label": "index.html"
+  },
+  {
+    "id": "AzuraCast",
+    "degree": 10,
+    "label": "AzuraCast"
+  },
+  {
+    "id": "ProgrammeGrid",
+    "degree": 8,
+    "label": "Horloge a bacs ponderes (8 bacs)"
+  },
+  {
+    "id": "VotingSystemPlan",
+    "degree": 7,
+    "label": "Système de vote playlist (planifié)"
+  },
+  {
+    "id": "RekordboxPipeline",
+    "degree": 6,
+    "label": "Pipeline Rekordbox → radio"
+  }
+]

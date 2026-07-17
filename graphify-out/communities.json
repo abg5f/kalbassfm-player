@@ -3,37 +3,99 @@
     {
       "id": "player-frontend",
       "label": "Player / Frontend",
-      "members": ["index.html", "sw.js", "manifest.webmanifest", "PWAFeature", "EqualizerFeature", "ReactionsFeature", "TopFiveFeature", "ChatFeature", "ContactPopup", "ProgrammeGrid", "NowPlayingAPI"]
+      "members": [
+        "index.html",
+        "sw.js",
+        "manifest.webmanifest",
+        "PWAFeature",
+        "EqualizerFeature",
+        "ReactionsFeature",
+        "TopFiveFeature",
+        "ChatFeature",
+        "ContactPopup",
+        "ProgrammeGrid",
+        "NowPlayingAPI",
+        "DesktopLayout"
+      ]
     },
     {
       "id": "infra-streaming",
       "label": "Infra / Streaming",
-      "members": ["AzuraCast", "Icecast", "Liquidsoap", "VPS", "DuckDNS", "GitHubRepo", "Vercel", "AzuraCastAdminAPI", "JinglesFeature"]
+      "members": [
+        "AzuraCast",
+        "Icecast",
+        "Liquidsoap",
+        "VPS",
+        "DuckDNS",
+        "GitHubRepo",
+        "Vercel",
+        "AzuraCastAdminAPI",
+        "JinglesFeature"
+      ]
     },
     {
       "id": "serverless-api",
-      "label": "Serverless / API (vote + chat temps réel connectés) + vote playlist planifié",
-      "members": ["api/reactions.js", "api/chat.js", "VercelKV", "TopFiveFeature", "ChatFeature", "VotingSystemPlan"]
+      "label": "Serverless / API (vote + chat + bot Telegram admin) + vote playlist planifie",
+      "members": [
+        "api/reactions.js",
+        "api/chat.js",
+        "VercelKV",
+        "TopFiveFeature",
+        "ChatFeature",
+        "VotingSystemPlan",
+        "api/telegram.js",
+        "TelegramBotFeature"
+      ]
     },
     {
       "id": "tooling-pipeline",
       "label": "Outillage / Pipeline musique",
-      "members": ["RekordboxPipeline", "tools/import-rekordbox.ps1", "tools/clean_local_tracks.py", "RaiDrive", "iTunesSearchAPI"]
+      "members": [
+        "RekordboxPipeline",
+        "tools/import-rekordbox.ps1",
+        "tools/clean_local_tracks.py",
+        "RaiDrive",
+        "iTunesSearchAPI",
+        "tools/classify_bins.py",
+        "tools/migrate_grid.py",
+        "tools/resync_metadata.py",
+        "tools/triage_new_tracks.py"
+      ]
     },
     {
       "id": "essentia-rotation",
       "label": "Pipeline Essentia / Rotation musicale",
-      "members": ["tools/analyze_essentia.py", "tools/build_rotation.py", "tools/dedup_metadata.py", "tools/normalize_and_dedup_metadata.py"]
+      "members": [
+        "tools/analyze_essentia.py",
+        "tools/build_rotation.py",
+        "tools/dedup_metadata.py",
+        "tools/normalize_and_dedup_metadata.py",
+        "tools/classify_bins.py",
+        "tools/migrate_grid.py",
+        "tools/resync_metadata.py",
+        "tools/triage_new_tracks.py"
+      ]
     },
     {
       "id": "planning-business",
       "label": "Documents de planification / business",
-      "members": [".planning/PROJECT.md", ".planning/ROADMAP.md", ".planning/PLAN.md", ".planning/REQUIREMENTS.md", ".planning/EXECUTION_CHECKLIST.md", ".planning/STATE.md", "SACEM"]
+      "members": [
+        ".planning/PROJECT.md",
+        ".planning/ROADMAP.md",
+        ".planning/PLAN.md",
+        ".planning/REQUIREMENTS.md",
+        ".planning/EXECUTION_CHECKLIST.md",
+        ".planning/STATE.md",
+        "SACEM"
+      ]
     },
     {
       "id": "session-context",
       "label": "Contexte de session",
-      "members": ["CONTEXT.md", "README.md"]
+      "members": [
+        "CONTEXT.md",
+        "README.md"
+      ]
     }
   ]
 }
