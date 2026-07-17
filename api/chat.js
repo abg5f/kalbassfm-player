@@ -65,9 +65,10 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       await maybeAnnounce(kv);
-      const [lj, dj] = await Promise.all([
+      const [lj, dj, pj] = await Promise.all([
         kv('lrange', 'chat:messages', '0', '49'),
         kv('hgetall', 'chat:deleted'),
+        kv('get', 'chat:pinned'),
       ]);
       const raw = lj.result || [];
       const deletedFields = dj.result || [];
@@ -76,7 +77,7 @@ export default async function handler(req, res) {
       const messages = raw
         .map((s) => { try { return JSON.parse(s); } catch { return null; } })
         .filter((m) => m && !deletedIds.has(m.id));
-      return res.status(200).json({ enabled: true, messages });
+      return res.status(200).json({ enabled: true, messages, pinned: pj.result || null });
     } catch {
       return res.status(200).json({ enabled: false, messages: [] });
     }
@@ -114,6 +115,10 @@ export default async function handler(req, res) {
     const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
+    // Compteur quotidien (jour Martinique UTC-4) lu par /stats du bot Telegram.
+    const day = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
+    await kv('incr', `stats:msg:${day}`);
+    await kv('expire', `stats:msg:${day}`, '172800');
     await notifyTelegram(kv, msg, clientId);
     return res.status(200).json({ enabled: true, ok: true });
   } catch {
@@ -144,6 +149,7 @@ async function notifyTelegram(kv, msg, clientId) {
         parse_mode: 'HTML',
         text: `${escapeHtml(msg.nick)}: ${escapeHtml(msg.text)}\n<code>${escapeHtml(clientId)}</code>`,
         reply_markup: { inline_keyboard: [[
+          { text: '↩️ Répondre', callback_data: 'rep:' + msg.id },
           { text: '🗑 Supprimer', callback_data: 'del:' + msg.id },
           { text: '🔨 Bannir', callback_data: 'ban:' + clientId },
         ]] },

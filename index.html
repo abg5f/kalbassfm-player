@@ -618,6 +618,38 @@
       opacity: .8;
     }
     .chat-reply b { color: var(--accent); }
+    /* Vibe now/next : ligne fine d'ambiance sous le titre */
+    .vibe {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      color: var(--muted);
+      margin: 4px 0 0;
+      letter-spacing: .02em;
+    }
+    .vibe b { color: var(--accent); font-weight: 700; }
+    .vibe .vibe-next { opacity: .7; }
+    /* Bandeau epingle (admin /pin) en haut du chat */
+    .chat-pinned {
+      display: none;
+      font-size: .68rem;
+      line-height: 1.3;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+    .chat-pinned.show { display: block; }
+    /* Formulaire de demande / dedicace (masque par defaut) */
+    .request-form { display: none; gap: 8px; margin-top: 8px; }
+    .request-form.show { display: flex; }
+    .request-note {
+      font-size: .62rem;
+      color: var(--accent);
+      margin-top: 6px;
+      min-height: 0;
+    }
     .chat-form {
       display: flex;
       gap: 8px;
@@ -883,12 +915,19 @@
         <p class="track-title" id="trackTitle">WAITING FOR STREAM</p>
       </div>
       <p class="track-artist" id="trackArtist">— ARTIST</p>
+      <p class="vibe" id="vibe"></p>
 
       <div class="actions-row" id="actionsRow" style="display:none">
         <button class="chip chip-fire" id="reactBtn" aria-label="Like this track">🔥 <span id="reactCount">0</span></button>
         <button class="chip" id="shareBtn" aria-label="Share this track">↗ Share</button>
         <a class="chip" id="findYT" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
+        <button class="chip" id="requestBtn" type="button" aria-label="Request a track or send a shout-out">🎵 Request</button>
       </div>
+      <form class="request-form" id="requestForm">
+        <input class="chat-input" id="requestInput" type="text" maxlength="200" placeholder="Song request or shout-out to the DJ..." autocomplete="off" aria-label="Request or shout-out">
+        <button class="chip" id="requestSend" type="submit">Send</button>
+      </form>
+      <p class="request-note" id="requestNote"></p>
     </div>
 
     <div class="controls">
@@ -939,6 +978,7 @@
         <span class="chev">›</span>
       </summary>
       <div class="panel-body">
+        <div class="chat-pinned" id="chatPinned"></div>
         <div class="chat-list" id="chatList"></div>
         <p class="chat-error" id="chatError" style="display:none"></p>
         <form class="chat-form" id="chatForm">
@@ -1337,12 +1377,18 @@
       chatList.appendChild(el);
     });
   }
+  const chatPinned = document.getElementById('chatPinned');
+  function renderPinned(pinned) {
+    if (pinned) { chatPinned.textContent = '📌 ' + pinned; chatPinned.classList.add('show'); }
+    else { chatPinned.textContent = ''; chatPinned.classList.remove('show'); }
+  }
   async function pollChat() {
     try {
       const r = await fetch('/api/chat', { cache: 'no-store' });
       const j = await r.json();
       if (!j.enabled) throw new Error('disabled');
       renderChat(j.messages);
+      renderPinned(j.pinned);
     } catch {
       chatList.innerHTML = '<p class="prog-note">Chat coming soon.</p>';
     }
@@ -1383,6 +1429,45 @@
       pollChat();
     } catch {}
     setTimeout(() => { chatCooldown = false; chatSend.disabled = false; }, 3000);
+  });
+
+  /* ── Demande / dedicace -> Telegram admin (jamais postee dans le chat public) ── */
+  const requestBtn = document.getElementById('requestBtn');
+  const requestForm = document.getElementById('requestForm');
+  const requestInput = document.getElementById('requestInput');
+  const requestSend = document.getElementById('requestSend');
+  const requestNote = document.getElementById('requestNote');
+  let requestNoteTimer = null;
+  function showRequestNote(msg) {
+    requestNote.textContent = msg;
+    clearTimeout(requestNoteTimer);
+    requestNoteTimer = setTimeout(() => { requestNote.textContent = ''; }, 4000);
+  }
+  requestBtn.addEventListener('click', () => {
+    if (requestForm.classList.toggle('show')) requestInput.focus();
+  });
+  let requestCooldown = false;
+  requestForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = requestInput.value.trim();
+    if (!text || requestCooldown) return;
+    if (LINK_RE.test(text)) { showRequestNote('Links are not allowed.'); return; }
+    requestCooldown = true;
+    requestSend.disabled = true;
+    try {
+      const r = await fetch('/api/request', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, nick: chatNick, text }),
+      });
+      const j = await r.json();
+      if (j.ok) { requestInput.value = ''; requestForm.classList.remove('show'); showRequestNote('Sent to the DJ 🎧'); }
+      else if (j.rateLimited) showRequestNote('Please wait a moment before sending again.');
+      else if (j.blocked === 'link') showRequestNote('Links are not allowed.');
+      else if (j.enabled === false) showRequestNote('Requests are unavailable right now.');
+      else showRequestNote('Could not send — try again.');
+    } catch { showRequestNote('Could not send — try again.'); }
+    setTimeout(() => { requestCooldown = false; requestSend.disabled = false; }, 3000);
   });
 
   /* ── Historique ── */
@@ -1449,6 +1534,35 @@
   }
   pollNowPlaying();
   setInterval(pollNowPlaying, CONFIG.pollMs);
+
+  /* ── Vibe now/next (horloge a bacs, heure Martinique UTC-4 fixe) ──
+     Les 7 fenetres refletent la programmation ; calcul 100% client, aucune
+     donnee serveur. order[] est en ordre chronologique pour trouver la fenetre
+     courante et la suivante (avec wrap : 0h-1h59 -> Peak time de la veille). */
+  const vibeEl = document.getElementById('vibe');
+  const VIBE_WINDOWS = [
+    { h: 2,  emoji: '🌙', name: 'Deep Night',   desc: 'deep, minimal & dub' },
+    { h: 6,  emoji: '🌅', name: 'Sunrise',      desc: 'ambient & downtempo' },
+    { h: 9,  emoji: '☀️', name: 'Solar Groove', desc: 'disco, funk & nu-disco' },
+    { h: 13, emoji: '🌴', name: 'Trade Winds',  desc: 'eclectic house' },
+    { h: 17, emoji: '🌇', name: 'Sunset',       desc: 'deep & melodic house' },
+    { h: 20, emoji: '🔥', name: 'Warm-up',      desc: 'tech house' },
+    { h: 23, emoji: '⚡', name: 'Peak time',    desc: 'techno' },
+  ];
+  function vibeHourLabel(h) { const ap = h < 12 ? 'AM' : 'PM'; let hh = h % 12; if (hh === 0) hh = 12; return hh + ap; }
+  function renderVibe() {
+    const m = new Date(Date.now() - 4 * 3600 * 1000);
+    const hr = m.getUTCHours();
+    let ci = -1;
+    for (let i = 0; i < VIBE_WINDOWS.length; i++) { if (hr >= VIBE_WINDOWS[i].h) ci = i; }
+    if (ci === -1) ci = VIBE_WINDOWS.length - 1; // avant 2h -> Peak time (wrap nocturne)
+    const cur = VIBE_WINDOWS[ci];
+    const nxt = VIBE_WINDOWS[(ci + 1) % VIBE_WINDOWS.length];
+    vibeEl.innerHTML = cur.emoji + ' Now · <b>' + cur.name + '</b> — ' + cur.desc +
+      ' <span class="vibe-next">· Next ' + vibeHourLabel(nxt.h) + ' ' + nxt.name + '</span>';
+  }
+  renderVibe();
+  setInterval(renderVibe, 60000);
 
   /* ── Sleep timer ── */
   const SLEEP_STEPS = [0, 15, 30, 60];

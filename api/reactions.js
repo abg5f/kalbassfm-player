@@ -74,6 +74,11 @@ export default async function handler(req, res) {
     if (art) fields.push('art', art);
     if (fields.length) await kv('hset', `meta:${id}`, ...fields);
 
+    // Compteur quotidien (jour Martinique UTC-4) lu par /stats du bot Telegram.
+    const day = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
+    await kv('incr', `stats:vote:${day}`);
+    await kv('expire', `stats:vote:${day}`, '172800');
+
     const j = await kv('zscore', 'leaderboard', id);
     const count = parseInt(j.result ?? 0, 10) || 0;
     return res.status(200).json({ enabled: true, count });

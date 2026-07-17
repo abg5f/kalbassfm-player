@@ -60,6 +60,17 @@ async function handleMessage(token, message) {
     }
   }
 
+  // Reponse via le bouton "↩️ Repondre" : l'admin a clique le bouton, on lui a
+  // demande d'ecrire sa reponse ; son prochain message texte simple (hors
+  // commande) est consomme ici comme reponse admin dans le chat live.
+  if (text && !text.startsWith('/')) {
+    const pending = await takePendingReply(fromId);
+    if (pending) {
+      const ok = await postAdminReply(text, pending);
+      return sendMessage(token, chatId, ok ? '↩️ Réponse envoyée dans le chat live.' : '❌ Échec de l\'envoi (store non configuré ?).');
+    }
+  }
+
   if (text === '/skip') {
     const r = await skipSong();
     if (r.ok) await postAdminMessage('⏭ An admin skipped the current track.');
@@ -102,6 +113,26 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? '▶️ Chat réactivé.' : '❌ Echec (store non configure ?).');
   }
 
+  if (text === '/np') {
+    return sendMessage(token, chatId, await nowPlayingText());
+  }
+
+  if (text === '/stats') {
+    return sendMessage(token, chatId, await statsText());
+  }
+
+  if (text.startsWith('/pin')) {
+    const body = text.slice(4).trim();
+    if (!body) return sendMessage(token, chatId, 'Usage : /pin <texte> (annonce épinglée en haut du chat)');
+    const ok = await setPinned(body);
+    return sendMessage(token, chatId, ok ? '📌 Annonce épinglée dans le chat.' : '❌ Echec (store non configure ?).');
+  }
+
+  if (text === '/unpin') {
+    const ok = await setPinned(null);
+    return sendMessage(token, chatId, ok ? '✅ Annonce dépinglée.' : '❌ Echec (store non configure ?).');
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n' +
     '/skip — passer au morceau suivant\n' +
@@ -109,7 +140,10 @@ async function handleMessage(token, message) {
     '/jingle — declencher un jingle (best effort)\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
-    'Astuce : "Repondre" a une notification de message du chat pour y repondre directement, sous 📻 KALBASSFM.');
+    '/np — morceau en cours + auditeurs\n' +
+    '/stats — auditeurs, messages et votes du jour\n' +
+    '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
+    'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
 async function handleCallback(token, cb) {
@@ -118,7 +152,19 @@ async function handleCallback(token, cb) {
   if (!authorized) return;
 
   const data = cb.data || '';
-  if (data.startsWith('del:')) {
+  if (data.startsWith('rep:')) {
+    // On retrouve le message d'origine via le message_id Telegram de la
+    // notification elle-meme (le mapping pose par api/chat.js), puis on arme
+    // un etat "reponse en attente" : le prochain message texte de l'admin
+    // sera poste comme reponse dans le chat live.
+    const orig = await getTgMap(cb.message.message_id);
+    if (!orig) return answerCallback(token, cb.id, 'Message introuvable (trop ancien).');
+    await setPendingReply(fromId, orig);
+    await answerCallback(token, cb.id, 'Écris ta réponse maintenant');
+    await sendMessage(token, cb.message.chat.id,
+      `✍️ Écris ta réponse à « ${orig.nick} » — je la posterai dans le chat live sous 📻 KALBASSFM.`,
+      { reply_markup: { force_reply: true } });
+  } else if (data.startsWith('del:')) {
     const id = data.slice(4);
     await markDeleted(id);
     await answerCallback(token, cb.id, 'Supprimé ✅');
@@ -184,6 +230,43 @@ async function triggerJingle() {
   }
 }
 
+async function nowPlaying() {
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/nowplaying/${STATION}`, {
+      headers: { 'User-Agent': BROWSER_UA },
+    });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+
+async function nowPlayingText() {
+  const d = await nowPlaying();
+  if (!d) return '❌ Impossible de joindre AzuraCast.';
+  const song = (d.now_playing && d.now_playing.song) || {};
+  const label = song.title ? `${song.artist || ''} — ${song.title}`.trim() : '(inconnu)';
+  const lc = (d.listeners && (d.listeners.current ?? d.listeners.total)) ?? 0;
+  return `▶️ En cours : ${label}\n🎧 Auditeurs : ${lc}`;
+}
+
+async function statsText() {
+  const kv = kvClient();
+  const day = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
+  const [d, msgJ, voteJ] = await Promise.all([
+    nowPlaying(),
+    kv ? kv('get', `stats:msg:${day}`) : Promise.resolve({ result: null }),
+    kv ? kv('get', `stats:vote:${day}`) : Promise.resolve({ result: null }),
+  ]);
+  const lc = (d && d.listeners && (d.listeners.current ?? d.listeners.total)) ?? '?';
+  const uniq = (d && d.listeners && d.listeners.unique) ?? '?';
+  const msgs = (msgJ && msgJ.result) || 0;
+  const votes = (voteJ && voteJ.result) || 0;
+  return `📊 Stats du ${day} (UTC-4)\n` +
+    `🎧 Auditeurs maintenant : ${lc} (uniques ${uniq})\n` +
+    `💬 Messages du chat aujourd'hui : ${msgs}\n` +
+    `🔥 Votes aujourd'hui : ${votes}`;
+}
+
 /* ---- Redis (memes cles que api/chat.js) ---- */
 function kvClient() {
   const base = process.env.KV_REST_API_URL;
@@ -228,6 +311,24 @@ async function postAdminReply(text, orig) {
   return true;
 }
 
+// Etat "reponse en attente" pose au clic du bouton Repondre, consomme au
+// message suivant. TTL court (3 min) : si l'admin ne repond pas tout de suite,
+// l'etat expire et un message ulterieur ne part pas par erreur dans le chat.
+async function setPendingReply(fromId, orig) {
+  const kv = kvClient();
+  if (!kv || !fromId) return;
+  await kv('set', `chat:pendingreply:${fromId}`, JSON.stringify(orig), 'EX', '180');
+}
+
+async function takePendingReply(fromId) {
+  const kv = kvClient();
+  if (!kv || !fromId) return null;
+  const j = await kv('get', `chat:pendingreply:${fromId}`);
+  if (!j || !j.result) return null;
+  await kv('del', `chat:pendingreply:${fromId}`); // usage unique
+  try { return JSON.parse(j.result); } catch { return null; }
+}
+
 async function markDeleted(id) {
   const kv = kvClient();
   if (!kv || !id) return;
@@ -249,13 +350,21 @@ async function setPaused(paused) {
   return true;
 }
 
+async function setPinned(text) {
+  const kv = kvClient();
+  if (!kv) return false;
+  if (text) await kv('set', 'chat:pinned', text.slice(0, 200));
+  else await kv('del', 'chat:pinned');
+  return true;
+}
+
 /* ---- Telegram ---- */
-async function sendMessage(token, chatId, text) {
+async function sendMessage(token, chatId, text, extra) {
   if (!chatId) return;
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({ chat_id: chatId, text, ...(extra || {}) }),
   }).catch(() => {});
 }
 
