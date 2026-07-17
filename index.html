@@ -1308,8 +1308,9 @@
   });
 
   /* ── Réactions 🔥 = vote (compteur partagé via /api/reactions, sinon local) ──
-     Votes libres : pas de limite, chacun peut voter plusieurs fois pour faire
-     monter un morceau dans le classement. */
+     Plafonné à 10 votes / auditeur / morceau côté serveur (clientId anonyme,
+     même identifiant que le chat) — évite les chiffres qui grimpent à l'infini
+     en spammant le bouton, tout en gardant le vote libre en dessous du plafond. */
   async function loadReactions(id) {
     reactBtn.disabled = false;
     if (!id) { reactCount.textContent = '0'; return; }
@@ -1334,7 +1335,7 @@
       const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), {
         method: 'POST', cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, title: current.title, artist: current.artist, art: current.art }),
+        body: JSON.stringify({ id, title: current.title, artist: current.artist, art: current.art, clientId }),
       });
       const j = await r.json();
       if (j.enabled && typeof j.count === 'number') reactCount.textContent = j.count;

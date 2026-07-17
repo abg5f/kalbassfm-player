@@ -150,6 +150,11 @@ async function handleMessage(token, message) {
     });
   }
 
+  if (text === '/reset_top5') {
+    const ok = await resetTop5();
+    return sendMessage(token, chatId, ok ? '🔥 Top 5 remis à zéro (les votes précédents ne comptent plus).' : '❌ Echec (store non configure ?).');
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n' +
     '/skip — passer au morceau suivant\n' +
@@ -157,6 +162,7 @@ async function handleMessage(token, message) {
     '/jingle — declencher un jingle (best effort)\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
+    '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
     '/np — morceau en cours + auditeurs\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -384,6 +390,16 @@ async function setPaused(paused) {
   if (!kv) return false;
   if (paused) await kv('set', 'chat:paused', '1');
   else await kv('del', 'chat:paused');
+  return true;
+}
+
+// Incremente l'epoch lu par api/reactions.js : le classement (leaderboard:<epoch>)
+// et les plafonds de vote par auditeur (votes:<epoch>:<id>) redemarrent a zero
+// sans avoir a lister/supprimer des cles individuellement.
+async function resetTop5() {
+  const kv = kvClient();
+  if (!kv) return false;
+  await kv('incr', 'top5:epoch');
   return true;
 }
 

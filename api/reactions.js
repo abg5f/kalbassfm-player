@@ -5,13 +5,28 @@
    Sans store configure, renvoie { enabled:false } et le front bascule
    en mode local — jamais d'erreur visible.
 
-   Votes libres : pas de limite par auditeur, chacun peut voter autant de
-   fois qu'il veut pour faire monter un morceau dans le classement.
+   Vote plafonne a 10 par auditeur et par morceau (clientId anonyme, meme
+   identifiant que le chat) — evite les chiffres qui grimpent a l'infini en
+   spammant le bouton, tout en gardant le vote libre en dessous du plafond.
+
+   "epoch" (compteur "top5:epoch") permet un reset instantane et repetable du
+   Top 5 (commande /reset_top5 du bot Telegram) : le leaderboard et les
+   plafonds par auditeur sont scopes par epoch, donc changer d'epoch les vide
+   tous les deux sans avoir a lister/supprimer des cles individuellement.
 
    Structure Redis :
-   - sorted set "leaderboard"  : score = nombre de votes, membre = id du morceau
-   - hash "meta:<id>"          : title / artist / art du morceau (pour le Top 5)
+   - cle "top5:epoch"                    : entier, incremente a chaque reset
+   - sorted set "leaderboard:<epoch>"    : score = votes, membre = id du morceau
+   - hash "votes:<epoch>:<id>"           : votes par clientId pour ce morceau (plafond 10)
+   - hash "meta:<id>"                    : title / artist / art (independant de l'epoch)
 */
+const MAX_VOTES_PER_USER = 10;
+
+async function getEpoch(kv) {
+  const j = await kv('get', 'top5:epoch');
+  return parseInt(j.result, 10) || 0;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -28,7 +43,8 @@ export default async function handler(req, res) {
   // ---- GET ?top=5 : classement des morceaux les plus votes ----
   if (req.method === 'GET' && req.query.top) {
     try {
-      const zj = await kv('zrange', 'leaderboard', '0', '4', 'REV', 'WITHSCORES');
+      const epoch = await getEpoch(kv);
+      const zj = await kv('zrange', `leaderboard:${epoch}`, '0', '4', 'REV', 'WITHSCORES');
       const raw = zj.result || [];
       const top = [];
       for (let i = 0; i < raw.length; i += 2) {
@@ -52,7 +68,8 @@ export default async function handler(req, res) {
   // ---- GET ?id=... : score actuel d'un morceau ----
   if (req.method === 'GET') {
     try {
-      const j = await kv('zscore', 'leaderboard', id);
+      const epoch = await getEpoch(kv);
+      const j = await kv('zscore', `leaderboard:${epoch}`, id);
       const count = parseInt(j.result ?? 0, 10) || 0;
       return res.status(200).json({ enabled: true, count });
     } catch {
@@ -60,14 +77,30 @@ export default async function handler(req, res) {
     }
   }
 
-  // ---- POST : voter pour un morceau (votes libres, sans limite) ----
+  // ---- POST : voter pour un morceau (plafond 10 / auditeur / morceau) ----
   const body = req.body || {};
   const title = (body.title || '').toString().slice(0, 200);
   const artist = (body.artist || '').toString().slice(0, 200);
   const art = (body.art || '').toString().slice(0, 500);
+  const clientId = (body.clientId || '').toString().slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, '') || null;
 
   try {
-    await kv('zincrby', 'leaderboard', '1', id);
+    const epoch = await getEpoch(kv);
+
+    if (clientId) {
+      const votesKey = `votes:${epoch}:${id}`;
+      const uj = await kv('hincrby', votesKey, clientId, '1');
+      const userCount = parseInt(uj.result, 10) || 0;
+      if (userCount > MAX_VOTES_PER_USER) {
+        await kv('hincrby', votesKey, clientId, '-1'); // annule le vote en trop
+        const j = await kv('zscore', `leaderboard:${epoch}`, id);
+        const count = parseInt(j.result ?? 0, 10) || 0;
+        return res.status(200).json({ enabled: true, count, capped: true });
+      }
+      await kv('expire', votesKey, '2592000'); // 30 jours, borne la croissance
+    }
+
+    await kv('zincrby', `leaderboard:${epoch}`, '1', id);
     const fields = [];
     if (title) fields.push('title', title);
     if (artist) fields.push('artist', artist);
@@ -79,7 +112,7 @@ export default async function handler(req, res) {
     await kv('incr', `stats:vote:${day}`);
     await kv('expire', `stats:vote:${day}`, '172800');
 
-    const j = await kv('zscore', 'leaderboard', id);
+    const j = await kv('zscore', `leaderboard:${epoch}`, id);
     const count = parseInt(j.result ?? 0, 10) || 0;
     return res.status(200).json({ enabled: true, count });
   } catch {
