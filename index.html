@@ -608,6 +608,16 @@
     }
     /* Messages admin (bot Telegram, flag serveur) : texte en gras */
     .chat-item-admin .chat-text { font-weight: 700; }
+    /* Citation du message auquel l'admin repond (via "Repondre" Telegram) */
+    .chat-reply {
+      font-size: .62rem;
+      color: var(--muted);
+      border-left: 2px solid var(--accent);
+      padding-left: 6px;
+      margin-bottom: 3px;
+      opacity: .8;
+    }
+    .chat-reply b { color: var(--accent); }
     .chat-form {
       display: flex;
       gap: 8px;
@@ -1311,9 +1321,19 @@
       const time = document.createElement('span');
       time.className = 'chat-time'; time.textContent = formatChatTime(m.ts);
       head.appendChild(nick); head.appendChild(time);
+      el.appendChild(head);
+      if (m.replyTo) {
+        const reply = document.createElement('div');
+        reply.className = 'chat-reply';
+        const b = document.createElement('b');
+        b.textContent = m.replyTo.nick || 'Listener';
+        reply.appendChild(b);
+        reply.appendChild(document.createTextNode(': ' + (m.replyTo.text || '')));
+        el.appendChild(reply);
+      }
       const text = document.createElement('div');
       text.className = 'chat-text'; text.textContent = m.text || '';
-      el.appendChild(head); el.appendChild(text);
+      el.appendChild(text);
       chatList.appendChild(el);
     });
   }

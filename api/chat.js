@@ -114,7 +114,7 @@ export default async function handler(req, res) {
     const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
-    await notifyTelegram(msg, clientId);
+    await notifyTelegram(kv, msg, clientId);
     return res.status(200).json({ enabled: true, ok: true });
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
@@ -131,12 +131,12 @@ function escapeHtml(s) {
 // utilise ailleurs comme source de verite). No-op silencieux si le bot n'est
 // pas configure ou en cas d'erreur reseau : la publication du message dans le
 // chat ne doit jamais en dependre.
-async function notifyTelegram(msg, clientId) {
+async function notifyTelegram(kv, msg, clientId) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -149,5 +149,13 @@ async function notifyTelegram(msg, clientId) {
         ]] },
       }),
     });
+    // Permet a l'admin de repondre nativement (Telegram "Reply") a cette
+    // notification : on retient quel message live elle represente, pour que
+    // api/telegram.js puisse retrouver le fil quand la reponse arrive.
+    const j = await r.json().catch(() => null);
+    const tgMessageId = j && j.result && j.result.message_id;
+    if (tgMessageId) {
+      await kv('set', `chat:tgmap:${tgMessageId}`, JSON.stringify({ id: msg.id, nick: msg.nick, text: msg.text }), 'EX', '259200');
+    }
   } catch {}
 }

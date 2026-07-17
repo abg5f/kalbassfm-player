@@ -46,6 +46,20 @@ async function handleMessage(token, message) {
   }
   if (!authorized) return; // ignore silencieusement les expediteurs non autorises
 
+  // Reponse native Telegram ("Repondre") a une notification de message du
+  // chat live : postee comme reponse admin, citation du message d'origine.
+  // Prioritaire sur les commandes ci-dessous (une reponse n'a pas a commencer
+  // par "/"). Si le message repondu n'est pas dans le mapping (notification
+  // trop vieille, ou reponse a autre chose qu'un message de chat), on retombe
+  // sur le traitement normal.
+  if (message.reply_to_message && text) {
+    const orig = await getTgMap(message.reply_to_message.message_id);
+    if (orig) {
+      const ok = await postAdminReply(text, orig);
+      return sendMessage(token, chatId, ok ? '↩️ Réponse envoyée dans le chat live.' : '❌ Échec de l\'envoi (store non configuré ?).');
+    }
+  }
+
   if (text === '/skip') {
     const r = await skipSong();
     if (r.ok) await postAdminMessage('⏭ An admin skipped the current track.');
@@ -94,7 +108,8 @@ async function handleMessage(token, message) {
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/jingle — declencher un jingle (best effort)\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
-    '/pause_chat / /resume_chat — couper/reactiver le chat');
+    '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
+    'Astuce : "Repondre" a une notification de message du chat pour y repondre directement, sous 📻 KALBASSFM.');
 }
 
 async function handleCallback(token, cb) {
@@ -184,6 +199,30 @@ async function postAdminMessage(text) {
   // admin:true est pose UNIQUEMENT ici (cote serveur) — le front l'utilise pour
   // mettre le message en valeur, un client ne peut pas le forger.
   const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: '📻 KALBASSFM', text: text.slice(0, 200), ts: Date.now(), admin: true };
+  await kv('lpush', 'chat:messages', JSON.stringify(msg));
+  await kv('ltrim', 'chat:messages', '0', '99');
+  return true;
+}
+
+async function getTgMap(tgMessageId) {
+  const kv = kvClient();
+  if (!kv || !tgMessageId) return null;
+  const j = await kv('get', `chat:tgmap:${tgMessageId}`);
+  if (!j || !j.result) return null;
+  try { return JSON.parse(j.result); } catch { return null; }
+}
+
+async function postAdminReply(text, orig) {
+  const kv = kvClient();
+  if (!kv) return false;
+  const msg = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+    nick: '📻 KALBASSFM',
+    text: text.slice(0, 200),
+    ts: Date.now(),
+    admin: true,
+    replyTo: { id: orig.id, nick: orig.nick, text: (orig.text || '').slice(0, 120) },
+  };
   await kv('lpush', 'chat:messages', JSON.stringify(msg));
   await kv('ltrim', 'chat:messages', '0', '99');
   return true;
