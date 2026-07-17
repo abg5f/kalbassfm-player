@@ -55,8 +55,8 @@ async function handleMessage(token, message) {
   if (message.reply_to_message && text) {
     const orig = await getTgMap(message.reply_to_message.message_id);
     if (orig) {
-      const ok = await postAdminReply(text, orig);
-      return sendMessage(token, chatId, ok ? '↩️ Réponse envoyée dans le chat live.' : '❌ Échec de l\'envoi (store non configuré ?).');
+      const id = await postAdminReply(text, orig);
+      return confirmWithDelete(token, chatId, '↩️ Réponse envoyée dans le chat live.', id);
     }
   }
 
@@ -66,8 +66,8 @@ async function handleMessage(token, message) {
   if (text && !text.startsWith('/')) {
     const pending = await takePendingReply(fromId);
     if (pending) {
-      const ok = await postAdminReply(text, pending);
-      return sendMessage(token, chatId, ok ? '↩️ Réponse envoyée dans le chat live.' : '❌ Échec de l\'envoi (store non configuré ?).');
+      const id = await postAdminReply(text, pending);
+      return confirmWithDelete(token, chatId, '↩️ Réponse envoyée dans le chat live.', id);
     }
   }
 
@@ -80,8 +80,8 @@ async function handleMessage(token, message) {
   if (text.startsWith('/msg')) {
     const body = text.slice(4).trim();
     if (!body) return sendMessage(token, chatId, 'Usage : /msg <texte>');
-    const ok = await postAdminMessage(body);
-    return sendMessage(token, chatId, ok ? '✅ Message envoye dans le chat live.' : '❌ Echec de l\'envoi (store non configure ?).');
+    const id = await postAdminMessage(body);
+    return confirmWithDelete(token, chatId, '✅ Message envoyé dans le chat live.', id);
   }
 
   if (text === '/jingle') {
@@ -133,6 +133,23 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? '✅ Annonce dépinglée.' : '❌ Echec (store non configure ?).');
   }
 
+  if (text === '/recent') {
+    const msgs = await getRecentMessages(10);
+    if (!msgs.length) return sendMessage(token, chatId, 'Aucun message à afficher.');
+    // Liste numerotee + un bouton "🗑 N" par message (auditeurs ET bot/auto),
+    // ce qui permet de supprimer les annonces automatiques et les messages
+    // admin, qui n'ont pas de notification individuelle. Apres une suppression,
+    // les boutons de ce message disparaissent (comportement partage avec les
+    // notifications) : relancer /recent rafraichit la liste sans le supprime.
+    const lines = msgs.map((m, i) => `${i + 1}. ${m.nick}: ${m.text}`);
+    const buttons = msgs.map((m, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'del:' + m.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId, 'Derniers messages du chat :\n' + lines.join('\n'), {
+      reply_markup: { inline_keyboard: rows },
+    });
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n' +
     '/skip — passer au morceau suivant\n' +
@@ -143,6 +160,7 @@ async function handleMessage(token, message) {
     '/np — morceau en cours + auditeurs\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
+    '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
     'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
@@ -276,15 +294,17 @@ function kvClient() {
   return (...segments) => fetch(`${base}/${segments.map(encodeURIComponent).join('/')}`, { headers }).then((r) => r.json());
 }
 
+// Retourne l'id du message poste (pour proposer un bouton de suppression), ou
+// null si le store n'est pas configure.
 async function postAdminMessage(text) {
   const kv = kvClient();
-  if (!kv) return false;
+  if (!kv) return null;
   // admin:true est pose UNIQUEMENT ici (cote serveur) — le front l'utilise pour
   // mettre le message en valeur, un client ne peut pas le forger.
   const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: '📻 KALBASSFM', text: text.slice(0, 200), ts: Date.now(), admin: true };
   await kv('lpush', 'chat:messages', JSON.stringify(msg));
   await kv('ltrim', 'chat:messages', '0', '99');
-  return true;
+  return msg.id;
 }
 
 async function getTgMap(tgMessageId) {
@@ -297,7 +317,7 @@ async function getTgMap(tgMessageId) {
 
 async function postAdminReply(text, orig) {
   const kv = kvClient();
-  if (!kv) return false;
+  if (!kv) return null;
   const msg = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
     nick: '📻 KALBASSFM',
@@ -308,7 +328,7 @@ async function postAdminReply(text, orig) {
   };
   await kv('lpush', 'chat:messages', JSON.stringify(msg));
   await kv('ltrim', 'chat:messages', '0', '99');
-  return true;
+  return msg.id;
 }
 
 // Etat "reponse en attente" pose au clic du bouton Repondre, consomme au
@@ -327,6 +347,23 @@ async function takePendingReply(fromId) {
   if (!j || !j.result) return null;
   await kv('del', `chat:pendingreply:${fromId}`); // usage unique
   try { return JSON.parse(j.result); } catch { return null; }
+}
+
+// Derniers messages encore visibles (deja-supprimes filtres), pour /recent.
+async function getRecentMessages(n) {
+  const kv = kvClient();
+  if (!kv) return [];
+  const [lj, dj] = await Promise.all([
+    kv('lrange', 'chat:messages', '0', String(n - 1)),
+    kv('hgetall', 'chat:deleted'),
+  ]);
+  const raw = lj.result || [];
+  const deletedFields = dj.result || [];
+  const deleted = new Set();
+  for (let i = 0; i < deletedFields.length; i += 2) deleted.add(deletedFields[i]);
+  return raw
+    .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+    .filter((m) => m && !deleted.has(m.id));
 }
 
 async function markDeleted(id) {
@@ -359,6 +396,16 @@ async function setPinned(text) {
 }
 
 /* ---- Telegram ---- */
+// Confirmation d'un message admin poste, avec un bouton "🗑 Supprimer" quand
+// l'envoi a reussi (id non nul) pour pouvoir retirer immediatement ce qu'on
+// vient de poster (reponse, /msg).
+function confirmWithDelete(token, chatId, okLabel, id) {
+  if (!id) return sendMessage(token, chatId, '❌ Échec de l\'envoi (store non configuré ?).');
+  return sendMessage(token, chatId, okLabel, {
+    reply_markup: { inline_keyboard: [[{ text: '🗑 Supprimer', callback_data: 'del:' + id }]] },
+  });
+}
+
 async function sendMessage(token, chatId, text, extra) {
   if (!chatId) return;
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
