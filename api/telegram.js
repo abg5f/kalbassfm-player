@@ -141,10 +141,13 @@ async function triggerJingle() {
     });
     if (!listRes.ok) return { message: `Echec de la liste des demandes (${listRes.status}).` };
     const list = await listRes.json();
+    // Les jingles sont des voix off dont le titre est le texte lu (pas de nom
+    // generique "jingle") : "kalbass fm" est le marqueur fiable commun aux 15,
+    // absent de tous les autres morceaux demandables (verifie manuellement).
     const jingles = (Array.isArray(list) ? list : []).filter((r) => {
       const song = r.song || {};
       const hay = `${song.title || ''} ${song.artist || ''}`.toLowerCase();
-      return hay.includes('jingle');
+      return hay.includes('kalbass fm');
     });
     if (!jingles.length) {
       return { message: 'Aucun jingle trouvable — vérifie que la playlist Jingles autorise les demandes dans AzuraCast.' };
