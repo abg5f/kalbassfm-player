@@ -1172,32 +1172,51 @@
   /* ── Flux ── */
   let corsOk = true;
   let userStopped = true; // true = l'utilisateur a volontairement coupé la lecture
+
+  // Reconnexion sur erreur dure (mount qui saute, coupure reseau) : on recharge
+  // reellement la source avec un backoff, au lieu de rester bloque sur "error".
+  let reconnectTimer = null;
+  let reconnectDelay = 1000;
+  const RECONNECT_MAX = 8000;
+  function clearReconnect() { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } }
+  function scheduleReconnect() {
+    if (userStopped || reconnectTimer) return; // deja une tentative en attente
+    setUI('loading'); // "CONNECTING..." pendant la reconnexion
+    reconnectTimer = setTimeout(() => { reconnectTimer = null; startStream(); }, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
+  }
+
   function startStream() {
     userStopped = false;
     const wantAnalyser = corsOk && !IS_MOBILE;
     if (wantAnalyser) audio.crossOrigin = 'anonymous'; else audio.removeAttribute('crossorigin');
-    audio.src = CONFIG.streamUrl;
+    // Cache-bust : force une nouvelle connexion au mount (une reconnexion sur la
+    // meme URL peut sinon reprendre un flux mort). Icecast ignore la query.
+    audio.src = CONFIG.streamUrl + (CONFIG.streamUrl.includes('?') ? '&' : '?') + '_=' + Date.now();
     audio.play()
-      .then(() => { if (wantAnalyser) initAnalyser(); setUI('playing'); })
+      .then(() => { if (wantAnalyser) initAnalyser(); reconnectDelay = 1000; clearReconnect(); setUI('playing'); })
       .catch(() => {
         if (wantAnalyser && !audioCtx) { corsOk = false; startStream(); }
-        else setUI('error');
+        else scheduleReconnect();
       });
   }
-  function stopStream() { userStopped = true; audio.pause(); audio.src = ''; setUI('paused'); }
+  function stopStream() { userStopped = true; clearReconnect(); audio.pause(); audio.src = ''; setUI('paused'); }
   function togglePlay() {
     if (playing) stopStream();
     else { setUI('loading'); startStream(); }
   }
   btnPlay.addEventListener('click', togglePlay);
-  audio.addEventListener('error',   () => { if (playing) setUI('error'); });
+  // Erreur dure (mount tombe, reseau coupe) : on relance vraiment le flux avec
+  // backoff au lieu de rester bloque sur "error". Ignore si l'utilisateur a coupe.
+  audio.addEventListener('error',   () => { if (!userStopped) scheduleReconnect(); });
   audio.addEventListener('waiting', () => { if (!audio.paused) setUI('loading'); });
-  audio.addEventListener('playing', () => setUI('playing'));
+  audio.addEventListener('playing', () => { reconnectDelay = 1000; clearReconnect(); setUI('playing'); });
 
   // Écran éteint / onglet masqué : le navigateur coupe parfois le flux ou
-  // suspend l'AudioContext (économie d'énergie). On relance activement.
+  // suspend l'AudioContext (économie d'énergie). On relance activement, et on
+  // escalade vers une reconnexion complete si un simple play() ne suffit pas.
   audio.addEventListener('pause', () => {
-    if (!userStopped) audio.play().catch(() => { if (!userStopped) startStream(); });
+    if (!userStopped) audio.play().catch(() => scheduleReconnect());
   });
   document.addEventListener('visibilitychange', () => {
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
@@ -1208,7 +1227,7 @@
   setInterval(() => {
     if (userStopped) return;
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-    if (audio.paused) audio.play().catch(() => {});
+    if (audio.paused) audio.play().catch(() => scheduleReconnect());
   }, 4000);
 
   volSlider.addEventListener('input', () => {
