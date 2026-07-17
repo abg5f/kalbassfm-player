@@ -628,6 +628,36 @@
     }
     .vibe b { color: var(--accent); font-weight: 700; }
     .vibe .vibe-next { opacity: .7; }
+    /* Vibe Streak : compteur de fidelite personnel, prive (localStorage) */
+    .streak-badge {
+      display: none;
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      color: var(--muted);
+      margin: 2px 0 0;
+    }
+    .streak-badge.show { display: block; }
+    .streak-badge b { color: var(--accent); }
+    .streak-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--bg, #0b0b0b);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+      font-size: .68rem;
+      padding: 8px 14px;
+      border-radius: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease;
+      z-index: 50;
+      max-width: 88vw;
+      text-align: center;
+    }
+    .streak-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     /* Bandeau epingle (admin /pin) en haut du chat */
     .chat-pinned {
       display: none;
@@ -916,6 +946,7 @@
       </div>
       <p class="track-artist" id="trackArtist">— ARTIST</p>
       <p class="vibe" id="vibe"></p>
+      <p class="streak-badge" id="streakBadge"></p>
 
       <div class="actions-row" id="actionsRow" style="display:none">
         <button class="chip chip-fire" id="reactBtn" aria-label="Like this track">🔥 <span id="reactCount">0</span></button>
@@ -1012,6 +1043,8 @@
     </div>
 
   </main>
+
+  <div class="streak-toast" id="streakToast" role="status" aria-live="polite"></div>
 
   <div class="modal-backdrop" id="contactModal" role="dialog" aria-modal="true" aria-label="Contact Lupari">
     <div class="modal-box">
@@ -1582,6 +1615,67 @@
   }
   renderVibe();
   setInterval(renderVibe, 60000);
+
+  /* ── Vibe Streak : fidelite gamifiee, 100% locale (localStorage) ──
+     Aucun compte, aucun serveur, aucun classement public : juste un compteur
+     personnel prive. Un jour ne compte que si l'auditeur a vraiment ecoute en
+     continu 60s (anti-triche leger, evite de compter un simple onglet ouvert). */
+  const streakBadge = document.getElementById('streakBadge');
+  const streakToast = document.getElementById('streakToast');
+  const STREAK_KEY = 'kfm_streak';
+  const STREAK_MILESTONES = [
+    { n: 3,   emoji: '🌴' }, { n: 7,   emoji: '🔥' }, { n: 14,  emoji: '⚡' },
+    { n: 30,  emoji: '👑' }, { n: 60,  emoji: '🏝️' }, { n: 100, emoji: '🐚' },
+  ];
+  function streakDay(offsetDays) {
+    return new Date(Date.now() - 4 * 3600 * 1000 - (offsetDays || 0) * 86400000).toISOString().slice(0, 10);
+  }
+  function getStreak() {
+    try { return JSON.parse(localStorage.getItem(STREAK_KEY)) || { current: 0, longest: 0, lastDate: null, lastMilestone: 0 }; }
+    catch { return { current: 0, longest: 0, lastDate: null, lastMilestone: 0 }; }
+  }
+  function saveStreak(s) { try { localStorage.setItem(STREAK_KEY, JSON.stringify(s)); } catch {} }
+  function renderStreak(s) {
+    if (!s.current) { streakBadge.classList.remove('show'); return; }
+    streakBadge.innerHTML = '🔥 <b>' + s.current + '-day</b> streak' + (s.longest > s.current ? ' · best ' + s.longest : '');
+    streakBadge.classList.add('show');
+  }
+  let streakToastTimer = null;
+  function showStreakToast(text) {
+    streakToast.textContent = text;
+    streakToast.classList.add('show');
+    clearTimeout(streakToastTimer);
+    streakToastTimer = setTimeout(() => streakToast.classList.remove('show'), 4000);
+  }
+  function maybeCelebrate(s) {
+    let hit = null;
+    for (const m of STREAK_MILESTONES) if (s.current >= m.n) hit = m;
+    if (hit && s.lastMilestone !== hit.n) {
+      s.lastMilestone = hit.n;
+      saveStreak(s);
+      showStreakToast(hit.emoji + ' ' + hit.n + '-day streak! Respect 🙌');
+    }
+  }
+  function markStreakDay() {
+    const today = streakDay(0);
+    const s = getStreak();
+    if (s.lastDate === today) return; // deja compte aujourd'hui
+    s.current = (s.lastDate === streakDay(1)) ? s.current + 1 : 1;
+    s.longest = Math.max(s.longest || 0, s.current);
+    s.lastDate = today;
+    saveStreak(s);
+    renderStreak(s);
+    maybeCelebrate(s);
+  }
+  renderStreak(getStreak()); // restaure le badge au chargement, sans attendre 60s d'ecoute
+
+  let streakTimer = null;
+  function clearStreakTimer() { if (streakTimer) { clearTimeout(streakTimer); streakTimer = null; } }
+  audio.addEventListener('playing', () => {
+    if (!streakTimer) streakTimer = setTimeout(() => { streakTimer = null; markStreakDay(); }, 60000);
+  });
+  audio.addEventListener('pause', clearStreakTimer);
+  audio.addEventListener('error', clearStreakTimer);
 
   /* ── Sleep timer ── */
   const SLEEP_STEPS = [0, 15, 30, 60];
