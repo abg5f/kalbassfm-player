@@ -2,7 +2,7 @@
    Network-first pour la navigation (les mises à jour passent toujours),
    cache seulement la coquille + icônes pour l'installation PWA / mode hors-ligne.
    Ne met JAMAIS en cache le flux audio ni l'API now-playing. */
-const V = 'kfm-v9'; // fix : streak tolerant aux micro-coupures (mobile/PWA)
+const V = 'kfm-v10'; // fix : clientId obligatoire pour voter (plafond non contournable)
 const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

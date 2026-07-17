@@ -87,18 +87,27 @@ export default async function handler(req, res) {
   try {
     const epoch = await getEpoch(kv);
 
-    if (clientId) {
-      const votesKey = `votes:${epoch}:${id}`;
-      const uj = await kv('hincrby', votesKey, clientId, '1');
-      const userCount = parseInt(uj.result, 10) || 0;
-      if (userCount > MAX_VOTES_PER_USER) {
-        await kv('hincrby', votesKey, clientId, '-1'); // annule le vote en trop
-        const j = await kv('zscore', `leaderboard:${epoch}`, id);
-        const count = parseInt(j.result ?? 0, 10) || 0;
-        return res.status(200).json({ enabled: true, count, capped: true });
-      }
-      await kv('expire', votesKey, '2592000'); // 30 jours, borne la croissance
+    // clientId obligatoire pour voter : sans lui, impossible d'appliquer le
+    // plafond par auditeur (contournable sinon en omettant simplement le
+    // champ — un vieux front en cache qui ne l'envoie pas encore, par
+    // exemple). On renvoie le score reel actuel pour ne pas faire redescendre
+    // l'affichage a 0 chez ce client.
+    if (!clientId) {
+      const j = await kv('zscore', `leaderboard:${epoch}`, id);
+      const count = parseInt(j.result ?? 0, 10) || 0;
+      return res.status(200).json({ enabled: true, count, ok: false });
     }
+
+    const votesKey = `votes:${epoch}:${id}`;
+    const uj = await kv('hincrby', votesKey, clientId, '1');
+    const userCount = parseInt(uj.result, 10) || 0;
+    if (userCount > MAX_VOTES_PER_USER) {
+      await kv('hincrby', votesKey, clientId, '-1'); // annule le vote en trop
+      const j = await kv('zscore', `leaderboard:${epoch}`, id);
+      const count = parseInt(j.result ?? 0, 10) || 0;
+      return res.status(200).json({ enabled: true, count, capped: true });
+    }
+    await kv('expire', votesKey, '2592000'); // 30 jours, borne la croissance
 
     await kv('zincrby', `leaderboard:${epoch}`, '1', id);
     const fields = [];
