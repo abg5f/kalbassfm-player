@@ -2,7 +2,15 @@
 
 > Dernière mise à jour : 2026-07-17
 
-## État actuel (2026-07-17)
+## État actuel (2026-07-17, fin de session)
+
+- ✅ **Interface passée entièrement en anglais** — UI, aria-labels, meta og/twitter, `manifest.webmanifest` (lang=en). Pseudos auditeurs `Listener-XXXX`. Le thumbnail de partage (WhatsApp etc.) suivra au prochain partage (cache tiers)
+- ✅ **Messages admin distingués visuellement** — flag `admin:true` posé **exclusivement côté serveur** (par `api/telegram.js`, infalsifiable par un client) → affiché en gras dans le chat (`index.html`). Anti-usurpation : un auditeur qui tente le pseudo "KALBASSFM" est renommé "Listener" côté serveur (`api/chat.js`)
+- ✅ **Messages automatiques d'animation du chat** (`api/chat.js`) — 8 annonces EN/jour (7 transitions de programme horodatées "UTC-4" + 1 rappel de vote à 18h), postées "paresseusement" au fil des GET des auditeurs (pas de cron), verrou Redis `chat:auto:<key>:<day>` (SET NX) garantissant un envoi unique ; sautées si personne n'écoute dans le quart d'heure de la transition
+- ✅ **Chat à hauteur fixe** — `.chat-list` passée de `max-height` à `height: 260px` (mobile) / colonne desktop : l'arrivée de nouveaux messages ne redimensionne plus jamais le panneau, scroll interne uniquement
+- ✅ **Bot Telegram `/jingle` opérationnel en prod** — deux bugs trouvés et corrigés après tests réels : (1) les 15 jingles sont des voix off dont le **titre est le texte lu**, aucun ne contient le mot "jingle" → filtre changé pour le marqueur fiable **"kalbass fm"** (vérifié : présent uniquement sur les 15 jingles parmi 383 morceaux demandables) ; (2) AzuraCast rejetait les requêtes API avec `"Les robots des moteurs de recherche ne sont pas autorisés"` (détection anti-crawler sur `User-Agent` absent) → ajout d'un `User-Agent` de navigateur classique sur les appels `triggerJingle()`. Activation manuelle nécessaire faite par l'utilisateur : station **"Autoriser la demande du titre suivant"** + playlist Jingles **"Autoriser les demandes"**
+
+## État antérieur (2026-07-17, milieu de session)
 
 - ✅ **NOUVELLE PROGRAMMATION "horloge à bacs pondérés" EN PRODUCTION** — remplace les 4 créneaux à ordre figé. 8 bacs curatés (`1_chill`...`8_jungle`), 7 fenêtres horaires (Lever 6-9h, Groove solaire 9-13h, Alizés 13-17h, Sunset 17-20h, Warm-up 20-23h, Peak 23-2h, Nuit profonde 2-6h), chaque fenêtre = 1 playlist dominante (poids 15) + 1-2 playlists invitées (poids 2-4) en mode **Shuffled**, séparation artiste **120 min** (Dupliquer le temps de prévention), fondu enchaîné **Mode intelligent**. Ponctuation jungle : playlist "Une fois toutes les 14 chansons" 23h-6h. **Vérifié en direct** : le dashboard AzuraCast montre nightdub + chill_guest + jungle actifs simultanément à 5h49, lecture suivante issue de chill_guest → l'alternance pondérée entre playlists planifiées qui se chevauchent fonctionne. Aucun redémarrage de diffusion nécessaire (AutoDJ prend les playlists à la volée)
 - ✅ **Migration de la bibliothèque accomplie** — `resync_metadata.py` (948→825 entrées saines, 123 doublons/perdues supprimées) puis `migrate_grid.py --apply` (825 fichiers déplacés vers les 8 bacs, préfixes `NNN_` retirés, metadata.json resynchronisé, zéro chemin cassé). Répartition : chill 115/12.2h, groove 139/15.2h, house 135/13.6h, deep 114/12.2h, clubhouse 86/8h, techno 120/12.9h, nightdub 80/9.7h, jungle 36/4h. Upload serveur fait par l'utilisateur (FileZilla, dossier `Progv2`), 14 playlists créées à la main dans AzuraCast
@@ -40,10 +48,14 @@
 | **Ban chat par clientId, pas par pseudo** | Le pseudo est dérivé côté navigateur et falsifiable ; le clientId est déjà la clé du rate-limit. Contournable en vidant localStorage — best effort assumé |
 | **Bot Telegram : un seul admin (TELEGram_CHAT_ID), secret webhook vérifié** | Démarrage simple, extensible en liste plus tard. Expéditeurs non autorisés ignorés silencieusement |
 | **Jingle à la demande via API Requests AzuraCast (best-effort)** | AzuraCast n'a pas d'API "jouer immédiatement" (vérifié dans le code source). La clé API contourne l'anti-flood IP ; reste le blocage "joué trop récemment", acceptable |
+| **Détection jingle par marqueur "kalbass fm", pas par mot "jingle"** | Les 15 jingles sont des voix off nommées d'après leur texte lu ("welcome to kalbass fm...") — aucun ne contient littéralement "jingle". Vérifié sur les 383 morceaux demandables : "kalbass fm" n'apparaît que dans les 15 jingles, zéro faux positif |
+| **Messages auto du chat en "lazy cron" (verrou Redis au GET), pas de cron réel** | Cohérent avec le reste du projet (pas d'infra supplémentaire) : le poll 3s des auditeurs sert de déclencheur, un `SET NX` par créneau+jour garantit l'unicité même avec des dizaines de clients simultanés |
+| **Flag `admin`/gras posé uniquement côté serveur, jamais dérivé du pseudo** | Le pseudo est envoyé librement par le client (déjà vrai pour le rate-limit) — un flag serveur est la seule façon fiable de distinguer un vrai message admin d'une usurpation |
 | **Anciennes décisions toujours valables** | Upload SFTP manuel volontaire ; jingles natifs hors pipeline ; polling+Redis (pas de WebSocket) pour toute feature partagée ; dossier = playlist ; DuckDNS gratuit ; volume Docker |
 
 ## En cours / TODOs
 
+- [ ] **Vérifier que `/jingle` fonctionne réellement en prod** après les deux fix (marqueur "kalbass fm" + User-Agent) — dernier test montrait encore l'erreur anti-robots, non reconfirmé après le fix
 - [ ] **Vérifier l'horloge sur 24h** (Rapports → Historique : ratio ~3:1 dominant/invité, pas d'artiste <2h, séquences différentes d'un jour à l'autre) puis **supprimer les 4 anciens dossiers + playlists serveur** et les restes locaux
 - [ ] **Redéposer les 97 fichiers jamais analysés dans `_incoming`** (`tools/orphans_report.txt`) + relancer `triage.bat` ; supprimer les 14 doublons physiques listés dans le même rapport
 - [ ] **Créer la playlist `filet`** (sans planning, poids 1, dossiers groove+house) si pas encore fait
@@ -77,10 +89,11 @@
 | `tools/triage_new_tracks.py` | Pipeline ingestion → 8 bacs, nom propre, plus d'étape d'ordre | ✅ Mis à jour, à retester sur les 97 orphelins |
 | `tools/build_rotation.py`, `tools/export_rotation.py` | Ancien calcul/export d'ordre | ⚠️ Superseded (en-têtes marqués) |
 | `tools/orphans_report.txt` | 97 fichiers jamais analysés + 14 doublons physiques | ⏳ À traiter (gitignored) |
-| `api/telegram.js` | Webhook bot Telegram admin (skip/msg/jingle/ban/pause + callbacks modération) | ✅ Déployé, testé |
-| `api/chat.js` | Chat live + modération (deleted/banned/paused) + notification Telegram | ✅ Déployé |
+| `api/telegram.js` | Webhook bot Telegram admin (skip/msg/jingle/ban/pause + callbacks modération) | ✅ Déployé ; `/jingle` corrigé 2x (marqueur "kalbass fm" + User-Agent), à reconfirmer |
+| `api/chat.js` | Chat live + modération (deleted/banned/paused) + notification Telegram + messages auto EN + anti-usurpation pseudo | ✅ Déployé |
 | `api/reactions.js` | Vote 🔥 + Top 5 | ✅ Déployé |
-| `index.html` | Player complet + layout desktop 2 colonnes | ✅ Live |
+| `index.html` | Player complet EN, layout desktop 2 colonnes, chat hauteur fixe, messages admin en gras | ✅ Live |
+| `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v4` | ✅ Live |
 | `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances | ✅ À jour 2026-07-17 |
 
 ## Infrastructure

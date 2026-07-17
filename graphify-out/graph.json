@@ -4,7 +4,7 @@
       "id": "index.html",
       "label": "index.html",
       "type": "file",
-      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme."
+      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais (2026-07-17 tard) : UI, aria-labels, meta og/twitter, manifest. Messages admin (flag admin:true) affiches en gras."
     },
     {
       "id": "api/reactions.js",
@@ -22,7 +22,7 @@
       "id": "manifest.webmanifest",
       "label": "manifest.webmanifest",
       "type": "file",
-      "summary": "Manifest PWA : nom KALBASS FM, icônes 192/512, mode standalone, thème sombre."
+      "summary": "Manifest PWA : nom KALBASS FM, icônes 192/512, mode standalone, thème sombre. Traduit en anglais (lang=en, description EN)."
     },
     {
       "id": "tools/import-rekordbox.ps1",
@@ -238,7 +238,7 @@
       "id": "api/chat.js",
       "label": "api/chat.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur via cle chat:rate:<clientId> (SET EX 3 NX), refuse tout message contenant un lien (regex LINK_RE) avant même le rate-limit — anti-autopromo. Même squelette/repli que api/reactions.js. Depuis 2026-07-16 : moderation via bot Telegram (notification de chaque message avec boutons Supprimer/Bannir, filtre hash chat:deleted au GET, set chat:banned et flag chat:paused verifies au POST)."
+      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur via cle chat:rate:<clientId> (SET EX 3 NX), refuse tout message contenant un lien (regex LINK_RE) avant même le rate-limit — anti-autopromo. Même squelette/repli que api/reactions.js. Depuis 2026-07-16 : moderation via bot Telegram (notification de chaque message avec boutons Supprimer/Bannir, filtre hash chat:deleted au GET, set chat:banned et flag chat:paused verifies au POST). Ajout : messages automatiques d'animation (7 transitions horloge + rappel vote, EN, UTC-4) postes paresseusement au GET avec verrou Redis chat:auto:<key>:<day> ; anti-usurpation du pseudo KALBASSFM ; chat-list a hauteur FIXE (plus max-height) pour que l'arrivee de messages n'agrandisse jamais le conteneur."
     },
     {
       "id": "ChatFeature",
@@ -280,13 +280,13 @@
       "id": "api/telegram.js",
       "label": "api/telegram.js",
       "type": "file",
-      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot) : /skip (AzuraCast backend/skip + annonce dans le chat), /msg (message admin), /jingle (best-effort via API Requests), /ban /unban (set Redis chat:banned), /pause_chat /resume_chat (flag chat:paused), callbacks boutons Supprimer/Bannir. Secret webhook + chat_id unique autorise."
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot) : /skip (AzuraCast backend/skip + annonce dans le chat), /msg (message admin), /jingle (best-effort via API Requests), /ban /unban (set Redis chat:banned), /pause_chat /resume_chat (flag chat:paused), callbacks boutons Supprimer/Bannir. Secret webhook + chat_id unique autorise. /jingle corrige deux fois : (1) filtre par marqueur voix-off 'kalbass fm' au lieu du mot 'jingle' absent des titres reels, (2) ajout d'un User-Agent navigateur sur les appels Requests (AzuraCast rejette les requetes sans UA credible, detection anti-crawler)."
     },
     {
       "id": "TelegramBotFeature",
       "label": "Bot Telegram admin",
       "type": "feature",
-      "summary": "Administration de la radio depuis Telegram : skip du morceau en cours, messages admin dans le chat live (pseudo KALBASSFM), moderation (suppression/ban depuis les notifications de chaque message), pause du chat, declenchement de jingle. Un seul admin (TELEGRAM_CHAT_ID)."
+      "summary": "Administration de la radio depuis Telegram : skip du morceau en cours, messages admin dans le chat live (pseudo KALBASSFM), moderation (suppression/ban depuis les notifications de chaque message), pause du chat, declenchement de jingle. Un seul admin (TELEGRAM_CHAT_ID). /jingle operationnel en prod apres ces deux corrections."
     },
     {
       "id": "DesktopLayout",
