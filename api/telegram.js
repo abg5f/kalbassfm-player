@@ -7,7 +7,7 @@
    - TELEGRAM_BOT_TOKEN     : token BotFather
    - TELEGRAM_WEBHOOK_SECRET: verifie contre X-Telegram-Bot-Api-Secret-Token
    - TELEGRAM_CHAT_ID       : seul chat_id autorise a utiliser le bot
-   - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip
+   - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip, /jingle, /delete_track
    - KV_REST_API_URL / KV_REST_API_TOKEN : memes que api/chat.js
 */
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
@@ -155,6 +155,23 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? '🔥 Top 5 remis à zéro (les votes précédents ne comptent plus).' : '❌ Echec (store non configure ?).');
   }
 
+  if (text.startsWith('/delete_track')) {
+    const q = text.slice('/delete_track'.length).trim();
+    if (!q) return sendMessage(token, chatId, 'Usage : /delete_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast.');
+    const r = await searchTracks(q);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche (${r.status}).`);
+    if (!r.list.length) return sendMessage(token, chatId, `Aucune piste trouvée pour « ${q} ».`);
+    const top = r.list.slice(0, 8);
+    const lines = top.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
+    const buttons = top.map((f, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'delfile:' + f.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId,
+      `Résultats pour « ${q} » — clique 🗑 pour supprimer définitivement (fichier + entrée bibliothèque) :\n` + lines.join('\n'), {
+        reply_markup: { inline_keyboard: rows },
+      });
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n' +
     '/skip — passer au morceau suivant\n' +
@@ -163,6 +180,7 @@ async function handleMessage(token, message) {
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
     '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
+    '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
     '/np — morceau en cours + auditeurs\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -198,6 +216,11 @@ async function handleCallback(token, cb) {
     await setBanned(id, true);
     await answerCallback(token, cb.id, 'Banni ✅');
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('delfile:')) {
+    const id = data.slice(8);
+    const r = await deleteTrack(id);
+    await answerCallback(token, cb.id, r.ok ? '🗑 Piste supprimée définitivement.' : `❌ Échec (${r.status}).`);
+    if (r.ok) await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
   }
@@ -251,6 +274,40 @@ async function triggerJingle() {
     return { message: sub.message || (subRes.ok ? '🎙 Jingle demandé.' : `Echec (${subRes.status}).`) };
   } catch {
     return { message: '❌ Erreur réseau vers AzuraCast.' };
+  }
+}
+
+// Recherche par titre/artiste dans la bibliotheque media de la station (pas
+// la file d'attente ni les demandes). L'API publique renvoie soit un tableau
+// simple, soit {rows:[...]} selon la version d'AzuraCast : on gere les deux.
+async function searchTracks(query) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const url = `${AZURACAST_BASE}/api/station/${STATION}/files?searchPhrase=${encodeURIComponent(query)}`;
+    const r = await fetch(url, { headers: { 'X-API-Key': apiKey } });
+    if (!r.ok) return { ok: false, status: r.status };
+    const body = await r.json();
+    const list = Array.isArray(body) ? body : (body.rows || body.data || []);
+    return { ok: true, list };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Suppression definitive : retire le fichier ET son entree de la bibliotheque
+// (ne se contente pas de le sortir de la playlist). Irreversible cote AzuraCast.
+async function deleteTrack(id) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/file/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'X-API-Key': apiKey },
+    });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
   }
 }
 
