@@ -238,13 +238,13 @@
       "id": "api/chat.js",
       "label": "api/chat.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation (chat:auto:<key>:<day>), anti-usurpation du pseudo KALBASSFM. Depuis 2026-07-20 : mapping chat:tgmap:<message_id_telegram> -> message live (TTL 3j) pour permettre a l'admin de repondre nativement depuis Telegram (fonctionnalite Reply, portee par api/telegram.js) ; bandeau chat:pinned pour l'annonce epinglee pilotee par /pin /unpin."
+      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation (chat:auto:<key>:<day>), anti-usurpation du pseudo KALBASSFM. Depuis 2026-07-20 : mapping chat:tgmap:<message_id_telegram> -> message live (TTL 3j) pour permettre a l'admin de repondre nativement depuis Telegram (fonctionnalite Reply, portee par api/telegram.js) ; bandeau chat:pinned pour l'annonce epinglee pilotee par /pin /unpin ; lookup chat:supporters (hash clientId->nom, pose par /mark_supporter) a chaque POST pour surclasser le pseudo + poser supporter:true, meme principe de confiance server-only que admin:true."
     },
     {
       "id": "ChatFeature",
       "label": "Chat live",
       "type": "feature",
-      "summary": "Panneau #chatPanel dans index.html, ouvert par defaut. Pseudo anonyme auto-genere, poll 3s, cooldown 3s, anti-lien client+serveur. Moderation admin par bot Telegram (suppression, ban, pause). Depuis 2026-07-19/20 : bandeau d'annonce epinglee (PinnedBannerFeature), messages admin repondant nativement a un message d'auditeur avec citation (ReplyFeature)."
+      "summary": "Panneau #chatPanel dans index.html, ouvert par defaut. Pseudo anonyme auto-genere, poll 3s, cooldown 3s, anti-lien client+serveur. Moderation admin par bot Telegram (suppression, ban, pause). Depuis 2026-07-19/20 : bandeau d'annonce epinglee (PinnedBannerFeature), messages admin repondant nativement a un message d'auditeur avec citation (ReplyFeature), badge visuel pour les supporters (pseudo + couleur --accent-2 distincts, lien clientId<->nom pose manuellement par l'admin via /mark_supporter)."
     },
     {
       "id": "ContactPopup",
@@ -280,7 +280,7 @@
       "id": "api/telegram.js",
       "label": "api/telegram.js",
       "type": "file",
-      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes historiques : /skip, /msg, /jingle, /ban /unban, /pause_chat /resume_chat. Ajouts 2026-07-19/20 : reponse native Telegram (Reply) OU bouton dedie -> postee comme reponse citee dans le chat live ; /recent et /recent_supporters (suppression retroactive avec boutons) ; /add_supporter (ajout manuel, don recu avant webhook BMC) ; /reset_top5 (incremente top5:epoch) ; /pin /unpin (bandeau chat:pinned) ; /np /stats ; /delete_track /delete_current_track (recherche+suppression bibliotheque AzuraCast, fallback progressif titre/artiste/phrase) ; /ask (brainstorm via l'API Claude, requete HTTP brute, pas de SDK)."
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes historiques : /skip, /msg, /jingle, /ban /unban, /pause_chat /resume_chat. Ajouts 2026-07-19/20 : reponse native Telegram (Reply) OU bouton dedie -> postee comme reponse citee dans le chat live ; /recent et /recent_supporters (suppression retroactive avec boutons) ; /add_supporter (ajout manuel, don recu avant webhook BMC) ; /reset_top5 (incremente top5:epoch) ; /pin /unpin (bandeau chat:pinned) ; /np /stats ; /delete_track /delete_current_track (recherche+suppression bibliotheque AzuraCast, fallback progressif titre/artiste/phrase) ; /ask (brainstorm via l'API Claude, requete HTTP brute, pas de SDK) ; /mark_supporter /unmark_supporter (lie un clientId a un nom de supporter dans le hash chat:supporters, meme patron que /ban)."
     },
     {
       "id": "TelegramBotFeature",
@@ -341,6 +341,12 @@
       "label": "Reponse admin depuis Telegram",
       "type": "feature",
       "summary": "L'admin repond a un message d'auditeur depuis Telegram (reply natif ou bouton dedie) ; la reponse est postee dans le chat live sous le pseudo admin, avec citation du message d'origine (mapping chat:tgmap dans api/chat.js)."
+    },
+    {
+      "id": "SupporterBadgeFeature",
+      "label": "Badge supporter dans le chat",
+      "type": "feature",
+      "summary": "Un supporter marque par l'admin (/mark_supporter <clientId> <nom>) voit son pseudo surclasse et affiche en couleur distincte (--accent-2) dans le chat live, quel que soit le pseudo qu'il a lui-meme choisi. Aucun lien automatique don<->clientId n'existe (pas de comptes, checkout sur BMC) : le rapprochement est manuel, fait par l'admin quand le supporter se manifeste dans le chat."
     }
   ],
   "edges": [
@@ -906,6 +912,30 @@
       "source": "VotingSystemPlan",
       "target": "TopFiveFeature",
       "relation": "distinct du classement libre existant de",
+      "weight": 1
+    },
+    {
+      "source": "SupporterBadgeFeature",
+      "target": "api/telegram.js",
+      "relation": "pilotée par /mark_supporter /unmark_supporter dans",
+      "weight": 2
+    },
+    {
+      "source": "SupporterBadgeFeature",
+      "target": "api/chat.js",
+      "relation": "appliquée via lookup chat:supporters dans",
+      "weight": 2
+    },
+    {
+      "source": "SupporterBadgeFeature",
+      "target": "ChatFeature",
+      "relation": "distingue visuellement les supporters dans",
+      "weight": 1
+    },
+    {
+      "source": "SupporterBadgeFeature",
+      "target": "SupportersFeature",
+      "relation": "prolonge dans le chat le statut de",
       "weight": 1
     }
   ]

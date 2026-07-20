@@ -10,14 +10,14 @@
     "label": "AzuraCast"
   },
   {
+    "id": "api/telegram.js",
+    "degree": 9,
+    "label": "api/telegram.js"
+  },
+  {
     "id": "ProgrammeGrid",
     "degree": 8,
     "label": "Horloge a bacs ponderes (8 bacs)"
-  },
-  {
-    "id": "api/telegram.js",
-    "degree": 8,
-    "label": "api/telegram.js"
   },
   {
     "id": "VotingSystemPlan",

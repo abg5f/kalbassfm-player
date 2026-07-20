@@ -50,7 +50,8 @@
         "api/telegram.js",
         "TelegramBotFeature",
         "api/supporters.js",
-        "ReplyFeature"
+        "ReplyFeature",
+        "SupporterBadgeFeature"
       ]
     },
     {
