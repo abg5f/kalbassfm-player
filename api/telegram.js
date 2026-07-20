@@ -218,8 +218,17 @@ async function handleCallback(token, cb) {
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('delfile:')) {
     const id = data.slice(8);
+    // Recupere le libelle avant suppression (apres, le fichier n'existe plus).
+    const info = await getTrack(id);
+    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || id}` : id;
     const r = await deleteTrack(id);
-    await answerCallback(token, cb.id, r.ok ? '🗑 Piste supprimée définitivement.' : `❌ Échec (${r.status}).`);
+    // Toast immediat (disparait vite) + message persistant dans le chat admin,
+    // pour avoir une trace claire de validation/echec meme si le toast est rate.
+    await answerCallback(token, cb.id, r.ok ? '🗑 Supprimé' : `❌ Échec (${r.status})`);
+    await sendMessage(token, cb.message.chat.id,
+      r.ok
+        ? `✅ Piste supprimée d'AzuraCast : ${label}`
+        : `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
     if (r.ok) await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
@@ -290,6 +299,22 @@ async function searchTracks(query) {
     const body = await r.json();
     const list = Array.isArray(body) ? body : (body.rows || body.data || []);
     return { ok: true, list };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Recupere titre/artiste d'un fichier avant de le supprimer, pour que le
+// message de confirmation nomme la piste plutot que son seul id numerique.
+async function getTrack(id) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/file/${encodeURIComponent(id)}`, {
+      headers: { 'X-API-Key': apiKey },
+    });
+    if (!r.ok) return { ok: false, status: r.status };
+    return { ok: true, data: await r.json() };
   } catch {
     return { ok: false, status: 'network-error' };
   }
