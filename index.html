@@ -97,7 +97,8 @@
     .main-col > .volume-row  { order: 6; }
     .main-col > #histPanel   { order: 7; }
     #topPanel                 { order: 8; }
-    .card > .footer       { order: 9; }
+    #supportersPanel          { order: 9; }
+    .card > .footer       { order: 10; }
 
     /* ── Desktop : chat + Top 5 en colonne latérale indépendante ── */
     @media (min-width: 1024px) {
@@ -580,6 +581,36 @@
       height: 100%;
     }
 
+    /* ── Supporters (Buy Me a Coffee) ── */
+    .supporter-item {
+      padding: 6px 0;
+      border-top: 1px solid #222;
+    }
+    .supporter-item:first-child { border-top: none; }
+    .supporter-item-head {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      justify-content: space-between;
+    }
+    .supporter-name {
+      font-family: 'Space Mono', monospace;
+      font-size: .64rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .supporter-time {
+      font-family: 'Space Mono', monospace;
+      font-size: .54rem;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .supporter-message {
+      font-size: .72rem;
+      color: #ccc;
+      margin-top: 2px;
+    }
+
     /* ── Chat live ── */
     .chat-list {
       /* Hauteur FIXE (pas max-height) : l'arrivee de nouveaux messages ne doit
@@ -1037,6 +1068,16 @@
         <div id="topList"></div>
       </div>
     </details>
+
+    <details class="panel" id="supportersPanel">
+      <summary>
+        <span class="panel-summary-label">Supporters ☕</span>
+        <span class="chev">›</span>
+      </summary>
+      <div class="panel-body">
+        <div id="supportersList"></div>
+      </div>
+    </details>
     </div>
 
     <div class="footer">
@@ -1111,6 +1152,7 @@
   const findYT    = document.getElementById('findYT');
   const historyList = document.getElementById('historyList');
   const topList = document.getElementById('topList');
+  const supportersList = document.getElementById('supportersList');
   const histPreview = document.getElementById('histPreview');
   const chatList  = document.getElementById('chatList');
   const chatForm  = document.getElementById('chatForm');
@@ -1411,6 +1453,38 @@
   }
   pollTop();
   setInterval(pollTop, 4000);
+
+  /* ── Supporters (Buy Me a Coffee) — evenement rare, poll peu frequent ── */
+  function renderSupporters(list) {
+    if (!Array.isArray(list) || !list.length) {
+      supportersList.innerHTML = '<p class="prog-note">No supporters yet.</p>';
+      return;
+    }
+    supportersList.innerHTML = '';
+    list.forEach((s) => {
+      const el = document.createElement('div');
+      el.className = 'supporter-item';
+      el.innerHTML =
+        '<div class="supporter-item-head">' +
+          '<span class="supporter-name">☕ ' + (s.name || 'A listener') + '</span>' +
+          '<span class="supporter-time">' + formatChatTime(s.ts) + '</span>' +
+        '</div>' +
+        (s.message ? '<div class="supporter-message">' + s.message + '</div>' : '');
+      supportersList.appendChild(el);
+    });
+  }
+  async function pollSupporters() {
+    try {
+      const r = await fetch('/api/supporters', { cache: 'no-store' });
+      const j = await r.json();
+      if (!j.enabled) throw new Error('disabled');
+      renderSupporters(j.supporters);
+    } catch {
+      supportersList.innerHTML = '<p class="prog-note">Coming soon.</p>';
+    }
+  }
+  pollSupporters();
+  setInterval(pollSupporters, 30000);
 
   /* ── Chat live (anonyme, pseudo auto-genere, partage via /api/chat) ── */
   function getClientId() {
