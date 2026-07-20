@@ -61,10 +61,18 @@ export default async function handler(req, res) {
   // ---- GET : derniers supporters (lecture publique, comme api/chat.js) ----
   if (req.method === 'GET') {
     try {
-      const lj = await kv('lrange', 'supporters', '0', '19');
+      // "supporters:deleted" est ecrit par api/telegram.js (/recent_supporters,
+      // bouton 🗑) — meme convention que "chat:deleted" pour api/chat.js.
+      const [lj, dj] = await Promise.all([
+        kv('lrange', 'supporters', '0', '19'),
+        kv('hgetall', 'supporters:deleted'),
+      ]);
+      const deletedFields = dj.result || [];
+      const deleted = new Set();
+      for (let i = 0; i < deletedFields.length; i += 2) deleted.add(deletedFields[i]);
       const supporters = (lj.result || [])
         .map((s) => { try { return JSON.parse(s); } catch { return null; } })
-        .filter(Boolean);
+        .filter((s) => s && !deleted.has(s.id));
       return res.status(200).json({ enabled: true, supporters });
     } catch {
       return res.status(200).json({ enabled: false, supporters: [] });

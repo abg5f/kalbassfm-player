@@ -150,6 +150,18 @@ async function handleMessage(token, message) {
     });
   }
 
+  if (text === '/recent_supporters') {
+    const list = await getRecentSupporters(10);
+    if (!list.length) return sendMessage(token, chatId, 'Aucun supporter à afficher.');
+    const lines = list.map((s, i) => `${i + 1}. ${s.name}` + (s.message ? ` — "${s.message}"` : ''));
+    const buttons = list.map((s, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'delsup:' + s.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId, 'Derniers supporters :\n' + lines.join('\n'), {
+      reply_markup: { inline_keyboard: rows },
+    });
+  }
+
   if (text === '/reset_top5') {
     const ok = await resetTop5();
     return sendMessage(token, chatId, ok ? '🔥 Top 5 remis à zéro (les votes précédents ne comptent plus).' : '❌ Echec (store non configure ?).');
@@ -227,6 +239,7 @@ async function handleMessage(token, message) {
     '/stats — auditeurs, messages et votes du jour\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
     '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
+    '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n' +
     'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
@@ -289,6 +302,11 @@ async function handleCallback(token, cb) {
     await sendMessage(token, cb.message.chat.id,
       `✅ Piste supprimée d'AzuraCast : ${label}\n` +
       (skip.ok ? '⏭ Morceau suivant lancé.' : `⚠️ Le skip a échoué (${skip.status}) — lance-le manuellement avec /skip.`));
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('delsup:')) {
+    const id = data.slice(7);
+    await markDeletedSupporter(id);
+    await answerCallback(token, cb.id, 'Supprimé ✅');
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
@@ -518,6 +536,31 @@ async function markDeleted(id) {
   const kv = kvClient();
   if (!kv || !id) return;
   await kv('hset', 'chat:deleted', id, '1');
+}
+
+// Meme convention que getRecentMessages/markDeleted, mais sur la liste
+// "supporters" (api/supporters.js) — suppression logique (hash "supporters:deleted"),
+// lue et filtree cote GET de api/supporters.js.
+async function getRecentSupporters(n) {
+  const kv = kvClient();
+  if (!kv) return [];
+  const [lj, dj] = await Promise.all([
+    kv('lrange', 'supporters', '0', String(n - 1)),
+    kv('hgetall', 'supporters:deleted'),
+  ]);
+  const raw = lj.result || [];
+  const deletedFields = dj.result || [];
+  const deleted = new Set();
+  for (let i = 0; i < deletedFields.length; i += 2) deleted.add(deletedFields[i]);
+  return raw
+    .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+    .filter((s) => s && !deleted.has(s.id));
+}
+
+async function markDeletedSupporter(id) {
+  const kv = kvClient();
+  if (!kv || !id) return;
+  await kv('hset', 'supporters:deleted', id, '1');
 }
 
 async function setBanned(clientId, banned) {
