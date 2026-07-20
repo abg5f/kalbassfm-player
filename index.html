@@ -125,17 +125,57 @@
         display: flex;
         flex-direction: column;
         border-left: 3px solid var(--border);
-        /* align-self:start : la colonne s'arrete a la hauteur de son propre
-           contenu au lieu d'etre etiree pour matcher la colonne principale
-           (qui est structurellement plus haute : artwork+controles+
-           historique) — sans ca, un grand bloc vide apparaissait sous
-           Chat/Supporters des que leur contenu cumule etait plus court que
-           la colonne principale. Chaque panneau garde sa hauteur naturelle
-           (chat plafonne a 260px via .chat-list) ; plus de scroll de bloc
-           necessaire puisque la colonne n'est plus contrainte en hauteur. */
-        align-self: start;
+        /* height:0 + min-height:100% : la colonne matche la hauteur de la
+           colonne principale (structurellement plus haute : artwork+
+           controles+historique). Contrairement a l'ancienne version, ce
+           n'est plus toute la colonne qui scrolle : c'est le Chat qui
+           s'etire pour absorber l'espace restant (regle #chatPanel[open]
+           ci-dessous), Supporters gardant sa hauteur naturelle plafonnee. */
+        height: 0;
+        min-height: 100%;
       }
       #chatPanel { border-bottom: none; }
+      /* Chat = element flexible de la sidebar : occupe tout l'espace vertical
+         restant sous Supporters au lieu de laisser un vide sous la colonne
+         principale, plus haute. .chat-list grandit avec lui (min-height en
+         filet de securite) ; le scroll reste interne (column-reverse ancre
+         sur les messages recents), jamais sur la colonne entiere. */
+      #chatPanel[open] {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+      /* Chrome enveloppe tout ce qui suit <summary> dans un pseudo-element
+         ::details-content (pour l'animation d'ouverture), display:block par
+         defaut et dimensionne a son contenu — ca casse la chaine flex meme
+         si .panel-body a flex:1. Doit etre remis en flex explicitement. */
+      #chatPanel[open]::details-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        height: auto;
+      }
+      #chatPanel[open] .panel-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+      #chatPanel[open] .chat-list {
+        flex: 1;
+        min-height: 160px;
+        height: auto;
+      }
+      /* Garde-fou : #supportersList n'a pas de plafond cote serveur (jusqu'a
+         20 entrees, api/supporters.js). La colonne ne scrollant plus en bloc,
+         une longue liste doit se contenir elle-meme plutot que deborder de
+         la carte. */
+      #supportersPanel[open] #supportersList {
+        max-height: 240px;
+        overflow-y: auto;
+      }
     }
 
     /* App installée (standalone / fullscreen) : plein écran bord-à-bord,
