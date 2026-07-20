@@ -100,7 +100,8 @@
     #supportersPanel          { order: 9; }
     .card > .footer       { order: 10; }
 
-    /* ── Desktop : chat + Top 5 en colonne latérale indépendante ── */
+    /* ── Desktop : colonne principale (lecteur, historique, Top 5) +
+       colonne laterale independante (chat + supporters) ── */
     @media (min-width: 1024px) {
       .card {
         width: min(960px, 94vw);
@@ -1034,6 +1035,16 @@
         <div id="historyList"></div>
       </div>
     </details>
+
+    <details class="panel" id="topPanel" open>
+      <summary>
+        <span class="panel-summary-label">Top 5 🔥</span>
+        <span class="chev">›</span>
+      </summary>
+      <div class="panel-body">
+        <div id="topList"></div>
+      </div>
+    </details>
     </div>
 
     <div class="sidebar-col">
@@ -1053,17 +1064,7 @@
       </div>
     </details>
 
-    <details class="panel" id="topPanel" open>
-      <summary>
-        <span class="panel-summary-label">Top 5 🔥</span>
-        <span class="chev">›</span>
-      </summary>
-      <div class="panel-body">
-        <div id="topList"></div>
-      </div>
-    </details>
-
-    <details class="panel" id="supportersPanel">
+    <details class="panel" id="supportersPanel" open>
       <summary>
         <span class="panel-summary-label">Supporters ☕</span>
         <span class="chev">›</span>
