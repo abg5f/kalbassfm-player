@@ -93,23 +93,29 @@ export default async function handler(req, res) {
   const rawMessage = data.support_note || data.message || data.note || data.support_message || '';
   const name = String(rawName).slice(0, 60).trim() || 'A listener';
   const message = String(rawMessage).slice(0, 200).trim();
+  // Les events de test envoyes depuis BMC Studio ("Send test event") portent
+  // live_mode:false : on fait quand meme tout le chemin (chat + Telegram +
+  // liste) pour permettre de verifier la tuyauterie de bout en bout, mais
+  // etiquete clairement pour ne pas induire les auditeurs en erreur.
+  const isTest = payload.live_mode === false;
+  const prefix = isTest ? '🧪 [TEST] ' : '';
 
   try {
     const id = (payload.event_id || Date.now()).toString(36) + Math.random().toString(36).slice(2, 8);
 
-    const entry = { id, name, message, ts: Date.now() };
+    const entry = { id, name: prefix + name, message, ts: Date.now() };
     await kv('lpush', 'supporters', JSON.stringify(entry));
     await kv('ltrim', 'supporters', '0', '49');
 
     // admin:true est pose UNIQUEMENT cote serveur, meme convention que
     // partout ailleurs (api/telegram.js, api/chat.js) — affiche en gras.
-    const thankYou = message ? `☕ Thanks ${name} for the coffee! "${message}"` : `☕ Thanks ${name} for the coffee!`;
+    const thankYou = message ? `☕ ${prefix}Thanks ${name} for the coffee! "${message}"` : `☕ ${prefix}Thanks ${name} for the coffee!`;
     const chatMsg = { id, nick: '📻 KALBASSFM', text: thankYou.slice(0, 200), ts: Date.now(), admin: true };
     await kv('lpush', 'chat:messages', JSON.stringify(chatMsg));
     await kv('ltrim', 'chat:messages', '0', '99');
 
-    await notifyTelegram(name, message);
-    return res.status(200).json({ ok: true });
+    await notifyTelegram(prefix + name, message);
+    return res.status(200).json({ ok: true, test: isTest });
   } catch {
     // 200 malgre l'echec cote nous : un retry BMC ne resoudra pas une panne
     // Redis, autant eviter d'epuiser le quota de tentatives pour rien.
