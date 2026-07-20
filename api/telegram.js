@@ -150,6 +150,16 @@ async function handleMessage(token, message) {
     });
   }
 
+  if (text.startsWith('/add_supporter')) {
+    const body = text.slice('/add_supporter'.length).trim();
+    if (!body) return sendMessage(token, chatId, 'Usage : /add_supporter <nom> | <message optionnel> — ajoute manuellement un supporter (ex: don reçu avant la mise en place du webhook BMC).');
+    const [namePart, ...rest] = body.split('|');
+    const name = namePart.trim().slice(0, 60) || 'A listener';
+    const message = rest.join('|').trim().slice(0, 200);
+    const ok = await addSupporter(name, message);
+    return sendMessage(token, chatId, ok ? `☕ Ajouté à la liste des supporters : ${name}` : '❌ Echec (store non configuré ?).');
+  }
+
   if (text === '/recent_supporters') {
     const list = await getRecentSupporters(10);
     if (!list.length) return sendMessage(token, chatId, 'Aucun supporter à afficher.');
@@ -240,6 +250,7 @@ async function handleMessage(token, message) {
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
     '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n' +
+    '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
     'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
@@ -555,6 +566,18 @@ async function getRecentSupporters(n) {
   return raw
     .map((s) => { try { return JSON.parse(s); } catch { return null; } })
     .filter((s) => s && !deleted.has(s.id));
+}
+
+// Ajout manuel (ex: don recu avant la mise en place du webhook BMC, ou
+// webhook temporairement en panne) — meme schema que api/supporters.js.
+async function addSupporter(name, message) {
+  const kv = kvClient();
+  if (!kv) return false;
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const entry = { id, name, message, ts: Date.now() };
+  await kv('lpush', 'supporters', JSON.stringify(entry));
+  await kv('ltrim', 'supporters', '0', '49');
+  return true;
 }
 
 async function markDeletedSupporter(id) {
