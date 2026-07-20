@@ -95,13 +95,16 @@ export default async function handler(req, res) {
 
   if (!clientId || !text) return res.status(200).json({ enabled: true, ok: false });
 
+  let supporterName = null;
   try {
-    const [pausedJ, bannedJ] = await Promise.all([
+    const [pausedJ, bannedJ, supporterJ] = await Promise.all([
       kv('get', 'chat:paused'),
       kv('sismember', 'chat:banned', clientId),
+      kv('hget', 'chat:supporters', clientId),
     ]);
     if (pausedJ.result) return res.status(200).json({ enabled: true, ok: false, paused: true });
     if (bannedJ.result) return res.status(200).json({ enabled: true, ok: false, banned: true });
+    supporterName = supporterJ.result || null;
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
   }
@@ -112,7 +115,12 @@ export default async function handler(req, res) {
     const lockJ = await kv('set', `chat:rate:${clientId}`, '1', 'EX', '3', 'NX');
     if (lockJ.result !== 'OK') return res.status(200).json({ enabled: true, ok: false, rateLimited: true });
 
-    const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
+    // supporter:true et le nom associe viennent EXCLUSIVEMENT du hash Redis
+    // chat:supporters (pose par /mark_supporter dans api/telegram.js) —
+    // jamais du pseudo envoye par le client, meme principe que admin:true.
+    const msg = supporterName
+      ? { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: supporterName, text, ts: Date.now(), supporter: true }
+      : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
     // Compteur quotidien (jour Martinique UTC-4) lu par /stats du bot Telegram.

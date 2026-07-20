@@ -34,6 +34,7 @@
       --card:    #111111;
       --border:  #FFFFFF;
       --accent:  #F5E642;
+      --accent-2: #E08A2E;
       --red:     #FF3B3B;
       --fg:      #FFFFFF;
       --muted:   #7A7A7A;
@@ -643,6 +644,9 @@
     }
     /* Messages admin (bot Telegram, flag serveur) : texte en gras */
     .chat-item-admin .chat-text { font-weight: 700; }
+    /* Supporters (lien clientId<->nom pose par l'admin via /mark_supporter,
+       jamais derive du pseudo client) : pseudo en couleur secondaire */
+    .chat-item-supporter .chat-nick { color: var(--accent-2); }
     /* Citation du message auquel l'admin repond (via "Repondre" Telegram) */
     .chat-reply {
       font-size: .62rem;
@@ -1505,8 +1509,8 @@
     chatList.innerHTML = '';
     messages.forEach((m) => {
       const el = document.createElement('div');
-      // m.admin est pose exclusivement cote serveur (bot Telegram) — fiable.
-      el.className = m.admin ? 'chat-item chat-item-admin' : 'chat-item';
+      // m.admin / m.supporter sont poses exclusivement cote serveur — fiables.
+      el.className = 'chat-item' + (m.admin ? ' chat-item-admin' : '') + (m.supporter ? ' chat-item-supporter' : '');
       const head = document.createElement('div');
       head.className = 'chat-item-head';
       const nick = document.createElement('span');

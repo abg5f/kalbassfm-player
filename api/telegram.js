@@ -110,6 +110,23 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? `✅ Debanni : ${id}` : '❌ Echec (store non configure ?).');
   }
 
+  if (text.startsWith('/mark_supporter')) {
+    const body = text.slice('/mark_supporter'.length).trim();
+    const spaceIdx = body.indexOf(' ');
+    const id = spaceIdx === -1 ? body : body.slice(0, spaceIdx);
+    const name = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
+    if (!id || !name) return sendMessage(token, chatId, 'Usage : /mark_supporter <clientId> <nom> (copie le clientId depuis une notification de chat)');
+    const ok = await setChatSupporter(id, name);
+    return sendMessage(token, chatId, ok ? `☕ ${id} apparaîtra désormais comme "${name}" dans le chat.` : '❌ Echec (store non configure ?).');
+  }
+
+  if (text.startsWith('/unmark_supporter')) {
+    const id = text.slice('/unmark_supporter'.length).trim();
+    if (!id) return sendMessage(token, chatId, 'Usage : /unmark_supporter <clientId>');
+    const ok = await setChatSupporter(id, null);
+    return sendMessage(token, chatId, ok ? `✅ Badge supporter retiré : ${id}` : '❌ Echec (store non configure ?).');
+  }
+
   if (text === '/pause_chat') {
     const ok = await setPaused(true);
     return sendMessage(token, chatId, ok ? '⏸ Chat en pause — plus personne ne peut poster.' : '❌ Echec (store non configure ?).');
@@ -255,6 +272,7 @@ async function handleMessage(token, message) {
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/jingle — declencher un jingle (best effort)\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
+    '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
     '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
     '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
@@ -656,6 +674,17 @@ async function setBanned(clientId, banned) {
   const kv = kvClient();
   if (!kv || !clientId) return false;
   await kv(banned ? 'sadd' : 'srem', 'chat:banned', clientId);
+  return true;
+}
+
+// Lien clientId -> nom de supporter, pose UNIQUEMENT par l'admin (/mark_supporter).
+// Lu par api/chat.js a chaque POST pour surclasser le pseudo (badge ☕) —
+// jamais derive de ce que le client envoie, meme principe que le flag admin.
+async function setChatSupporter(clientId, name) {
+  const kv = kvClient();
+  if (!kv || !clientId) return false;
+  if (name) await kv('hset', 'chat:supporters', clientId, name.slice(0, 30));
+  else await kv('hdel', 'chat:supporters', clientId);
   return true;
 }
 
