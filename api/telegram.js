@@ -9,9 +9,16 @@
    - TELEGRAM_CHAT_ID       : seul chat_id autorise a utiliser le bot
    - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip, /jingle, /delete_track
    - KV_REST_API_URL / KV_REST_API_TOKEN : memes que api/chat.js
+   - ANTHROPIC_API_KEY      : cle API Claude (console.anthropic.com) pour /ask
 */
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
 const STATION = 'kalbassfm';
+
+// Marge large : les autres commandes (AzuraCast, Redis) sont deja rapides,
+// mais /ask attend une reponse Claude avant de repondre a Telegram — sur le
+// plan Vercel Hobby ce champ est plafonne a 10s de toute facon (ignore
+// silencieusement au-dela), sur Pro il autorise jusqu'a 30s.
+export const config = { maxDuration: 30 };
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -150,6 +157,13 @@ async function handleMessage(token, message) {
     });
   }
 
+  if (text.startsWith('/ask')) {
+    const q = text.slice('/ask'.length).trim();
+    if (!q) return sendMessage(token, chatId, 'Usage : /ask <ta question> — ex: /ask propose-moi un message a pin pour annoncer le mode support');
+    const answer = await askClaude(q);
+    return sendMessage(token, chatId, answer || '❌ Échec de la requête Claude (clé API manquante ou erreur réseau).');
+  }
+
   if (text.startsWith('/add_supporter')) {
     const body = text.slice('/add_supporter'.length).trim();
     if (!body) return sendMessage(token, chatId, 'Usage : /add_supporter <nom> | <message optionnel> — ajoute manuellement un supporter (ex: don reçu avant la mise en place du webhook BMC).');
@@ -251,6 +265,7 @@ async function handleMessage(token, message) {
     '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n' +
     '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
+    '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n' +
     'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
@@ -460,6 +475,57 @@ async function statsText() {
     `🎧 Auditeurs maintenant : ${lc} (uniques ${uniq})\n` +
     `💬 Messages du chat aujourd'hui : ${msgs}\n` +
     `🔥 Votes aujourd'hui : ${votes}`;
+}
+
+/* ---- Claude (brainstorm admin : /ask) ---- */
+const CLAUDE_SYSTEM_PROMPT =
+  "You help run KALBASSFM, a 100% electronic webradio from the Caribbean. " +
+  "The admin messages you from Telegram for quick brainstorming — drafting a chat " +
+  "pin announcement, ideas to animate the live chat, small engagement ideas, or " +
+  "general help. When asked to draft a pin message, give exactly 3 short numbered " +
+  "options, each under 200 characters (they get pasted directly after \"/pin \"), " +
+  "in English, matching a light Caribbean/electronic-music tone. For anything else, " +
+  "give a few concise, actionable suggestions. Keep replies short and scannable — " +
+  "this is read on a phone inside Telegram, not a long essay.";
+
+// HTTP brut (pas de dependance @anthropic-ai/sdk, coherent avec le reste du
+// projet). Pas de "thinking" : reponses courtes/creatives, pas de raisonnement
+// complexe requis, et ca garde la latence basse dans le contexte d'un webhook.
+async function askClaude(prompt) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-8',
+        max_tokens: 1024,
+        system: CLAUDE_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: prompt.slice(0, 2000) }],
+      }),
+      signal: controller.signal,
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const text = (data.content || [])
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('\n')
+      .trim();
+    // Marge de securite sous la limite Telegram (4096 caracteres/message).
+    return text ? text.slice(0, 3800) : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /* ---- Redis (memes cles que api/chat.js) ---- */
