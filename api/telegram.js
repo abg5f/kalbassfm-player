@@ -177,8 +177,16 @@ async function handleMessage(token, message) {
     if (!d) return sendMessage(token, chatId, '❌ Impossible de joindre AzuraCast.');
     const song = (d.now_playing && d.now_playing.song) || {};
     if (!song.title) return sendMessage(token, chatId, '❌ Aucun morceau identifiable en cours.');
-    const query = `${song.artist || ''} ${song.title || ''}`.trim();
-    const r = await searchTracks(query);
+    // La recherche AzuraCast (searchPhrase) matche la phrase complete contre
+    // UN champ a la fois (titre OU artiste) — "Artiste Titre" colle en un seul
+    // terme ne matchera jamais si les deux sont stockes separement en base.
+    // On essaie donc le titre seul d'abord (le plus distinctif), puis
+    // l'artiste seul, puis la phrase combinee en dernier recours.
+    let r = await searchTracks(song.title);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length && song.artist) r = await searchTracks(song.artist);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length) r = await searchTracks(`${song.artist || ''} ${song.title}`.trim());
     if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
     if (!r.list.length) {
       return sendMessage(token, chatId,
