@@ -172,6 +172,39 @@ async function handleMessage(token, message) {
       });
   }
 
+  if (text === '/delete_current_track') {
+    const d = await nowPlaying();
+    if (!d) return sendMessage(token, chatId, '❌ Impossible de joindre AzuraCast.');
+    const song = (d.now_playing && d.now_playing.song) || {};
+    if (!song.title) return sendMessage(token, chatId, '❌ Aucun morceau identifiable en cours.');
+    const query = `${song.artist || ''} ${song.title || ''}`.trim();
+    const r = await searchTracks(query);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length) {
+      return sendMessage(token, chatId,
+        `Aucune piste de bibliothèque ne correspond à « ${song.artist || '?'} — ${song.title} » ` +
+        `(morceau en direct, requête externe, ou jingle ?).`);
+    }
+    // On tente une correspondance exacte titre(+artiste) pour eviter de
+    // presenter par erreur un homonyme de la bibliotheque ; a defaut, on
+    // laisse l'admin choisir parmi les resultats de la recherche.
+    const exact = r.list.filter((f) =>
+      (f.title || '').toLowerCase() === song.title.toLowerCase() &&
+      (!song.artist || (f.artist || '').toLowerCase() === song.artist.toLowerCase()));
+    const candidates = (exact.length ? exact : r.list).slice(0, 5);
+    const lines = candidates.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
+    const buttons = candidates.map((f, i) => ({ text: '🗑⏭ ' + (i + 1), callback_data: 'delcur:' + f.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId,
+      `▶️ En cours : ${song.artist || '?'} — ${song.title}\n` +
+      (exact.length === 1
+        ? 'Trouvée dans la bibliothèque — clique 🗑⏭ pour supprimer et passer au morceau suivant :'
+        : `${candidates.length} correspondance(s) possible(s) — choisis la bonne :`) +
+      '\n' + lines.join('\n'),
+      { reply_markup: { inline_keyboard: rows } });
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n' +
     '/skip — passer au morceau suivant\n' +
@@ -181,6 +214,7 @@ async function handleMessage(token, message) {
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
     '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
     '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
+    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n' +
     '/np — morceau en cours + auditeurs\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -230,6 +264,24 @@ async function handleCallback(token, cb) {
         ? `✅ Piste supprimée d'AzuraCast : ${label}`
         : `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
     if (r.ok) await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('delcur:')) {
+    const id = data.slice(7);
+    const info = await getTrack(id);
+    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || id}` : id;
+    const r = await deleteTrack(id);
+    if (!r.ok) {
+      await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
+      await sendMessage(token, cb.message.chat.id,
+        `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
+      return editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+    }
+    const skip = await skipSong();
+    if (skip.ok) await postAdminMessage('⏭ An admin skipped the current track.');
+    await answerCallback(token, cb.id, skip.ok ? '🗑 Supprimé, morceau suivant lancé' : '🗑 Supprimé (skip échoué)');
+    await sendMessage(token, cb.message.chat.id,
+      `✅ Piste supprimée d'AzuraCast : ${label}\n` +
+      (skip.ok ? '⏭ Morceau suivant lancé.' : `⚠️ Le skip a échoué (${skip.status}) — lance-le manuellement avec /skip.`));
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
   }
