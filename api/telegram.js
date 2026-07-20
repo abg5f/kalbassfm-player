@@ -7,7 +7,7 @@
    - TELEGRAM_BOT_TOKEN     : token BotFather
    - TELEGRAM_WEBHOOK_SECRET: verifie contre X-Telegram-Bot-Api-Secret-Token
    - TELEGRAM_CHAT_ID       : seul chat_id autorise a utiliser le bot
-   - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip
+   - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip, /jingle, /delete_track
    - KV_REST_API_URL / KV_REST_API_TOKEN : memes que api/chat.js
 */
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
@@ -155,6 +155,56 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? '🔥 Top 5 remis à zéro (les votes précédents ne comptent plus).' : '❌ Echec (store non configure ?).');
   }
 
+  if (text.startsWith('/delete_track')) {
+    const q = text.slice('/delete_track'.length).trim();
+    if (!q) return sendMessage(token, chatId, 'Usage : /delete_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast.');
+    const r = await searchTracks(q);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche (${r.status}).`);
+    if (!r.list.length) return sendMessage(token, chatId, `Aucune piste trouvée pour « ${q} ».`);
+    const top = r.list.slice(0, 8);
+    const lines = top.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
+    const buttons = top.map((f, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'delfile:' + f.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId,
+      `Résultats pour « ${q} » — clique 🗑 pour supprimer définitivement (fichier + entrée bibliothèque) :\n` + lines.join('\n'), {
+        reply_markup: { inline_keyboard: rows },
+      });
+  }
+
+  if (text === '/delete_current_track') {
+    const d = await nowPlaying();
+    if (!d) return sendMessage(token, chatId, '❌ Impossible de joindre AzuraCast.');
+    const song = (d.now_playing && d.now_playing.song) || {};
+    if (!song.title) return sendMessage(token, chatId, '❌ Aucun morceau identifiable en cours.');
+    const query = `${song.artist || ''} ${song.title || ''}`.trim();
+    const r = await searchTracks(query);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length) {
+      return sendMessage(token, chatId,
+        `Aucune piste de bibliothèque ne correspond à « ${song.artist || '?'} — ${song.title} » ` +
+        `(morceau en direct, requête externe, ou jingle ?).`);
+    }
+    // On tente une correspondance exacte titre(+artiste) pour eviter de
+    // presenter par erreur un homonyme de la bibliotheque ; a defaut, on
+    // laisse l'admin choisir parmi les resultats de la recherche.
+    const exact = r.list.filter((f) =>
+      (f.title || '').toLowerCase() === song.title.toLowerCase() &&
+      (!song.artist || (f.artist || '').toLowerCase() === song.artist.toLowerCase()));
+    const candidates = (exact.length ? exact : r.list).slice(0, 5);
+    const lines = candidates.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
+    const buttons = candidates.map((f, i) => ({ text: '🗑⏭ ' + (i + 1), callback_data: 'delcur:' + f.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId,
+      `▶️ En cours : ${song.artist || '?'} — ${song.title}\n` +
+      (exact.length === 1
+        ? 'Trouvée dans la bibliothèque — clique 🗑⏭ pour supprimer et passer au morceau suivant :'
+        : `${candidates.length} correspondance(s) possible(s) — choisis la bonne :`) +
+      '\n' + lines.join('\n'),
+      { reply_markup: { inline_keyboard: rows } });
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n' +
     '/skip — passer au morceau suivant\n' +
@@ -163,6 +213,8 @@ async function handleMessage(token, message) {
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
     '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
+    '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
+    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n' +
     '/np — morceau en cours + auditeurs\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -197,6 +249,38 @@ async function handleCallback(token, cb) {
     const id = data.slice(4);
     await setBanned(id, true);
     await answerCallback(token, cb.id, 'Banni ✅');
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('delfile:')) {
+    const id = data.slice(8);
+    // Recupere le libelle avant suppression (apres, le fichier n'existe plus).
+    const info = await getTrack(id);
+    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || id}` : id;
+    const r = await deleteTrack(id);
+    // Toast immediat (disparait vite) + message persistant dans le chat admin,
+    // pour avoir une trace claire de validation/echec meme si le toast est rate.
+    await answerCallback(token, cb.id, r.ok ? '🗑 Supprimé' : `❌ Échec (${r.status})`);
+    await sendMessage(token, cb.message.chat.id,
+      r.ok
+        ? `✅ Piste supprimée d'AzuraCast : ${label}`
+        : `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
+    if (r.ok) await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('delcur:')) {
+    const id = data.slice(7);
+    const info = await getTrack(id);
+    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || id}` : id;
+    const r = await deleteTrack(id);
+    if (!r.ok) {
+      await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
+      await sendMessage(token, cb.message.chat.id,
+        `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
+      return editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+    }
+    const skip = await skipSong();
+    if (skip.ok) await postAdminMessage('⏭ An admin skipped the current track.');
+    await answerCallback(token, cb.id, skip.ok ? '🗑 Supprimé, morceau suivant lancé' : '🗑 Supprimé (skip échoué)');
+    await sendMessage(token, cb.message.chat.id,
+      `✅ Piste supprimée d'AzuraCast : ${label}\n` +
+      (skip.ok ? '⏭ Morceau suivant lancé.' : `⚠️ Le skip a échoué (${skip.status}) — lance-le manuellement avec /skip.`));
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
@@ -251,6 +335,56 @@ async function triggerJingle() {
     return { message: sub.message || (subRes.ok ? '🎙 Jingle demandé.' : `Echec (${subRes.status}).`) };
   } catch {
     return { message: '❌ Erreur réseau vers AzuraCast.' };
+  }
+}
+
+// Recherche par titre/artiste dans la bibliotheque media de la station (pas
+// la file d'attente ni les demandes). L'API publique renvoie soit un tableau
+// simple, soit {rows:[...]} selon la version d'AzuraCast : on gere les deux.
+async function searchTracks(query) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const url = `${AZURACAST_BASE}/api/station/${STATION}/files?searchPhrase=${encodeURIComponent(query)}`;
+    const r = await fetch(url, { headers: { 'X-API-Key': apiKey } });
+    if (!r.ok) return { ok: false, status: r.status };
+    const body = await r.json();
+    const list = Array.isArray(body) ? body : (body.rows || body.data || []);
+    return { ok: true, list };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Recupere titre/artiste d'un fichier avant de le supprimer, pour que le
+// message de confirmation nomme la piste plutot que son seul id numerique.
+async function getTrack(id) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/file/${encodeURIComponent(id)}`, {
+      headers: { 'X-API-Key': apiKey },
+    });
+    if (!r.ok) return { ok: false, status: r.status };
+    return { ok: true, data: await r.json() };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Suppression definitive : retire le fichier ET son entree de la bibliotheque
+// (ne se contente pas de le sortir de la playlist). Irreversible cote AzuraCast.
+async function deleteTrack(id) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/file/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: { 'X-API-Key': apiKey },
+    });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
   }
 }
 
