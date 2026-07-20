@@ -1,8 +1,18 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-17
+> Dernière mise à jour : 2026-07-20
 
-## État actuel (2026-07-17, fin de session)
+## État actuel (2026-07-20, fin de session)
+
+- ✅ **Bot Telegram admin très étendu** (`api/telegram.js`) — nouvelles commandes : réponse native (Reply Telegram ou bouton dédié) postée dans le chat live sous le pseudo admin **avec citation** du message d'origine (mapping `chat:tgmap` dans `api/chat.js`, TTL 3j) ; `/recent` et `/recent_supporters` (suppression rétroactive avec boutons 🗑) ; `/add_supporter` (ajout manuel, ex. don reçu avant le webhook) ; `/reset_top5` (reset instantané via compteur d'epoch) ; `/pin`/`/unpin` (bandeau d'annonce épinglée) ; `/np`/`/stats` ; `/delete_track`/`/delete_current_track` (suppression bibliothèque AzuraCast, recherche progressive titre→artiste→phrase — corrige un vrai bug où AzuraCast ne matche pas une phrase combinée) ; `/ask` (brainstorm via l'API Claude, HTTP brut, `claude-opus-4-8`, nécessite `ANTHROPIC_API_KEY`)
+- ✅ **Webhook Buy Me a Coffee opérationnel** (`api/supporters.js`, nouveau) — signature HMAC-SHA256 vérifiée sur le corps brut, remerciement auto dans le chat live + panneau **Supporters ☕** + notif Telegram à chaque don réel. Events de test BMC (`live_mode:false`) étiquetés `🧪 [TEST]` pour ne pas induire les auditeurs en erreur. Testé de bout en bout avec le bouton "Send test event" de BMC
+- ✅ **Plafond de vote 🔥 durci** (`api/reactions.js`) — 10 votes max par `clientId` et par morceau (`clientId` désormais **obligatoire**, faille de contournement par ancien front en cache fermée), plus blocage visuel côté front (shake + toast) dès que le quota de l'auditeur est atteint. Reset du classement via compteur d'epoch (`/reset_top5`), réutilisable à volonté sans lister/supprimer de clés Redis
+- ✅ **Vibe Streak** — fidélité gamifiée 100% locale (`localStorage`, zéro serveur). Le déclencheur initial (60s d'écoute strictement ininterrompue) ne se déclenchait quasiment jamais en usage mobile réel (micro-coupures : verrouillage d'écran, throttling) → remplacé par un cumul tolérant qui met juste le compteur en pause au lieu de le remettre à zéro
+- ✅ **Reconnexion audio durcie** (`index.html`) — sur erreur dure, backoff exponentiel (1s→8s) + cache-bust de l'URL du flux au lieu de rester bloqué sur "error"
+- ✅ **Layout desktop réorganisé (2 itérations)** — (1) la colonne latérale scrolle désormais comme un bloc (`overflow-y:auto`) au lieu de faire jongler les hauteurs des panneaux via flex-grow/shrink, fragile dès que 3+ panneaux sont ouverts (chevauchement observé en prod) ; (2) **Top 5 déplacé sous Historique** dans la colonne principale, **Supporters mis en avant** (ouvert par défaut, juste sous le Chat) — les contributeurs financiers sont désormais visibles sans scroll
+- ✅ **Petites features chat** : bandeau d'annonce épinglée (`/pin`), bouton **Request** (dédicace → Telegram), indicateur **Vibe now/next** (ambiance du créneau horaire courant)
+
+## État antérieur (2026-07-17, fin de session)
 
 - ✅ **Interface passée entièrement en anglais** — UI, aria-labels, meta og/twitter, `manifest.webmanifest` (lang=en). Pseudos auditeurs `Listener-XXXX`. Le thumbnail de partage (WhatsApp etc.) suivra au prochain partage (cache tiers)
 - ✅ **Messages admin distingués visuellement** — flag `admin:true` posé **exclusivement côté serveur** (par `api/telegram.js`, infalsifiable par un client) → affiché en gras dans le chat (`index.html`). Anti-usurpation : un auditeur qui tente le pseudo "KALBASSFM" est renommé "Listener" côté serveur (`api/chat.js`)
@@ -52,9 +62,17 @@
 | **Messages auto du chat en "lazy cron" (verrou Redis au GET), pas de cron réel** | Cohérent avec le reste du projet (pas d'infra supplémentaire) : le poll 3s des auditeurs sert de déclencheur, un `SET NX` par créneau+jour garantit l'unicité même avec des dizaines de clients simultanés |
 | **Flag `admin`/gras posé uniquement côté serveur, jamais dérivé du pseudo** | Le pseudo est envoyé librement par le client (déjà vrai pour le rate-limit) — un flag serveur est la seule façon fiable de distinguer un vrai message admin d'une usurpation |
 | **Anciennes décisions toujours valables** | Upload SFTP manuel volontaire ; jingles natifs hors pipeline ; polling+Redis (pas de WebSocket) pour toute feature partagée ; dossier = playlist ; DuckDNS gratuit ; volume Docker |
+| **Reset Top 5 via compteur d'epoch Redis, pas de suppression de clés (2026-07-20)** | Incrémenter `top5:epoch` "vide" instantanément le leaderboard ET les plafonds de vote par auditeur (les clés sont scopées par epoch) sans lister/supprimer quoi que ce soit — réutilisable à volonté par `/reset_top5` |
+| **clientId obligatoire pour voter, requête rejetée sinon (2026-07-20)** | Le plafond de 10 votes n'était appliqué que si `clientId` était présent — un ancien front en cache (avant l'ajout du plafond) pouvait donc voter sans limite. Rejeter les votes sans `clientId` ferme cette faille quelle que soit la version du client qui appelle l'API |
+| **Vibe Streak : cumul tolérant plutôt que chronomètre strict (2026-07-20)** | La première version exigeait 60s d'écoute strictement ininterrompues — les micro-coupures mobiles (écran verrouillé, throttling) remettaient tout à zéro avant d'atteindre le seuil, donc le streak ne se déclenchait presque jamais en usage réel. Le cumul met juste le compteur en pause au lieu de le réinitialiser |
+| **Top 5 sous Historique, Supporters mis en avant (2026-07-20)** | Top 5/Historique = même thème (lecture/popularité) ; Chat/Supporters = vie communautaire. Les supporters sont des contributeurs financiers réels — les rendre visibles sans scroll était explicitement demandé |
+| **Sidebar desktop scrolle comme un bloc, pas de flex-grow/shrink entre panneaux (2026-07-20)** | L'ancienne approche (chat en `flex:1` mangeant l'espace restant) supposait exactement 2 panneaux flexibles ; avec un 3e (Supporters), le contenu cumulé dépassait l'espace disponible et flexbox ne pouvait plus rétrécir sous le contenu minimal → chevauchement visuel observé en prod. Le scroll de bloc est robuste quel que soit le nombre de panneaux, présents ou futurs |
+| **Événements de test BMC (`live_mode:false`) étiquetés, jamais traités comme réels (2026-07-20)** | Le bouton "Send test event" de BMC Studio envoie un vrai payload webhook — sans ce garde-fou, cliquer sur "test" aurait posté un faux remerciement dans le chat live sous les yeux des vrais auditeurs |
 
 ## En cours / TODOs
 
+- [ ] **Configurer le webhook Buy Me a Coffee** si pas déjà fait après cette session : BMC Studio → Integrations → Webhooks → URL `https://kalbassfm-player.vercel.app/api/supporters`, événement "Support created" uniquement, copier le secret dans `BMC_WEBHOOK_SECRET` sur Vercel
+- [ ] **Ajouter `ANTHROPIC_API_KEY` sur Vercel** pour que `/ask` fonctionne (clé à créer sur console.anthropic.com)
 - [ ] **Vérifier que `/jingle` fonctionne réellement en prod** après les deux fix (marqueur "kalbass fm" + User-Agent) — dernier test montrait encore l'erreur anti-robots, non reconfirmé après le fix
 - [ ] **Vérifier l'horloge sur 24h** (Rapports → Historique : ratio ~3:1 dominant/invité, pas d'artiste <2h, séquences différentes d'un jour à l'autre) puis **supprimer les 4 anciens dossiers + playlists serveur** et les restes locaux
 - [ ] **Redéposer les 97 fichiers jamais analysés dans `_incoming`** (`tools/orphans_report.txt`) + relancer `triage.bat` ; supprimer les 14 doublons physiques listés dans le même rapport
@@ -68,6 +86,9 @@
 - [ ] **Système de vote de playlist par genre** (`wild-cooking-book.md`) — plan complet, non codé ; à re-concevoir sur la nouvelle grille (bacs ≠ genres purs)
 - [ ] **Weekend différencié / bac "pépites"** — extensions natives possibles de l'horloge, non planifiées
 - [ ] **Domaine payant** (optionnel)
+- [ ] **Retirer « ID (#04) »** (`Progv2/4_deep/29. ID - ID (#04).mp3`) — probable extrait de DJ set trance mal étiqueté (tags "ID"/"ID", pochette reprenant visuellement un épisode ASOT), pas un vrai morceau. `/delete_current_track` désormais disponible pour ça une fois le morceau relancé
+- [ ] **Faire entrer « Arachnida » (Veuskemini) dans le pipeline** — jamais passé par `classify_bins.py`/`triage_new_tracks.py` (probablement uploadé directement sur le serveur), donc mal classé (son genre — expérimental/IDM — ne correspond pas au créneau où il tournait). Le localiser sur le serveur, le rapatrier dans `_incoming`, relancer `triage.bat`
+- [ ] **Repérer d'autres morceaux uploadés hors pipeline** — le cas Arachnida suggère qu'il en existe potentiellement d'autres en plus des 97 déjà connus dans `orphans_report.txt`. Un script de rapprochement serveur↔local (comparer la liste AzuraCast à `metadata.json`) permettrait de tous les repérer d'un coup
 
 ## Problèmes connus
 
@@ -89,12 +110,13 @@
 | `tools/triage_new_tracks.py` | Pipeline ingestion → 8 bacs, nom propre, plus d'étape d'ordre | ✅ Mis à jour, à retester sur les 97 orphelins |
 | `tools/build_rotation.py`, `tools/export_rotation.py` | Ancien calcul/export d'ordre | ⚠️ Superseded (en-têtes marqués) |
 | `tools/orphans_report.txt` | 97 fichiers jamais analysés + 14 doublons physiques | ⏳ À traiter (gitignored) |
-| `api/telegram.js` | Webhook bot Telegram admin (skip/msg/jingle/ban/pause + callbacks modération) | ✅ Déployé ; `/jingle` corrigé 2x (marqueur "kalbass fm" + User-Agent), à reconfirmer |
-| `api/chat.js` | Chat live + modération (deleted/banned/paused) + notification Telegram + messages auto EN + anti-usurpation pseudo | ✅ Déployé |
-| `api/reactions.js` | Vote 🔥 + Top 5 | ✅ Déployé |
-| `index.html` | Player complet EN, layout desktop 2 colonnes, chat hauteur fixe, messages admin en gras | ✅ Live |
-| `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v4` | ✅ Live |
-| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances | ✅ À jour 2026-07-17 |
+| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause, reply avec citation, supporters, reset Top 5, bandeau épinglé, np/stats, suppression bibliothèque, /ask Claude) | ✅ Déployé, très étendu le 2026-07-20 |
+| `api/chat.js` | Chat live + modération + mapping `chat:tgmap` (reply) + `chat:pinned` (bandeau) + messages auto EN + anti-usurpation pseudo | ✅ Déployé |
+| `api/reactions.js` | Vote 🔥 plafonné 10/auditeur/morceau (clientId obligatoire) + Top 5 + reset par epoch | ✅ Déployé, durci le 2026-07-20 |
+| `api/supporters.js` | **Nouveau** — webhook Buy Me a Coffee (HMAC), remerciement chat + panneau Supporters + notif Telegram | ✅ Déployé, testé de bout en bout |
+| `index.html` | Player complet EN, layout desktop réorganisé (Top 5 sous Historique, Supporters en avant), Vibe Streak, bandeau épinglé, Request, reconnexion durcie | ✅ Live |
+| `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v14` | ✅ Live |
+| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances | ✅ À jour 2026-07-20 |
 
 ## Infrastructure
 
@@ -107,10 +129,10 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-17 (construction manuelle via /graphify, pas de CLI)
+> Mis à jour le 2026-07-20 (construction manuelle via /graphify, pas de CLI)
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 12), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (8), `VotingSystemPlan` (7, toujours non codé), `RekordboxPipeline` (6), Upstash Redis (4 fonctions serverless), `classify_bins.py` (source de vérité classification).
-Communautés détectées : 7 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
+God nodes (concepts centraux) : `index.html` (hub front, degré 16), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (8), `api/telegram.js` (hub des commandes admin, 8, nouveau god node), `VotingSystemPlan` (8, toujours non codé), Upstash Redis (5 fonctions serverless), `classify_bins.py` (source de vérité classification).
+Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes [dons+IA, nouveau], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

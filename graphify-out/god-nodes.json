@@ -1,7 +1,7 @@
 [
   {
     "id": "index.html",
-    "degree": 12,
+    "degree": 16,
     "label": "index.html"
   },
   {
@@ -15,13 +15,13 @@
     "label": "Horloge a bacs ponderes (8 bacs)"
   },
   {
-    "id": "VotingSystemPlan",
-    "degree": 7,
-    "label": "Système de vote playlist (planifié)"
+    "id": "api/telegram.js",
+    "degree": 8,
+    "label": "api/telegram.js"
   },
   {
-    "id": "RekordboxPipeline",
-    "degree": 6,
-    "label": "Pipeline Rekordbox → radio"
+    "id": "VotingSystemPlan",
+    "degree": 8,
+    "label": "Système de vote playlist (planifié)"
   }
 ]

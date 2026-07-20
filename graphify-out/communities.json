@@ -15,7 +15,11 @@
         "ContactPopup",
         "ProgrammeGrid",
         "NowPlayingAPI",
-        "DesktopLayout"
+        "DesktopLayout",
+        "SupportersFeature",
+        "VibeStreakFeature",
+        "PinnedBannerFeature",
+        "RequestFeature"
       ]
     },
     {
@@ -44,7 +48,18 @@
         "ChatFeature",
         "VotingSystemPlan",
         "api/telegram.js",
-        "TelegramBotFeature"
+        "TelegramBotFeature",
+        "api/supporters.js",
+        "ReplyFeature"
+      ]
+    },
+    {
+      "id": "external-integrations",
+      "label": "Intégrations externes (dons, IA)",
+      "members": [
+        "BuyMeACoffee",
+        "ClaudeAPI",
+        "api/supporters.js"
       ]
     },
     {
