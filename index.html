@@ -2073,9 +2073,10 @@
      le high score local reste toujours disponible dans ce cas). ── */
   const FLAPPY = {
     W: 288, H: 432, GROUND_H: 36,
-    GRAVITY: 0.32, FLAP_V: -6.2,
+    GRAVITY: 0.26, FLAP_V: -5.6, MAX_FALL_V: 7,
     PIPE_W: 44, GAP_H: 118, PIPE_SPACING: 165,
     BIRD_X: 70, BIRD_R: 12,
+    COUNTDOWN_STEP: 45, // frames par chiffre (~0.75s a 60fps), decompte 3-2-1
   };
   const flappyModal = document.getElementById('flappyModal');
   const flappyCanvas = document.getElementById('flappyCanvas');
@@ -2086,8 +2087,8 @@
   const flappyStartBtn = document.getElementById('flappyStartBtn');
   const flappyLbList = document.getElementById('flappyLbList');
 
-  let fState = 'ready'; // 'ready' | 'playing' | 'dead'
-  let fBirdY, fBirdV, fPipes, fScore, fGroundOff, fRaf;
+  let fState = 'ready'; // 'ready' | 'countdown' | 'playing' | 'dead'
+  let fBirdY, fBirdV, fPipes, fScore, fGroundOff, fRaf, fCountdownFrames;
 
   function flappyResetWorld() {
     fBirdY = FLAPPY.H / 2;
@@ -2100,7 +2101,7 @@
     const margin = FLAPPY.GAP_H / 2 + 26;
     return margin + Math.random() * (FLAPPY.H - FLAPPY.GROUND_H - margin * 2);
   }
-  function flappySpeed() { return 2.3 + Math.min(fScore * 0.035, 1.8); }
+  function flappySpeed() { return 1.6 + Math.min(fScore * 0.02, 1.0); }
 
   function drawFlappyBird(x, y, rot) {
     fctx.save();
@@ -2162,6 +2163,19 @@
     fctx.fillText(String(fScore), FLAPPY.W / 2, 46);
   }
 
+  function drawFlappyCountdown() {
+    const n = Math.max(1, Math.min(3, Math.ceil(fCountdownFrames / FLAPPY.COUNTDOWN_STEP)));
+    fctx.font = '700 72px "Space Mono", monospace';
+    fctx.textAlign = 'center';
+    fctx.textBaseline = 'middle';
+    fctx.lineWidth = 6;
+    fctx.strokeStyle = '#0D0D0D';
+    fctx.strokeText(String(n), FLAPPY.W / 2, FLAPPY.H / 2 - 70);
+    fctx.fillStyle = '#F5E642';
+    fctx.fillText(String(n), FLAPPY.W / 2, FLAPPY.H / 2 - 70);
+    fctx.textBaseline = 'alphabetic';
+  }
+
   function flappyCollides() {
     if (fBirdY + FLAPPY.BIRD_R >= FLAPPY.H - FLAPPY.GROUND_H) return true;
     for (const p of fPipes) {
@@ -2177,6 +2191,7 @@
   function flappyUpdate() {
     const speed = flappySpeed();
     fBirdV += FLAPPY.GRAVITY;
+    if (fBirdV > FLAPPY.MAX_FALL_V) fBirdV = FLAPPY.MAX_FALL_V;
     fBirdY += fBirdV;
     if (fBirdY - FLAPPY.BIRD_R < 0) { fBirdY = FLAPPY.BIRD_R; fBirdV = 0; }
     fGroundOff += speed;
@@ -2192,9 +2207,16 @@
   }
 
   function flappyLoop() {
-    flappyUpdate();
-    drawFlappy();
-    if (fState === 'playing') fRaf = requestAnimationFrame(flappyLoop);
+    if (fState === 'countdown') {
+      fCountdownFrames -= 1;
+      drawFlappy(); // oiseau et decor restent statiques, aucune gravite appliquee ici
+      drawFlappyCountdown();
+      if (fCountdownFrames <= 0) fState = 'playing';
+    } else if (fState === 'playing') {
+      flappyUpdate();
+      drawFlappy();
+    }
+    if (fState === 'countdown' || fState === 'playing') fRaf = requestAnimationFrame(flappyLoop);
   }
 
   function flappyShowOverlay(mode, score, best) {
@@ -2204,16 +2226,17 @@
       flappyStartBtn.textContent = '▶ Play again';
     } else {
       flappyOverlayTitle.textContent = 'Flappy Kalbass';
-      flappyOverlayText.innerHTML = 'Tap, click or press Space to flap.<br>Dodge the pipes, keep the vibe going!';
+      flappyOverlayText.innerHTML = 'Tap, click or press Space to flap.<br>A 3-2-1 countdown gets you started!';
       flappyStartBtn.textContent = '▶ Play';
     }
     flappyOverlay.hidden = false;
   }
 
   function flappyStart() {
-    fState = 'playing';
+    fState = 'countdown';
     flappyOverlay.hidden = true;
     flappyResetWorld();
+    fCountdownFrames = FLAPPY.COUNTDOWN_STEP * 3;
     if (fRaf) cancelAnimationFrame(fRaf);
     flappyLoop();
   }

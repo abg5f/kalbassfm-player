@@ -2,7 +2,7 @@
    Network-first pour la navigation (les mises à jour passent toujours),
    cache seulement la coquille + icônes pour l'installation PWA / mode hors-ligne.
    Ne met JAMAIS en cache le flux audio ni l'API now-playing. */
-const V = 'kfm-v16'; // feat : mini-jeu Flappy Kalbass + classement (popup, radio continue en fond)
+const V = 'kfm-v17'; // fix : Flappy Kalbass plus lent + decompte 3-2-1, oiseau statique avant le premier tap
 const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
