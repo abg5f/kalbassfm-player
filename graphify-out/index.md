@@ -1,6 +1,6 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17 puis le 2026-07-20 (2 fois) via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17 puis le 2026-07-20 (3 fois) via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
 
 ## Vue d'ensemble
 
