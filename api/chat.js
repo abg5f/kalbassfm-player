@@ -51,6 +51,27 @@ async function maybeAnnounce(kv) {
   } catch {}
 }
 
+// Annonce ponctuelle (pas quotidienne comme ANNOUNCEMENTS ci-dessus) pour un
+// lancement de feature : verrou SET NX sans expiration -> part une seule fois,
+// au premier GET qui arrive apres le deploiement, quel que soit le nombre
+// d'auditeurs connectes en meme temps.
+async function maybeAnnounceOnce(kv) {
+  try {
+    const lock = await kv('set', 'chat:announced:flappy', '1', 'NX');
+    if (lock.result !== 'OK') return;
+    const msg = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      nick: '📻 KALBASSFM',
+      text: '🐦 New: Flappy Kalbass is live — tap the bird icon up top and go smash the leaderboard!',
+      ts: Date.now(),
+      admin: true,
+      auto: true,
+    };
+    await kv('lpush', 'chat:messages', JSON.stringify(msg));
+    await kv('ltrim', 'chat:messages', '0', '99');
+  } catch {}
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -68,6 +89,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       await maybeAnnounce(kv);
+      await maybeAnnounceOnce(kv);
       const [lj, dj, pj] = await Promise.all([
         kv('lrange', 'chat:messages', '0', '49'),
         kv('hgetall', 'chat:deleted'),
