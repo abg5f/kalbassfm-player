@@ -14,6 +14,15 @@
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
 const STATION = 'kalbassfm';
 
+// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
+// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
+// a false pour reactiver. kvClient() renvoie null pendant la pause, donc
+// chaque commande Redis (/ban, /rename, /pin, /msg, /recent, /stats, etc.)
+// echoue proprement avec son message "store non configure" existant, sans
+// toucher Upstash. Les commandes qui ne touchent que AzuraCast (/skip,
+// /jingle, /delete_track, /np) ou Claude (/ask) continuent de fonctionner.
+const REDIS_PAUSED = true;
+
 // Marge large : les autres commandes (AzuraCast, Redis) sont deja rapides,
 // mais /ask attend une reponse Claude avant de repondre a Telegram — sur le
 // plan Vercel Hobby ce champ est plafonne a 10s de toute facon (ignore
@@ -600,6 +609,7 @@ async function askClaude(prompt) {
 
 /* ---- Redis (memes cles que api/chat.js) ---- */
 function kvClient() {
+  if (REDIS_PAUSED) return null;
   const base = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
   if (!base || !kvToken) return null;

@@ -22,6 +22,12 @@
 */
 const MAX_VOTES_PER_USER = 10;
 
+// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
+// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
+// a false pour reactiver. Se comporte exactement comme un store non
+// configure (le front bascule deja proprement sur ce cas).
+const REDIS_PAUSED = true;
+
 async function getEpoch(kv) {
   const j = await kv('get', 'top5:epoch');
   return parseInt(j.result, 10) || 0;
@@ -35,7 +41,7 @@ export default async function handler(req, res) {
 
   const base = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!base || !token) return res.status(200).json({ enabled: false, count: 0, top: [] });
+  if (!base || !token || REDIS_PAUSED) return res.status(200).json({ enabled: false, count: 0, top: [] });
 
   const headers = { Authorization: `Bearer ${token}` };
   const kv = (...segments) => fetch(`${base}/${segments.map(encodeURIComponent).join('/')}`, { headers }).then(r => r.json());

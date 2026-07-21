@@ -16,6 +16,12 @@
 */
 const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|me|tv|info|biz|xyz|gg|app|shop))/i;
 
+// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
+// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
+// a false pour reactiver. Se comporte exactement comme un store non
+// configure (le front bascule deja proprement sur ce cas).
+const REDIS_PAUSED = true;
+
 // Messages automatiques d'animation du chat, postes "paresseusement" au fil
 // des GET (le chat est polle toutes les 3s par les auditeurs — pas besoin de
 // cron). Un verrou Redis SET NX par annonce et par jour garantit un envoi
@@ -56,7 +62,7 @@ export default async function handler(req, res) {
 
   const base = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!base || !token) return res.status(200).json({ enabled: false, messages: [] });
+  if (!base || !token || REDIS_PAUSED) return res.status(200).json({ enabled: false, messages: [] });
 
   const headers = { Authorization: `Bearer ${token}` };
   const kv = (...segments) => fetch(`${base}/${segments.map(encodeURIComponent).join('/')}`, { headers }).then(r => r.json());

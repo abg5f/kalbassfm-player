@@ -45,6 +45,14 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
+// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
+// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
+// a false pour reactiver. Se comporte exactement comme un store non
+// configure (le front bascule deja proprement sur ce cas). Coupe aussi le
+// webhook Buy Me a Coffee (POST) : mieux vaut rater un remerciement en direct
+// que de continuer a consommer le quota pendant la pause.
+const REDIS_PAUSED = true;
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -53,7 +61,7 @@ export default async function handler(req, res) {
 
   const base = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
-  if (!base || !kvToken) return res.status(200).json({ enabled: false, supporters: [] });
+  if (!base || !kvToken || REDIS_PAUSED) return res.status(200).json({ enabled: false, supporters: [] });
 
   const headers = { Authorization: `Bearer ${kvToken}` };
   const kv = (...segments) => fetch(`${base}/${segments.map(encodeURIComponent).join('/')}`, { headers }).then((r) => r.json());
