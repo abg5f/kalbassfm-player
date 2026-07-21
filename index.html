@@ -1482,18 +1482,25 @@
       topList.appendChild(el);
     });
   }
+  // N'efface le contenu deja affiche qu'au tout premier chargement rate —
+  // une panne/quota Upstash transitoire (le poll suivant reussira) ne doit
+  // pas faire clignoter la liste vers un etat vide puis revenir.
+  let topLoadedOnce = false;
   async function pollTop() {
     try {
       const r = await fetch('/api/reactions?top=5', { cache: 'no-store' });
       const j = await r.json();
       if (!j.enabled) throw new Error('disabled');
       renderTop(j.top);
+      topLoadedOnce = true;
     } catch {
-      topList.innerHTML = '<p class="prog-note">Chart coming soon.</p>';
+      if (!topLoadedOnce) topList.innerHTML = '<p class="prog-note">Chart coming soon.</p>';
     }
   }
   pollTop();
-  setInterval(pollTop, 4000);
+  // Espace a 8s (au lieu de 4s) — meme raison que pollChat, ce endpoint fait
+  // jusqu'a 6 commandes Redis par poll (zrange + un hgetall par morceau du top 5).
+  setInterval(pollTop, 8000);
 
   /* ── Supporters (Buy Me a Coffee) — evenement rare, poll peu frequent ── */
   function renderSupporters(list) {
@@ -1514,18 +1521,20 @@
       supportersList.appendChild(el);
     });
   }
+  let supportersLoadedOnce = false;
   async function pollSupporters() {
     try {
       const r = await fetch('/api/supporters', { cache: 'no-store' });
       const j = await r.json();
       if (!j.enabled) throw new Error('disabled');
       renderSupporters(j.supporters);
+      supportersLoadedOnce = true;
     } catch {
-      supportersList.innerHTML = '<p class="prog-note">Coming soon.</p>';
+      if (!supportersLoadedOnce) supportersList.innerHTML = '<p class="prog-note">Coming soon.</p>';
     }
   }
   pollSupporters();
-  setInterval(pollSupporters, 30000);
+  setInterval(pollSupporters, 45000);
 
   /* ── Chat live (anonyme, pseudo auto-genere, partage via /api/chat) ── */
   function getClientId() {
@@ -1581,6 +1590,7 @@
     if (pinned) { chatPinned.textContent = '📌 ' + pinned; chatPinned.classList.add('show'); }
     else { chatPinned.textContent = ''; chatPinned.classList.remove('show'); }
   }
+  let chatLoadedOnce = false;
   async function pollChat() {
     try {
       const r = await fetch('/api/chat', { cache: 'no-store' });
@@ -1588,12 +1598,16 @@
       if (!j.enabled) throw new Error('disabled');
       renderChat(j.messages);
       renderPinned(j.pinned);
+      chatLoadedOnce = true;
     } catch {
-      chatList.innerHTML = '<p class="prog-note">Chat coming soon.</p>';
+      if (!chatLoadedOnce) chatList.innerHTML = '<p class="prog-note">Chat coming soon.</p>';
     }
   }
   pollChat();
-  setInterval(pollChat, 3000);
+  // Espace a 6s (au lieu de 3s) pour reduire la consommation de commandes
+  // Upstash (quota mensuel du plan gratuit) — chaque poll fait 3 commandes
+  // Redis cote serveur (lrange + hgetall + get).
+  setInterval(pollChat, 6000);
 
   // Refuse les liens dans le chat (anti-autopromo) — meme regle que api/chat.js,
   // verifiee cote client pour un retour immediat sans attendre le serveur.

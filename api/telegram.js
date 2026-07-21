@@ -164,12 +164,12 @@ async function handleMessage(token, message) {
   }
 
   if (text === '/pause_chat') {
-    const ok = await setPaused(true);
-    return sendMessage(token, chatId, ok ? '⏸ Chat en pause — plus personne ne peut poster.' : '❌ Echec (store non configure ?).');
+    const ok = await pauseChatWithBanner();
+    return sendMessage(token, chatId, ok ? '⏸ Chat en pause — plus personne ne peut poster, bandeau épinglé pour prévenir les auditeurs.' : '❌ Echec (store non configure ?).');
   }
 
   if (text === '/resume_chat') {
-    const ok = await setPaused(false);
+    const ok = await resumeChatRestorePin();
     return sendMessage(token, chatId, ok ? '▶️ Chat réactivé.' : '❌ Echec (store non configure ?).');
   }
 
@@ -314,7 +314,7 @@ async function handleMessage(token, message) {
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
     '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
-    '/pause_chat / /resume_chat — couper/reactiver le chat\n\n' +
+    '/pause_chat / /resume_chat — couper/reactiver le chat (bandeau epingle automatiquement pendant la pause)\n\n' +
     '👤 Auditeurs & supporters\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
@@ -804,11 +804,38 @@ async function renameHistoryByNick(oldNick, name) {
   return count;
 }
 
-async function setPaused(paused) {
+// Bandeau epingle automatiquement pendant une pause, pour que les auditeurs
+// comprennent pourquoi l'envoi est bloque plutot que de croire a un bug.
+const PAUSE_BANNER = '⏸ Chat temporarily paused — back soon!';
+
+// Sauvegarde l'annonce eventuellement deja epinglee (/pin) avant de la
+// remplacer par le bandeau de pause, pour pouvoir la restaurer a la reprise
+// au lieu de la perdre.
+async function pauseChatWithBanner() {
   const kv = kvClient();
   if (!kv) return false;
-  if (paused) await kv('set', 'chat:paused', '1');
-  else await kv('del', 'chat:paused');
+  const prev = await kv('get', 'chat:pinned');
+  if (prev.result) await kv('set', 'chat:pinned:backup', prev.result);
+  else await kv('del', 'chat:pinned:backup');
+  await kv('set', 'chat:paused', '1');
+  await kv('set', 'chat:pinned', PAUSE_BANNER);
+  return true;
+}
+
+async function resumeChatRestorePin() {
+  const kv = kvClient();
+  if (!kv) return false;
+  await kv('del', 'chat:paused');
+  const backup = await kv('get', 'chat:pinned:backup');
+  if (backup.result) {
+    await kv('set', 'chat:pinned', backup.result);
+    await kv('del', 'chat:pinned:backup');
+  } else {
+    // Ne retire le bandeau que s'il s'agit bien du bandeau de pause — l'admin
+    // a pu poser un /pin different pendant la pause, on ne veut pas l'ecraser.
+    const cur = await kv('get', 'chat:pinned');
+    if (cur.result === PAUSE_BANNER) await kv('del', 'chat:pinned');
+  }
   return true;
 }
 

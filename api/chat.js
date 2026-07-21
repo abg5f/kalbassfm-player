@@ -70,6 +70,11 @@ export default async function handler(req, res) {
         kv('hgetall', 'chat:deleted'),
         kv('get', 'chat:pinned'),
       ]);
+      // lj.result absent (pas juste vide) = erreur Upstash (ex: quota mensuel
+      // depasse) plutot qu'une vraie liste vide — sans cette distinction,
+      // l'appel "reussit" silencieusement avec messages:[] et le front efface
+      // le chat au lieu de garder le dernier contenu affiche.
+      if (lj.result === undefined) throw new Error('kv-error');
       const raw = lj.result || [];
       const deletedFields = dj.result || [];
       const deletedIds = new Set();

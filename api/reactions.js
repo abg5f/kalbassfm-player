@@ -45,6 +45,11 @@ export default async function handler(req, res) {
     try {
       const epoch = await getEpoch(kv);
       const zj = await kv('zrange', `leaderboard:${epoch}`, '0', '4', 'REV', 'WITHSCORES');
+      // zj.result est absent (pas juste vide) quand Upstash renvoie une erreur
+      // (ex: quota mensuel depasse) plutot qu'un vrai classement vide — sans
+      // cette distinction, l'appel "reussit" silencieusement avec top:[] et le
+      // front affiche "No votes yet." au lieu de garder le dernier classement.
+      if (zj.result === undefined) throw new Error('kv-error');
       const raw = zj.result || [];
       const top = [];
       for (let i = 0; i < raw.length; i += 2) {

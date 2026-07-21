@@ -67,6 +67,9 @@ export default async function handler(req, res) {
         kv('lrange', 'supporters', '0', '19'),
         kv('hgetall', 'supporters:deleted'),
       ]);
+      // lj.result absent = erreur Upstash (quota, panne) plutot qu'une vraie
+      // liste vide — voir le meme commentaire dans api/chat.js.
+      if (lj.result === undefined) throw new Error('kv-error');
       const deletedFields = dj.result || [];
       const deleted = new Set();
       for (let i = 0; i < deletedFields.length; i += 2) deleted.add(deletedFields[i]);
