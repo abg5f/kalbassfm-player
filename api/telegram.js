@@ -336,6 +336,13 @@ async function handleCallback(token, cb) {
   if (!authorized) return;
 
   const data = cb.data || '';
+  // Toute la logique ci-dessous est enveloppee dans un try/catch : sans lui,
+  // une erreur Redis (quota Upstash depasse, panne...) qui leve avant
+  // d'atteindre answerCallback laisse le tap Telegram sans aucune reaction
+  // visible (bouton ni retire, ni toast) — l'admin croit avoir rate son tap
+  // et reessaie en boucle pour rien. On garantit ici qu'un tap produit
+  // toujours un retour, meme en cas d'echec.
+  try {
   if (data.startsWith('rep:')) {
     // On retrouve le message d'origine via le message_id Telegram de la
     // notification elle-meme (le mapping pose par api/chat.js), puis on arme
@@ -396,6 +403,9 @@ async function handleCallback(token, cb) {
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
+  }
+  } catch {
+    await answerCallback(token, cb.id, '❌ Échec (Redis indisponible — quota Upstash dépassé ?)').catch(() => {});
   }
 }
 
