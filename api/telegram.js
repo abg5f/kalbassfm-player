@@ -266,31 +266,29 @@ async function handleMessage(token, message) {
   }
 
   return sendMessage(token, chatId,
-    '📻 RADIO\n' +
+    'Commandes disponibles :\n\n' +
+    '🎵 Diffusion\n' +
+    '/np — morceau en cours + auditeurs\n' +
     '/skip — passer au morceau suivant\n' +
     '/jingle — declencher un jingle (best effort)\n' +
-    '/np — morceau en cours + auditeurs\n' +
-    '\n💬 CHAT\n' +
+    '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
+    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n\n' +
+    '💬 Chat live\n' +
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
-    '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
     '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
-    '\n👤 AUDITEURS\n' +
+    '/pause_chat / /resume_chat — couper/reactiver le chat\n\n' +
+    '👤 Auditeurs & supporters\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
-    '\n☕ SUPPORTERS\n' +
     '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
     '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
-    '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n' +
-    '\n🔥 VOTES\n' +
-    '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
-    '\n📚 BIBLIOTHÈQUE\n' +
-    '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
-    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n' +
-    '\n📊 STATS\n' +
+    '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
+    '🤖 Assistant\n' +
+    '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
+    '📊 Stats & votes\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
-    '\n🤖 IA\n' +
-    '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n' +
-    '\nAstuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
+    '/reset_top5 — remettre à zéro le classement des votes 🔥\n\n' +
+    'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
 async function handleCallback(token, cb) {

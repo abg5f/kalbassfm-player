@@ -42,6 +42,10 @@ import clean_local_tracks as clt  # noqa: E402  (fonctions clean() / itunes_look
 from classify_bins import (  # noqa: E402  (source de verite unique de la grille)
     NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_bin,
 )
+import paramiko  # noqa: E402
+from sftp_config import (  # noqa: E402
+    SFTP_HOST, SFTP_PORT, SFTP_USER, SFTP_PASS, SFTP_REMOTE_ROOT,
+)
 
 INCOMING = r"C:\Users\ph.dufourcq\Music\00_AZURACAST\_incoming".replace("\\", "/").replace("C:", "/mnt/c")
 FAILED = os.path.join(INCOMING, "_failed")
@@ -58,6 +62,35 @@ METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "triage_report.html")
 
 
+def open_sftp():
+    """Ouvre la connexion SFTP vers AzuraCast. Retourne (transport, sftp) ou (None, None)."""
+    try:
+        transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
+        transport.connect(username=SFTP_USER, password=SFTP_PASS)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        return transport, sftp
+    except Exception as e:
+        print(f"[SFTP] Connexion impossible ({e}) — classement local seul, sans envoi.")
+        return None, None
+
+
+def upload_to_azuracast(sftp, slot, local_path):
+    """Envoie local_path vers /<slot>/<nom> sur AzuraCast. Leve une exception en cas d'echec."""
+    remote_dir = SFTP_REMOTE_ROOT.rstrip("/") + "/" + slot
+    remote_path = remote_dir + "/" + os.path.basename(local_path)
+    try:
+        sftp.stat(remote_dir)
+    except FileNotFoundError:
+        sftp.mkdir(remote_dir)
+    # Garde-fou : ne jamais ecraser silencieusement un morceau deja en ligne.
+    try:
+        sftp.stat(remote_path)
+        raise RuntimeError(f"existe deja sur le serveur ({remote_path}) — envoi ignore")
+    except FileNotFoundError:
+        pass
+    sftp.put(local_path, remote_path)
+
+
 def wsl_to_windows(path):
     return path.replace("/mnt/c", "C:").replace("/", "\\")
 
@@ -71,6 +104,8 @@ class Report:
         self.slots = {s: [] for s in SLOT_FOLDERS}
         self.duplicates = []
         self.failures = []
+        self.upload_failures = []
+        self.uploaded = 0
         self.done = 0
 
     def add_success(self, slot, artist, title, bpm, genre, energy):
@@ -86,6 +121,14 @@ class Report:
     def add_failure(self, filename, error):
         self.failures.append((filename, str(error)))
         self.done += 1
+        self.render()
+
+    def add_upload_success(self):
+        self.uploaded += 1
+        self.render()
+
+    def add_upload_failure(self, filename, error):
+        self.upload_failures.append((filename, str(error)))
         self.render()
 
     def render(self, finished=False):
