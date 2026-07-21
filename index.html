@@ -519,6 +519,11 @@
     .panel > summary .chev { color: var(--accent); transition: transform 180ms; flex-shrink: 0; }
     .panel[open] > summary .chev { transform: rotate(90deg); }
     .panel-body { padding: 4px 18px 14px; }
+    /* Supporters = contributeurs financiers reels : fond teinte en --accent-2
+       (meme couleur que leur pseudo dans le chat) pour le distinguer des
+       autres panneaux au premier coup d'oeil, sans rompre l'esthetique
+       brutaliste du site (pas de degrade, juste une teinte plate discrete). */
+    #supportersPanel { background: rgba(224, 138, 46, 0.08); }
     .panel-summary-label { min-width: 0; overflow: hidden; white-space: nowrap; }
     .hist-preview {
       font-weight: 400;

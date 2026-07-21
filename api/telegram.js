@@ -80,7 +80,6 @@ async function handleMessage(token, message) {
 
   if (text === '/skip') {
     const r = await skipSong();
-    if (r.ok) await postAdminMessage('⏭ An admin skipped the current track.');
     return sendMessage(token, chatId, r.ok ? '⏭ Morceau suivant lance.' : `Echec du skip (${r.status}).`);
   }
 
@@ -267,24 +266,31 @@ async function handleMessage(token, message) {
   }
 
   return sendMessage(token, chatId,
-    'Commandes disponibles :\n' +
+    '📻 RADIO\n' +
     '/skip — passer au morceau suivant\n' +
-    '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/jingle — declencher un jingle (best effort)\n' +
-    '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
-    '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
+    '/np — morceau en cours + auditeurs\n' +
+    '\n💬 CHAT\n' +
+    '/msg <texte> — envoyer un message admin dans le chat live\n' +
+    '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat\n' +
+    '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
+    '\n👤 AUDITEURS\n' +
+    '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
+    '\n☕ SUPPORTERS\n' +
+    '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
+    '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
+    '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n' +
+    '\n🔥 VOTES\n' +
     '/reset_top5 — remettre à zéro le classement des votes 🔥\n' +
+    '\n📚 BIBLIOTHÈQUE\n' +
     '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
     '/delete_current_track — supprimer le morceau en cours et passer au suivant\n' +
-    '/np — morceau en cours + auditeurs\n' +
+    '\n📊 STATS\n' +
     '/stats — auditeurs, messages et votes du jour\n' +
-    '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
-    '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
-    '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n' +
-    '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
+    '\n🤖 IA\n' +
     '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n' +
-    'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
+    '\nAstuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
 async function handleCallback(token, cb) {
@@ -341,7 +347,6 @@ async function handleCallback(token, cb) {
       return editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
     }
     const skip = await skipSong();
-    if (skip.ok) await postAdminMessage('⏭ An admin skipped the current track.');
     await answerCallback(token, cb.id, skip.ok ? '🗑 Supprimé, morceau suivant lancé' : '🗑 Supprimé (skip échoué)');
     await sendMessage(token, cb.message.chat.id,
       `✅ Piste supprimée d'AzuraCast : ${label}\n` +
