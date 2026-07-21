@@ -42,6 +42,15 @@ export default async function handler(req, res) {
   return res.status(200).json({ ok: true });
 }
 
+// Tolere les chevrons colles a la lettre depuis les messages d'usage
+// ("/rename <clientId> <pseudo>") — un admin qui copie l'exemple sans
+// remplacer les placeholders enregistrerait sinon sous une cle "<...>" qui
+// ne correspond a aucun clientId reel, en echec silencieux (aucune erreur,
+// juste aucun effet visible).
+function stripAngles(s) {
+  return s.replace(/^<(.*)>$/, '$1');
+}
+
 async function handleMessage(token, message) {
   const chatId = message.chat && message.chat.id;
   const fromId = message.from && message.from.id;
@@ -96,14 +105,14 @@ async function handleMessage(token, message) {
   }
 
   if (text.startsWith('/ban')) {
-    const id = text.slice(4).trim();
+    const id = stripAngles(text.slice(4).trim());
     if (!id) return sendMessage(token, chatId, 'Usage : /ban <clientId> (copie-le depuis une notification de chat)');
     const ok = await setBanned(id, true);
     return sendMessage(token, chatId, ok ? `🔨 Banni : ${id}` : '❌ Echec (store non configure ?).');
   }
 
   if (text.startsWith('/unban')) {
-    const id = text.slice(6).trim();
+    const id = stripAngles(text.slice(6).trim());
     if (!id) return sendMessage(token, chatId, 'Usage : /unban <clientId>');
     const ok = await setBanned(id, false);
     return sendMessage(token, chatId, ok ? `✅ Debanni : ${id}` : '❌ Echec (store non configure ?).');
@@ -112,15 +121,15 @@ async function handleMessage(token, message) {
   if (text.startsWith('/mark_supporter')) {
     const body = text.slice('/mark_supporter'.length).trim();
     const spaceIdx = body.indexOf(' ');
-    const id = spaceIdx === -1 ? body : body.slice(0, spaceIdx);
-    const name = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
+    const id = stripAngles(spaceIdx === -1 ? body : body.slice(0, spaceIdx));
+    const name = stripAngles(spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim());
     if (!id || !name) return sendMessage(token, chatId, 'Usage : /mark_supporter <clientId> <nom> (copie le clientId depuis une notification de chat)');
     const ok = await setChatSupporter(id, name);
     return sendMessage(token, chatId, ok ? `☕ ${id} apparaîtra désormais comme "${name}" dans le chat.` : '❌ Echec (store non configure ?).');
   }
 
   if (text.startsWith('/unmark_supporter')) {
-    const id = text.slice('/unmark_supporter'.length).trim();
+    const id = stripAngles(text.slice('/unmark_supporter'.length).trim());
     if (!id) return sendMessage(token, chatId, 'Usage : /unmark_supporter <clientId>');
     const ok = await setChatSupporter(id, null);
     return sendMessage(token, chatId, ok ? `✅ Badge supporter retiré : ${id}` : '❌ Echec (store non configure ?).');
@@ -129,8 +138,8 @@ async function handleMessage(token, message) {
   if (text.startsWith('/rename')) {
     const body = text.slice('/rename'.length).trim();
     const spaceIdx = body.indexOf(' ');
-    const id = spaceIdx === -1 ? body : body.slice(0, spaceIdx);
-    const name = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
+    const id = stripAngles(spaceIdx === -1 ? body : body.slice(0, spaceIdx));
+    const name = stripAngles(spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim());
     if (!id || !name) return sendMessage(token, chatId, 'Usage : /rename <clientId> <nouveau pseudo> (copie le clientId depuis une notification de chat)');
     const ok = await setChatNickname(id, name);
     if (ok) await renameHistory(id, name);
@@ -138,7 +147,7 @@ async function handleMessage(token, message) {
   }
 
   if (text.startsWith('/unrename')) {
-    const id = text.slice('/unrename'.length).trim();
+    const id = stripAngles(text.slice('/unrename'.length).trim());
     if (!id) return sendMessage(token, chatId, 'Usage : /unrename <clientId>');
     const ok = await setChatNickname(id, null);
     return sendMessage(token, chatId, ok ? `✅ Pseudo réinitialisé : ${id}` : '❌ Echec (store non configure ?).');
