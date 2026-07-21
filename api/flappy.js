@@ -1,5 +1,5 @@
 /* Classement global du mini-jeu Flappy Kalbass, partage entre auditeurs.
-   Meme backend que api/reactions.js (Vercel KV / Upstash Redis via API REST,
+   Meme backend que api/chat.js (Vercel KV / Upstash Redis via API REST,
    variables d'env KV_REST_API_URL + KV_REST_API_TOKEN). Sans store configure,
    renvoie { enabled:false } et le front bascule sur le high score local
    uniquement — jamais d'erreur visible.
@@ -15,8 +15,8 @@ const MAX_SCORE = 100000;
 const MAX_LEADERBOARD_SIZE = 500; // borne la croissance, on ne garde que le Top
 
 // Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
-// mensuel depasse a repetition sur ce meme store, voir api/reactions.js) —
-// a remettre a false EN MEME TEMPS que REDIS_PAUSED dans api/reactions.js.
+// mensuel depasse a repetition, voir CONTEXT.md) — a remettre a false
+// EN MEME TEMPS que REDIS_PAUSED dans api/chat.js et api/supporters.js.
 const REDIS_PAUSED = true;
 
 export default async function handler(req, res) {

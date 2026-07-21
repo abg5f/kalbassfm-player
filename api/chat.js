@@ -1,6 +1,6 @@
 /* Chat live anonyme entre auditeurs, partage via Vercel Storage / Upstash Redis
-   (variables d'env KV_REST_API_URL + KV_REST_API_TOKEN, memes que api/reactions.js).
-   Sans store configure, renvoie { enabled:false } et le front bascule en mode
+   (variables d'env KV_REST_API_URL + KV_REST_API_TOKEN, memes que api/supporters.js
+   et api/flappy.js). Sans store configure, renvoie { enabled:false } et le front bascule en mode
    degrade (panneau masque) — jamais d'erreur visible.
 
    Pas d'identification : chaque auditeur a un clientId anonyme genere cote

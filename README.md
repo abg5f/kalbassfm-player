@@ -47,7 +47,7 @@ Installable sur mobile et desktop :
 | Audio | Web Audio API + `<audio>` natif |
 | Déploiement | Vercel (auto sur push GitHub) |
 | Streaming | AzuraCast + Icecast + Liquidsoap sur VPS Ubuntu |
-| Serverless | `api/reactions.js` (compteur 🔥, store KV à connecter) |
+| Serverless | `api/` (chat live, supporters, bot Telegram admin, Flappy Kalbass — Vercel KV/Upstash Redis) |
 
 ## Infrastructure
 
@@ -60,7 +60,7 @@ VPS 167.233.226.128 (Ubuntu / Docker)
 
 Vercel
   └── kalbassfm-player.vercel.app
-        └── Player statique + fonction serverless reactions
+        └── Player statique + fonctions serverless (chat, supporters, bot admin, Flappy)
 
 Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
 ```

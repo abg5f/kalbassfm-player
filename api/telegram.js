@@ -248,11 +248,6 @@ async function handleMessage(token, message) {
     });
   }
 
-  if (text === '/reset_top5') {
-    const ok = await resetTop5();
-    return sendMessage(token, chatId, ok ? '🔥 Top 5 remis à zéro (les votes précédents ne comptent plus).' : '❌ Echec (store non configure ?).');
-  }
-
   if (text.startsWith('/delete_track')) {
     const q = text.slice('/delete_track'.length).trim();
     if (!q) return sendMessage(token, chatId, 'Usage : /delete_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast.');
@@ -333,9 +328,8 @@ async function handleMessage(token, message) {
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
     '🤖 Assistant\n' +
     '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
-    '📊 Stats & votes\n' +
-    '/stats — auditeurs, messages et votes du jour\n' +
-    '/reset_top5 — remettre à zéro le classement des votes 🔥\n\n' +
+    '📊 Stats\n' +
+    '/stats — auditeurs et messages du jour\n\n' +
     'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
 }
 
@@ -541,19 +535,16 @@ async function nowPlayingText() {
 async function statsText() {
   const kv = kvClient();
   const day = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
-  const [d, msgJ, voteJ] = await Promise.all([
+  const [d, msgJ] = await Promise.all([
     nowPlaying(),
     kv ? kv('get', `stats:msg:${day}`) : Promise.resolve({ result: null }),
-    kv ? kv('get', `stats:vote:${day}`) : Promise.resolve({ result: null }),
   ]);
   const lc = (d && d.listeners && (d.listeners.current ?? d.listeners.total)) ?? '?';
   const uniq = (d && d.listeners && d.listeners.unique) ?? '?';
   const msgs = (msgJ && msgJ.result) || 0;
-  const votes = (voteJ && voteJ.result) || 0;
   return `📊 Stats du ${day} (UTC-4)\n` +
     `🎧 Auditeurs maintenant : ${lc} (uniques ${uniq})\n` +
-    `💬 Messages du chat aujourd'hui : ${msgs}\n` +
-    `🔥 Votes aujourd'hui : ${votes}`;
+    `💬 Messages du chat aujourd'hui : ${msgs}`;
 }
 
 /* ---- Claude (brainstorm admin : /ask) ---- */
@@ -856,16 +847,6 @@ async function resumeChatRestorePin() {
     const cur = await kv('get', 'chat:pinned');
     if (cur.result === PAUSE_BANNER) await kv('del', 'chat:pinned');
   }
-  return true;
-}
-
-// Incremente l'epoch lu par api/reactions.js : le classement (leaderboard:<epoch>)
-// et les plafonds de vote par auditeur (votes:<epoch>:<id>) redemarrent a zero
-// sans avoir a lister/supprimer des cles individuellement.
-async function resetTop5() {
-  const kv = kvClient();
-  if (!kv) return false;
-  await kv('incr', 'top5:epoch');
   return true;
 }
 

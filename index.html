@@ -97,7 +97,6 @@
     .main-col > .controls    { order: 5; }
     .main-col > .volume-row  { order: 6; }
     .main-col > #histPanel   { order: 7; }
-    #topPanel                 { order: 8; }
     #supportersPanel          { order: 9; }
     .card > .footer       { order: 10; }
 
@@ -386,28 +385,6 @@
       border-color: var(--accent);
       color: var(--accent);
     }
-    .chip-fire.pop { animation: pop 340ms ease; }
-    @keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
-    .chip-fire.capped { opacity: .6; }
-    .chip-fire.shake { animation: shake 380ms ease; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-4px); }
-      40% { transform: translateX(4px); }
-      60% { transform: translateX(-3px); }
-      80% { transform: translateX(3px); }
-    }
-    .fire-float {
-      position: fixed;
-      pointer-events: none;
-      font-size: 1.1rem;
-      z-index: 40;
-      animation: floatUp 900ms ease-out forwards;
-    }
-    @keyframes floatUp {
-      0%   { opacity: 1; transform: translateY(0) scale(1); }
-      100% { opacity: 0; transform: translateY(-46px) scale(1.5); }
-    }
 
     /* ── Controls ── */
     .controls {
@@ -581,55 +558,6 @@
       color: var(--muted);
       margin-top: 8px;
       letter-spacing: .06em;
-    }
-
-    .top-item {
-      padding: 8px 0;
-      border-top: 1px solid #222;
-    }
-    .top-item:first-child { border-top: none; }
-    .top-item-head {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 5px;
-    }
-    .top-rank {
-      font-family: 'Space Mono', monospace;
-      font-size: .68rem;
-      font-weight: 700;
-      color: var(--accent);
-      flex-shrink: 0;
-      width: 16px;
-    }
-    .top-meta { min-width: 0; flex: 1; }
-    .top-title {
-      font-size: .74rem;
-      font-weight: 700;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .top-artist {
-      font-family: 'Space Mono', monospace;
-      font-size: .62rem;
-      color: #888;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .top-count {
-      font-family: 'Space Mono', monospace;
-      font-size: .62rem;
-      font-weight: 700;
-      color: var(--accent);
-      flex-shrink: 0;
-    }
-    .top-gauge {
-      background: var(--track);
-      border: 1px solid #444;
-      height: 8px;
-      margin-left: 24px;
-    }
-    .top-gauge-fill {
-      background: var(--accent);
-      height: 100%;
     }
 
     /* ── Supporters (Buy Me a Coffee) ── */
@@ -1109,7 +1037,6 @@
       <p class="streak-badge" id="streakBadge"></p>
 
       <div class="actions-row" id="actionsRow" style="display:none">
-        <button class="chip chip-fire" id="reactBtn" aria-label="Like this track">🔥 <span id="reactCount">0</span></button>
         <button class="chip" id="shareBtn" aria-label="Share this track">↗ Share</button>
         <a class="chip" id="findYT" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
         <button class="chip" id="requestBtn" type="button" aria-label="Request a track or send a shout-out">🎵 Request</button>
@@ -1161,15 +1088,6 @@
       </div>
     </details>
 
-    <details class="panel" id="topPanel">
-      <summary>
-        <span class="panel-summary-label">Top 5 🔥</span>
-        <span class="chev">›</span>
-      </summary>
-      <div class="panel-body">
-        <div id="topList"></div>
-      </div>
-    </details>
     </div>
 
     <div class="sidebar-col">
@@ -1287,12 +1205,9 @@
   const listenersEl = document.getElementById('listeners');
   const listenersCount = document.getElementById('listenersCount');
   const actionsRow = document.getElementById('actionsRow');
-  const reactBtn  = document.getElementById('reactBtn');
-  const reactCount = document.getElementById('reactCount');
   const shareBtn  = document.getElementById('shareBtn');
   const findYT    = document.getElementById('findYT');
   const historyList = document.getElementById('historyList');
-  const topList = document.getElementById('topList');
   const supportersList = document.getElementById('supportersList');
   const histPreview = document.getElementById('histPreview');
   const chatList  = document.getElementById('chatList');
@@ -1499,108 +1414,6 @@
     }
   });
 
-  /* ── Réactions 🔥 = vote (compteur partagé via /api/reactions, sinon local) ──
-     Le total affiché reste celui de tous les auditeurs (utile pour le Top 5),
-     mais le serveur plafonne à 10 la contribution d'un seul clientId par
-     morceau. Le front suit sa propre part (yourVotes, renvoyée par l'API) pour
-     bloquer visuellement LE BOUTON dès que CET auditeur atteint son quota —
-     sans quoi les clics restent optimistiquement incrémentés à l'écran même
-     une fois le serveur passé en mode "capped", ce qui donnait l'impression
-     que le plafond ne servait à rien. */
-  const MAX_VOTES_PER_USER = 10;
-  let yourVotes = 0;
-  function applyCappedState() {
-    reactBtn.classList.toggle('capped', yourVotes >= MAX_VOTES_PER_USER);
-  }
-  async function loadReactions(id) {
-    reactBtn.disabled = false;
-    yourVotes = 0;
-    if (!id) { reactCount.textContent = '0'; applyCappedState(); return; }
-    try {
-      const r = await fetch('/api/reactions?id=' + encodeURIComponent(id) + '&clientId=' + encodeURIComponent(clientId), { cache: 'no-store' });
-      const j = await r.json();
-      reactCount.textContent = j.count ?? 0;
-      yourVotes = j.yourVotes || 0;
-    } catch { reactCount.textContent = reactCount.textContent || '0'; }
-    reactBtn.classList.toggle('chip-fire', true);
-    applyCappedState();
-  }
-  reactBtn.addEventListener('click', async (e) => {
-    const id = current.songId;
-    if (!id) return;
-    if (yourVotes >= MAX_VOTES_PER_USER) {
-      reactBtn.classList.remove('shake'); void reactBtn.offsetWidth; reactBtn.classList.add('shake');
-      showToast('🔥 10 max per track — that\'s enough love! 😉');
-      return;
-    }
-    reactCount.textContent = (parseInt(reactCount.textContent, 10) || 0) + 1;
-    yourVotes += 1;
-    applyCappedState();
-    reactBtn.classList.remove('pop'); void reactBtn.offsetWidth; reactBtn.classList.add('pop');
-    // petit 🔥 qui s'envole
-    const f = document.createElement('div');
-    f.className = 'fire-float'; f.textContent = '🔥';
-    f.style.left = e.clientX - 8 + 'px'; f.style.top = e.clientY - 12 + 'px';
-    document.body.appendChild(f); setTimeout(() => f.remove(), 900);
-    try {
-      const r = await fetch('/api/reactions?id=' + encodeURIComponent(id), {
-        method: 'POST', cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, title: current.title, artist: current.artist, art: current.art, clientId }),
-      });
-      const j = await r.json();
-      if (typeof j.yourVotes === 'number') yourVotes = j.yourVotes;
-      applyCappedState();
-      if (j.capped) showToast('🔥 10 max per track — that\'s enough love! 😉');
-      if (j.enabled && typeof j.count === 'number') reactCount.textContent = j.count;
-    } catch {}
-    pollTop();
-  });
-
-  /* ── Top 5 des votes ── */
-  function renderTop(top) {
-    if (!Array.isArray(top) || !top.length) {
-      topList.innerHTML = '<p class="prog-note">No votes yet.</p>';
-      return;
-    }
-    const maxCount = top[0].count || 1;
-    topList.innerHTML = '';
-    top.forEach((t, i) => {
-      const pct = Math.max(4, Math.round((t.count / maxCount) * 100));
-      const el = document.createElement('div');
-      el.className = 'top-item';
-      el.innerHTML =
-        '<div class="top-item-head">' +
-          '<span class="top-rank">#' + (i + 1) + '</span>' +
-          '<div class="top-meta">' +
-            '<div class="top-title">' + (t.title || '—') + '</div>' +
-            '<div class="top-artist">' + (t.artist || '') + '</div>' +
-          '</div>' +
-          '<span class="top-count">🔥 ' + t.count + '</span>' +
-        '</div>' +
-        '<div class="top-gauge"><div class="top-gauge-fill" style="width:' + pct + '%"></div></div>';
-      topList.appendChild(el);
-    });
-  }
-  // N'efface le contenu deja affiche qu'au tout premier chargement rate —
-  // une panne/quota Upstash transitoire (le poll suivant reussira) ne doit
-  // pas faire clignoter la liste vers un etat vide puis revenir.
-  let topLoadedOnce = false;
-  async function pollTop() {
-    try {
-      const r = await fetch('/api/reactions?top=5', { cache: 'no-store' });
-      const j = await r.json();
-      if (!j.enabled) throw new Error('disabled');
-      renderTop(j.top);
-      topLoadedOnce = true;
-    } catch {
-      if (!topLoadedOnce) topList.innerHTML = '<p class="prog-note">Chart coming soon.</p>';
-    }
-  }
-  pollTop();
-  // Espace a 8s (au lieu de 4s) — meme raison que pollChat, ce endpoint fait
-  // jusqu'a 6 commandes Redis par poll (zrange + un hgetall par morceau du top 5).
-  setInterval(pollTop, 8000);
 
   /* ── Supporters (Buy Me a Coffee) — evenement rare, poll peu frequent ── */
   function renderSupporters(list) {
@@ -1842,7 +1655,6 @@
       actionsRow.style.display = 'flex';
       updateFindLinks();
       updateMediaSession();
-      loadReactions(current.songId);
     } catch { /* silent */ }
   }
   pollNowPlaying();
@@ -2068,9 +1880,9 @@
 
   /* ── Flappy Kalbass — mini-jeu en popup, la radio continue de jouer
      (aucun appel a l'element <audio> depuis ce bloc). Score local
-     (localStorage) + classement global via /api/flappy (meme patron que
-     /api/reactions : { enabled:false } si le store Redis est coupe/absent,
-     le high score local reste toujours disponible dans ce cas). ── */
+     (localStorage) + classement global via /api/flappy ({ enabled:false }
+     si le store Redis est coupe/absent, le high score local reste toujours
+     disponible dans ce cas). ── */
   const FLAPPY = {
     W: 288, H: 432, GROUND_H: 36,
     GRAVITY: 0.26, FLAP_V: -5.6, MAX_FALL_V: 7,
