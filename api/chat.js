@@ -96,15 +96,18 @@ export default async function handler(req, res) {
   if (!clientId || !text) return res.status(200).json({ enabled: true, ok: false });
 
   let supporterName = null;
+  let renamedNick = null;
   try {
-    const [pausedJ, bannedJ, supporterJ] = await Promise.all([
+    const [pausedJ, bannedJ, supporterJ, nicknameJ] = await Promise.all([
       kv('get', 'chat:paused'),
       kv('sismember', 'chat:banned', clientId),
       kv('hget', 'chat:supporters', clientId),
+      kv('hget', 'chat:nicknames', clientId),
     ]);
     if (pausedJ.result) return res.status(200).json({ enabled: true, ok: false, paused: true });
     if (bannedJ.result) return res.status(200).json({ enabled: true, ok: false, banned: true });
     supporterName = supporterJ.result || null;
+    renamedNick = nicknameJ.result || null;
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
   }
@@ -118,9 +121,13 @@ export default async function handler(req, res) {
     // supporter:true et le nom associe viennent EXCLUSIVEMENT du hash Redis
     // chat:supporters (pose par /mark_supporter dans api/telegram.js) —
     // jamais du pseudo envoye par le client, meme principe que admin:true.
+    // A defaut de badge supporter, un pseudo impose par l'admin via /rename
+    // (hash chat:nicknames, moderation d'un pseudo offensant) prend le pas
+    // sur celui choisi par le client.
+    const finalNick = supporterName || renamedNick || nick;
     const msg = supporterName
-      ? { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: supporterName, text, ts: Date.now(), supporter: true }
-      : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick, text, ts: Date.now() };
+      ? { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), supporter: true }
+      : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now() };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
     // Compteur quotidien (jour Martinique UTC-4) lu par /stats du bot Telegram.

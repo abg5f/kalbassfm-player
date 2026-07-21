@@ -126,6 +126,23 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? `✅ Badge supporter retiré : ${id}` : '❌ Echec (store non configure ?).');
   }
 
+  if (text.startsWith('/rename')) {
+    const body = text.slice('/rename'.length).trim();
+    const spaceIdx = body.indexOf(' ');
+    const id = spaceIdx === -1 ? body : body.slice(0, spaceIdx);
+    const name = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
+    if (!id || !name) return sendMessage(token, chatId, 'Usage : /rename <clientId> <nouveau pseudo> (copie le clientId depuis une notification de chat)');
+    const ok = await setChatNickname(id, name);
+    return sendMessage(token, chatId, ok ? `✏️ ${id} apparaîtra désormais comme "${name}" dans le chat.` : '❌ Echec (store non configure ?).');
+  }
+
+  if (text.startsWith('/unrename')) {
+    const id = text.slice('/unrename'.length).trim();
+    if (!id) return sendMessage(token, chatId, 'Usage : /unrename <clientId>');
+    const ok = await setChatNickname(id, null);
+    return sendMessage(token, chatId, ok ? `✅ Pseudo réinitialisé : ${id}` : '❌ Echec (store non configure ?).');
+  }
+
   if (text === '/pause_chat') {
     const ok = await setPaused(true);
     return sendMessage(token, chatId, ok ? '⏸ Chat en pause — plus personne ne peut poster.' : '❌ Echec (store non configure ?).');
@@ -281,6 +298,7 @@ async function handleMessage(token, message) {
     '👤 Auditeurs & supporters\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
+    '/rename <clientId> <pseudo> / /unrename <clientId> — imposer un pseudo (moderation)\n' +
     '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
     '🤖 Assistant\n' +
@@ -688,6 +706,17 @@ async function setChatSupporter(clientId, name) {
   if (!kv || !clientId) return false;
   if (name) await kv('hset', 'chat:supporters', clientId, name.slice(0, 30));
   else await kv('hdel', 'chat:supporters', clientId);
+  return true;
+}
+
+// Lien clientId -> pseudo impose par l'admin (moderation d'un pseudo
+// offensant/inapproprie), sans badge supporter. Priorite plus faible que
+// chat:supporters cote api/chat.js (un supporter marque garde son nom+badge).
+async function setChatNickname(clientId, name) {
+  const kv = kvClient();
+  if (!kv || !clientId) return false;
+  if (name) await kv('hset', 'chat:nicknames', clientId, name.slice(0, 30));
+  else await kv('hdel', 'chat:nicknames', clientId);
   return true;
 }
 
