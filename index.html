@@ -248,6 +248,20 @@
     }
     .btn-install-icon.show { display: flex; }
     .btn-install-icon:active { transform: translate(1px, 1px); }
+    .btn-flappy-icon {
+      width: 28px; height: 28px;
+      background: var(--accent);
+      color: var(--bg);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-flappy-icon:active { transform: translate(1px, 1px); }
 
     /* ── Artwork ── */
     .artwork {
@@ -887,6 +901,70 @@
       padding: 4px 6px;
     }
 
+    /* ── Popup Flappy Kalbass ── */
+    .flappy-box { max-width: 320px; }
+    .flappy-stage {
+      position: relative;
+      width: 100%;
+      border: 2px solid var(--border);
+      line-height: 0;
+    }
+    .flappy-stage canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: pointer; }
+    .flappy-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(13,13,13,.86);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .flappy-overlay[hidden] { display: none; }
+    .flappy-overlay-inner { text-align: center; width: 100%; }
+    .flappy-overlay-title {
+      font-weight: 700;
+      font-size: .95rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .flappy-overlay-score {
+      font-family: 'Space Mono', monospace;
+      color: var(--accent);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .flappy-overlay-text {
+      font-family: 'Space Mono', monospace;
+      font-size: .66rem;
+      color: #999;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    .flappy-leaderboard { margin-top: 14px; }
+    .flappy-leaderboard-title {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .flappy-lb-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+    .flappy-lb-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: .68rem;
+      padding: 4px 0;
+    }
+    .flappy-lb-item.self { color: var(--accent); }
+    .flappy-lb-rank { width: 22px; flex-shrink: 0; color: var(--muted); }
+    .flappy-lb-nick { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .flappy-lb-score { font-weight: 700; }
+
     /* ── Bandeau d'installation (mobile) ── */
     .install-toast {
       position: fixed;
@@ -999,6 +1077,7 @@
         <span id="stationName">KALBASSFM</span>
       </h1>
       <div class="header-actions">
+        <button class="btn-flappy-icon" id="flappyBtn" aria-label="Play Flappy Kalbass" title="Play Flappy Kalbass">🐦</button>
         <button class="btn-install-icon" id="headerInstallBtn" aria-label="Install the KALBASS FM app" title="Install the app">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path d="M12 3v12M7 10l5 5 5-5M5 20h14"/>
@@ -1144,6 +1223,27 @@
       <div class="modal-actions">
         <a href="mailto:kalbassfm.76z0r@passfwd.com" class="donate-link">✉ Send an email</a>
         <a href="https://www.instagram.com/luparimusic/" target="_blank" rel="noopener noreferrer" class="donate-link">📷 Instagram @luparimusic</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="flappyModal" role="dialog" aria-modal="true" aria-label="Flappy Kalbass game">
+    <div class="modal-box flappy-box">
+      <button class="modal-close" id="flappyModalClose" aria-label="Close">✕</button>
+      <div class="modal-title">🐦 Flappy Kalbass</div>
+      <div class="flappy-stage">
+        <canvas id="flappyCanvas" width="288" height="432" aria-label="Flappy Kalbass game"></canvas>
+        <div class="flappy-overlay" id="flappyOverlay">
+          <div class="flappy-overlay-inner">
+            <p class="flappy-overlay-title" id="flappyOverlayTitle">Flappy Kalbass</p>
+            <p class="flappy-overlay-text" id="flappyOverlayText">Tap, click or press Space to flap.<br>Dodge the pipes, keep the vibe going!</p>
+            <button class="chip chip-fire" id="flappyStartBtn" type="button">▶ Play</button>
+          </div>
+        </div>
+      </div>
+      <div class="flappy-leaderboard">
+        <p class="flappy-leaderboard-title">Global leaderboard</p>
+        <div class="flappy-lb-list" id="flappyLbList"><p class="prog-note">Loading…</p></div>
       </div>
     </div>
   </div>
@@ -1965,6 +2065,238 @@
   document.getElementById('contactModalClose').addEventListener('click', closeContactModal);
   contactModal.addEventListener('click', (e) => { if (e.target === contactModal) closeContactModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeContactModal(); });
+
+  /* ── Flappy Kalbass — mini-jeu en popup, la radio continue de jouer
+     (aucun appel a l'element <audio> depuis ce bloc). Score local
+     (localStorage) + classement global via /api/flappy (meme patron que
+     /api/reactions : { enabled:false } si le store Redis est coupe/absent,
+     le high score local reste toujours disponible dans ce cas). ── */
+  const FLAPPY = {
+    W: 288, H: 432, GROUND_H: 36,
+    GRAVITY: 0.32, FLAP_V: -6.2,
+    PIPE_W: 44, GAP_H: 118, PIPE_SPACING: 165,
+    BIRD_X: 70, BIRD_R: 12,
+  };
+  const flappyModal = document.getElementById('flappyModal');
+  const flappyCanvas = document.getElementById('flappyCanvas');
+  const fctx = flappyCanvas.getContext('2d');
+  const flappyOverlay = document.getElementById('flappyOverlay');
+  const flappyOverlayTitle = document.getElementById('flappyOverlayTitle');
+  const flappyOverlayText = document.getElementById('flappyOverlayText');
+  const flappyStartBtn = document.getElementById('flappyStartBtn');
+  const flappyLbList = document.getElementById('flappyLbList');
+
+  let fState = 'ready'; // 'ready' | 'playing' | 'dead'
+  let fBirdY, fBirdV, fPipes, fScore, fGroundOff, fRaf;
+
+  function flappyResetWorld() {
+    fBirdY = FLAPPY.H / 2;
+    fBirdV = 0;
+    fPipes = [{ x: FLAPPY.W + 60, gapY: flappySpawnGapY() }];
+    fScore = 0;
+    fGroundOff = 0;
+  }
+  function flappySpawnGapY() {
+    const margin = FLAPPY.GAP_H / 2 + 26;
+    return margin + Math.random() * (FLAPPY.H - FLAPPY.GROUND_H - margin * 2);
+  }
+  function flappySpeed() { return 2.3 + Math.min(fScore * 0.035, 1.8); }
+
+  function drawFlappyBird(x, y, rot) {
+    fctx.save();
+    fctx.translate(x, y);
+    fctx.rotate(Math.max(-25, Math.min(75, rot)) * Math.PI / 180);
+    fctx.beginPath();
+    fctx.ellipse(0, 0, 13, 15, 0, 0, Math.PI * 2);
+    fctx.fillStyle = '#0D0D0D';
+    fctx.fill();
+    fctx.lineWidth = 2.5;
+    fctx.strokeStyle = '#FFFFFF';
+    fctx.stroke();
+    fctx.fillStyle = '#F5E642';
+    fctx.fillRect(8, -4, 8, 6);
+    fctx.strokeStyle = '#FFFFFF';
+    fctx.lineWidth = 1.5;
+    fctx.beginPath(); fctx.moveTo(-3, -9); fctx.lineTo(4, -9); fctx.stroke();
+    fctx.restore();
+  }
+
+  function drawFlappyPipe(x, gapY) {
+    const topH = gapY - FLAPPY.GAP_H / 2;
+    const botY = gapY + FLAPPY.GAP_H / 2;
+    fctx.fillStyle = '#F5E642';
+    fctx.strokeStyle = '#FFFFFF';
+    fctx.lineWidth = 3;
+    fctx.fillRect(x, 0, FLAPPY.PIPE_W, topH);
+    fctx.strokeRect(x, 0, FLAPPY.PIPE_W, topH);
+    fctx.fillRect(x, botY, FLAPPY.PIPE_W, FLAPPY.H - FLAPPY.GROUND_H - botY);
+    fctx.strokeRect(x, botY, FLAPPY.PIPE_W, FLAPPY.H - FLAPPY.GROUND_H - botY);
+    fctx.fillRect(x - 3, topH - 14, FLAPPY.PIPE_W + 6, 14);
+    fctx.strokeRect(x - 3, topH - 14, FLAPPY.PIPE_W + 6, 14);
+    fctx.fillRect(x - 3, botY, FLAPPY.PIPE_W + 6, 14);
+    fctx.strokeRect(x - 3, botY, FLAPPY.PIPE_W + 6, 14);
+  }
+
+  function drawFlappy() {
+    fctx.fillStyle = '#0D0D0D';
+    fctx.fillRect(0, 0, FLAPPY.W, FLAPPY.H);
+    fPipes.forEach((p) => drawFlappyPipe(p.x, p.gapY));
+    // sol
+    fctx.fillStyle = '#2A2A2A';
+    fctx.fillRect(0, FLAPPY.H - FLAPPY.GROUND_H, FLAPPY.W, FLAPPY.GROUND_H);
+    fctx.strokeStyle = '#FFFFFF';
+    fctx.lineWidth = 3;
+    fctx.beginPath(); fctx.moveTo(0, FLAPPY.H - FLAPPY.GROUND_H); fctx.lineTo(FLAPPY.W, FLAPPY.H - FLAPPY.GROUND_H); fctx.stroke();
+    fctx.fillStyle = '#F5E642';
+    for (let gx = -fGroundOff % 20; gx < FLAPPY.W; gx += 20) {
+      fctx.fillRect(gx, FLAPPY.H - FLAPPY.GROUND_H + 6, 10, 4);
+    }
+    drawFlappyBird(FLAPPY.BIRD_X, fBirdY, fBirdV * 4);
+    // score
+    fctx.font = '700 26px "Space Mono", monospace';
+    fctx.textAlign = 'center';
+    fctx.lineWidth = 4;
+    fctx.strokeStyle = '#0D0D0D';
+    fctx.strokeText(String(fScore), FLAPPY.W / 2, 46);
+    fctx.fillStyle = '#F5E642';
+    fctx.fillText(String(fScore), FLAPPY.W / 2, 46);
+  }
+
+  function flappyCollides() {
+    if (fBirdY + FLAPPY.BIRD_R >= FLAPPY.H - FLAPPY.GROUND_H) return true;
+    for (const p of fPipes) {
+      const withinX = FLAPPY.BIRD_X + FLAPPY.BIRD_R > p.x && FLAPPY.BIRD_X - FLAPPY.BIRD_R < p.x + FLAPPY.PIPE_W;
+      if (!withinX) continue;
+      const topH = p.gapY - FLAPPY.GAP_H / 2;
+      const botY = p.gapY + FLAPPY.GAP_H / 2;
+      if (fBirdY - FLAPPY.BIRD_R < topH || fBirdY + FLAPPY.BIRD_R > botY) return true;
+    }
+    return false;
+  }
+
+  function flappyUpdate() {
+    const speed = flappySpeed();
+    fBirdV += FLAPPY.GRAVITY;
+    fBirdY += fBirdV;
+    if (fBirdY - FLAPPY.BIRD_R < 0) { fBirdY = FLAPPY.BIRD_R; fBirdV = 0; }
+    fGroundOff += speed;
+    fPipes.forEach((p) => { p.x -= speed; });
+    if (!fPipes.length || fPipes[fPipes.length - 1].x < FLAPPY.W - FLAPPY.PIPE_SPACING) {
+      fPipes.push({ x: FLAPPY.W, gapY: flappySpawnGapY() });
+    }
+    fPipes = fPipes.filter((p) => p.x > -FLAPPY.PIPE_W - 10);
+    fPipes.forEach((p) => {
+      if (!p.passed && p.x + FLAPPY.PIPE_W < FLAPPY.BIRD_X) { p.passed = true; fScore += 1; }
+    });
+    if (flappyCollides()) return flappyDie();
+  }
+
+  function flappyLoop() {
+    flappyUpdate();
+    drawFlappy();
+    if (fState === 'playing') fRaf = requestAnimationFrame(flappyLoop);
+  }
+
+  function flappyShowOverlay(mode, score, best) {
+    if (mode === 'dead') {
+      flappyOverlayTitle.textContent = 'Game Over';
+      flappyOverlayText.innerHTML = 'Score: <b style="color:var(--accent)">' + score + '</b> &nbsp;·&nbsp; Best: <b>' + best + '</b>';
+      flappyStartBtn.textContent = '▶ Play again';
+    } else {
+      flappyOverlayTitle.textContent = 'Flappy Kalbass';
+      flappyOverlayText.innerHTML = 'Tap, click or press Space to flap.<br>Dodge the pipes, keep the vibe going!';
+      flappyStartBtn.textContent = '▶ Play';
+    }
+    flappyOverlay.hidden = false;
+  }
+
+  function flappyStart() {
+    fState = 'playing';
+    flappyOverlay.hidden = true;
+    flappyResetWorld();
+    if (fRaf) cancelAnimationFrame(fRaf);
+    flappyLoop();
+  }
+
+  function flappyDie() {
+    fState = 'dead';
+    if (fRaf) cancelAnimationFrame(fRaf);
+    const before = parseInt(localStorage.getItem('kfm_flappy_best') || '0', 10) || 0;
+    const best = Math.max(before, fScore);
+    if (fScore > before) localStorage.setItem('kfm_flappy_best', String(fScore));
+    flappyShowOverlay('dead', fScore, best);
+    submitFlappyScore(fScore);
+  }
+
+  function flappyFlap() {
+    if (fState === 'playing') fBirdV = FLAPPY.FLAP_V;
+  }
+
+  flappyCanvas.addEventListener('pointerdown', flappyFlap);
+  flappyStartBtn.addEventListener('click', flappyStart);
+
+  function renderFlappyLeaderboard(top) {
+    if (!Array.isArray(top) || !top.length) {
+      flappyLbList.innerHTML = '<p class="prog-note">No scores yet — be the first!</p>';
+      return;
+    }
+    flappyLbList.innerHTML = '';
+    top.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'flappy-lb-item' + (t.nick === chatNick ? ' self' : '');
+      const rank = document.createElement('span'); rank.className = 'flappy-lb-rank'; rank.textContent = '#' + (i + 1);
+      const nick = document.createElement('span'); nick.className = 'flappy-lb-nick'; nick.textContent = t.nick || 'Listener';
+      const score = document.createElement('span'); score.className = 'flappy-lb-score'; score.textContent = t.score;
+      row.appendChild(rank); row.appendChild(nick); row.appendChild(score);
+      flappyLbList.appendChild(row);
+    });
+  }
+  async function loadFlappyLeaderboard() {
+    try {
+      const r = await fetch('/api/flappy?top=10', { cache: 'no-store' });
+      const j = await r.json();
+      if (!j.enabled) throw new Error('disabled');
+      renderFlappyLeaderboard(j.top);
+    } catch {
+      flappyLbList.innerHTML = '<p class="prog-note">Leaderboard coming soon.</p>';
+    }
+  }
+  async function submitFlappyScore(score) {
+    if (score <= 0) return;
+    try {
+      await fetch('/api/flappy', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, nick: chatNick, score }),
+      });
+    } catch {}
+    loadFlappyLeaderboard();
+  }
+
+  function openFlappyModal() {
+    fState = 'ready';
+    if (fRaf) cancelAnimationFrame(fRaf);
+    flappyResetWorld();
+    drawFlappy();
+    flappyShowOverlay('ready');
+    flappyModal.classList.add('show');
+    loadFlappyLeaderboard();
+  }
+  function closeFlappyModal() {
+    fState = 'ready';
+    if (fRaf) cancelAnimationFrame(fRaf);
+    flappyModal.classList.remove('show');
+  }
+  document.getElementById('flappyBtn').addEventListener('click', openFlappyModal);
+  document.getElementById('flappyModalClose').addEventListener('click', closeFlappyModal);
+  flappyModal.addEventListener('click', (e) => { if (e.target === flappyModal) closeFlappyModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFlappyModal();
+    if ((e.code === 'Space' || e.key === 'ArrowUp') && flappyModal.classList.contains('show')) {
+      e.preventDefault();
+      if (fState === 'ready') flappyStart(); else flappyFlap();
+    }
+  });
 
   // iOS et certains navigateurs mobiles ne declenchent jamais beforeinstallprompt :
   // on programme un affichage de repli independant de l'evenement natif.
