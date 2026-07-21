@@ -7,3 +7,4 @@ tools/migration_report.csv
 tools/migration_sftp.txt
 tools/orphans_report.txt
 tools/sftp_config.py
+tools/pending_uploads.json

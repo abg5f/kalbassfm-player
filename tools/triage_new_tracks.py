@@ -60,6 +60,55 @@ SLOT_FOLDERS = {b: f"{NEW_PROG_WSL}/{b}" for b in NEW_BINS}
 
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "triage_report.html")
+# Morceaux deja classes localement (dans New_prog/<bac>) mais pas encore
+# envoyes sur AzuraCast (SFTP indisponible au moment du classement). Retentes
+# automatiquement au debut de chaque run suivant -> rien ne reste jamais
+# bloque, meme si le cron tourne sans surveillance.
+PENDING_UPLOADS_PATH = os.path.join(TOOLS_DIR, "pending_uploads.json")
+
+
+def load_pending_uploads():
+    if os.path.exists(PENDING_UPLOADS_PATH):
+        with open(PENDING_UPLOADS_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+def save_pending_uploads(pending):
+    with open(PENDING_UPLOADS_PATH, "w", encoding="utf-8") as f:
+        json.dump(pending, f, ensure_ascii=False, indent=1)
+
+
+def retry_pending_uploads(sftp, report):
+    """Retente les envois SFTP restes en echec lors d'un run precedent.
+
+    Retourne la liste des entrees toujours en echec (ne sauvegarde pas
+    elle-meme : main() est seule proprietaire de l'ecriture du fichier,
+    pour fusionner proprement avec les echecs du run courant)."""
+    pending = load_pending_uploads()
+    if not pending:
+        return []
+    print(f"{len(pending)} envoi(s) AzuraCast en attente d'un run precedent...")
+    still_pending = []
+    for entry in pending:
+        slot, local_path = entry["slot"], entry["path"]
+        if not os.path.exists(local_path):
+            # Fichier deplace/supprime manuellement depuis -> on abandonne le suivi.
+            continue
+        try:
+            upload_to_azuracast(sftp, slot, local_path)
+            print(f"  [OK] {os.path.basename(local_path)} envoye (retry)")
+            report.add_upload_success()
+        except RemoteAlreadyExists:
+            # Deja present sur le serveur : l'envoi precedent avait en fait
+            # reussi malgre l'echec de sauvegarde de son statut. On considere
+            # ce morceau traite -> evite une boucle d'echec infinie.
+            print(f"  [OK] {os.path.basename(local_path)} deja sur le serveur (retry)")
+            report.add_upload_success()
+        except Exception as e:
+            print(f"  [ECHEC] {os.path.basename(local_path)}: {e}")
+            still_pending.append(entry)
+    return still_pending
 
 
 def open_sftp():
@@ -74,6 +123,10 @@ def open_sftp():
         return None, None
 
 
+class RemoteAlreadyExists(Exception):
+    """Un fichier du meme nom existe deja dans le bac distant."""
+
+
 def upload_to_azuracast(sftp, slot, local_path):
     """Envoie local_path vers /<slot>/<nom> sur AzuraCast. Leve une exception en cas d'echec."""
     remote_dir = SFTP_REMOTE_ROOT.rstrip("/") + "/" + slot
@@ -85,7 +138,7 @@ def upload_to_azuracast(sftp, slot, local_path):
     # Garde-fou : ne jamais ecraser silencieusement un morceau deja en ligne.
     try:
         sftp.stat(remote_path)
-        raise RuntimeError(f"existe deja sur le serveur ({remote_path}) — envoi ignore")
+        raise RemoteAlreadyExists(remote_path)
     except FileNotFoundError:
         pass
     sftp.put(local_path, remote_path)
@@ -157,6 +210,9 @@ class Report:
         fail_rows = "".join(
             f"<tr><td>{html.escape(f)}</td><td>{html.escape(e)}</td></tr>" for f, e in self.failures
         )
+        upload_fail_rows = "".join(
+            f"<tr><td>{html.escape(f)}</td><td>{html.escape(e)}</td></tr>" for f, e in self.upload_failures
+        )
 
         status_label = "Termine" if finished else "En cours..."
         refresh_tag = "" if finished else '<meta http-equiv="refresh" content="2">'
@@ -183,12 +239,14 @@ class Report:
 <h1>KALBASSFM - Triage des nouveaux morceaux</h1>
 <div class="status">{status_label} — {self.done}/{self.total} traites — {elapsed:.0f}s</div>
 <div class="progress"><div class="progress-fill"></div></div>
-<p>Doublons ignores : {len(self.duplicates)} | Echecs : {len(self.failures)}</p>
+<p>Doublons ignores : {len(self.duplicates)} | Echecs : {len(self.failures)} | Envoyes AzuraCast : {self.uploaded} | Echecs envoi : {len(self.upload_failures)}</p>
 {slot_blocks}
 <h3>Doublons ignores ({len(self.duplicates)})</h3>
 <table><tr><th>Fichier</th><th>Correspond a</th></tr>{dup_rows}</table>
-<h3>Echecs ({len(self.failures)})</h3>
+<h3>Echecs classement ({len(self.failures)})</h3>
 <table><tr><th>Fichier</th><th>Erreur</th></tr>{fail_rows}</table>
+<h3>Echecs envoi AzuraCast ({len(self.upload_failures)})</h3>
+<table><tr><th>Fichier</th><th>Erreur</th></tr>{upload_fail_rows}</table>
 </body></html>"""
         with open(REPORT_PATH, "w", encoding="utf-8") as f:
             f.write(doc)
@@ -367,7 +425,12 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report):
     )
     dup_index.append((clt.tokens(artist), clt.tokens(title), dest_path))
     report.add_success(slot, artist, title, result["bpm"], result["genres"][0][0], energy)
-    return result
+
+    # Pas d'envoi SFTP ici : le classement est fait morceau par morceau, mais
+    # l'envoi vers AzuraCast n'a lieu qu'une fois EN UNE SEULE PASSE a la toute
+    # fin de main(), une fois tous les fichiers de _incoming traites (cf. commentaire
+    # de main()) — permet d'ecouter les morceaux dans leur bac avant l'envoi.
+    return result, slot, dest_path
 
 
 def main():
@@ -377,14 +440,19 @@ def main():
         for f in sorted(os.listdir(INCOMING))
         if f.lower().endswith(".mp3") and os.path.isfile(os.path.join(INCOMING, f))
     ]
-    if not files:
-        print("Aucun fichier a traiter dans _incoming.")
+    pending = load_pending_uploads()
+    if not files and not pending:
+        print("Aucun fichier a traiter dans _incoming, aucun envoi en attente.")
         return
 
-    print(f"{len(files)} fichier(s) a traiter.\n")
-    print("Indexation de New_prog pour la detection de doublons...")
-    dup_index = build_duplicate_index()
-    print(f"  -> {len(dup_index)} morceaux existants indexes.\n")
+    if files:
+        print(f"{len(files)} fichier(s) a traiter.\n")
+        print("Indexation de New_prog pour la detection de doublons...")
+        dup_index = build_duplicate_index()
+        print(f"  -> {len(dup_index)} morceaux existants indexes.\n")
+    else:
+        print("Aucun nouveau fichier dans _incoming — envoi des morceaux en attente uniquement.\n")
+        dup_index = []
 
     metadata = load_metadata()
     # Seuils de classification auto-calibres sur la bibliotheque existante
@@ -392,19 +460,27 @@ def main():
     cutoffs = compute_cutoffs(metadata, compute_energies(metadata))
     report = Report(len(files))
     report.render()
-    report.open_in_browser()
+    if files:
+        report.open_in_browser()
 
+    # ── Phase 1 : classement local seul, aucun envoi SFTP ────────────────────
+    # Lancement toujours manuel (pas de cron) : l'utilisateur ecoute les
+    # morceaux bruts dans _incoming avant de declencher ce script. L'envoi
+    # AzuraCast n'intervient qu'en Phase 2, une fois TOUT le lot classe.
     ok_count = 0
     dup_count = 0
+    newly_classified = []  # [(slot, dest_path), ...] a envoyer en Phase 2
 
     for path in files:
         try:
-            result = process_file(path, metadata, cutoffs, dup_index, report)
-            if result is None:
+            outcome = process_file(path, metadata, cutoffs, dup_index, report)
+            if outcome is None:
                 dup_count += 1
                 continue
+            result, slot, dest_path = outcome
             metadata.append(result)
             save_metadata(metadata)
+            newly_classified.append((slot, dest_path))
             ok_count += 1
         except Exception as e:
             print(f"[ERREUR] {os.path.basename(path)}: {e}")
@@ -414,13 +490,44 @@ def main():
             except Exception:
                 pass
 
-    print(f"\n{ok_count}/{len(files)} morceaux integres, {dup_count} doublon(s) ignore(s).")
-    if ok_count:
+    if files:
+        print(f"\n{ok_count}/{len(files)} morceaux classes localement, {dup_count} doublon(s) ignore(s).")
+
+    # ── Phase 2 : un seul passage d'envoi SFTP, a la toute fin ───────────────
+    print("\nConnexion SFTP AzuraCast...")
+    transport, sftp = open_sftp()
+    if sftp is not None:
+        print(f"  -> connecte a {SFTP_HOST}:{SFTP_PORT}\n")
+        try:
+            pending = retry_pending_uploads(sftp, report)
+            for slot, dest_path in newly_classified:
+                try:
+                    print(f"[SFTP] Envoi -> /{slot}/{os.path.basename(dest_path)}")
+                    upload_to_azuracast(sftp, slot, dest_path)
+                    report.add_upload_success()
+                except RemoteAlreadyExists as e:
+                    print(f"[SFTP] Deja sur le serveur, ignore : {e}")
+                    report.add_upload_success()
+                except Exception as e:
+                    print(f"[SFTP] Echec envoi {os.path.basename(dest_path)}: {e}")
+                    report.add_upload_failure(os.path.basename(dest_path), e)
+                    pending.append({"slot": slot, "path": dest_path})
+        finally:
+            sftp.close()
+            transport.close()
         print(
-            "Les nouveaux morceaux ont ete deposes dans leur bac (aucun fichier "
-            "existant renomme) -> tu peux uploader uniquement les nouveaux fichiers en SFTP."
+            f"\n{report.uploaded} morceau(x) envoye(s) sur AzuraCast, "
+            f"{len(pending)} en attente (echec ou serveur indisponible a nouveau)."
+        )
+    else:
+        # SFTP indisponible : tout le lot classe ce run rejoint la file d'attente.
+        pending.extend({"slot": s, "path": p} for s, p in newly_classified)
+        print(
+            f"SFTP indisponible : {len(pending)} morceau(x) en attente d'envoi "
+            "-> relance ce script une fois la connexion retablie."
         )
 
+    save_pending_uploads(pending)
     report.render(finished=True)
 
 
