@@ -746,6 +746,13 @@ async function setChatNickname(clientId, name) {
 // clientId (ajoute cote api/chat.js, jamais renvoye au GET public — voir le
 // commentaire associe la-bas). LSET met a jour en place, sans reordonner la
 // liste. Best effort silencieux : n'affecte jamais le resultat de /rename.
+//
+// chat:messages recoit des LPUSH concurrents (n'importe quel auditeur qui
+// poste pendant qu'on boucle ici decale tous les index suivants) : on
+// reverifie via LINDEX que l'entree n'a pas bouge juste avant d'ecrire, pour
+// ne jamais corrompre le message d'un autre auditeur. Une entree decalee est
+// simplement sautee (sans risque de la relancer : /rename_nick/rename sont
+// idempotents) plutot que de risquer un LSET au mauvais index.
 async function renameHistory(clientId, name) {
   const kv = kvClient();
   if (!kv || !clientId) return;
@@ -756,6 +763,8 @@ async function renameHistory(clientId, name) {
       let msg;
       try { msg = JSON.parse(raw[i]); } catch { continue; }
       if (msg.clientId === clientId) {
+        const cur = await kv('lindex', 'chat:messages', String(i));
+        if (cur.result !== raw[i]) continue;
         msg.nick = name;
         await kv('lset', 'chat:messages', String(i), JSON.stringify(msg));
       }
@@ -768,7 +777,11 @@ async function renameHistory(clientId, name) {
 // quel plutot que sur le clientId. A manier avec discernement — le pseudo
 // auto-genere ("Listener-XXXX", derive du clientId modulo 9000) n'est pas
 // garanti unique entre auditeurs differents, contrairement au clientId.
-// Exclut les messages admin (nick "KALBASSFM") par securite.
+// Exclut les messages admin (nick "KALBASSFM") par securite. Meme garde-fou
+// LINDEX que renameHistory contre les LPUSH concurrents — voir ce commentaire.
+// Idempotent : si le compte renvoye est inferieur au nombre attendu (des
+// entrees ont decale pendant la boucle), relancer la meme commande rattrape
+// le reste sans risque.
 async function renameHistoryByNick(oldNick, name) {
   const kv = kvClient();
   if (!kv) return 0;
@@ -780,6 +793,8 @@ async function renameHistoryByNick(oldNick, name) {
       let msg;
       try { msg = JSON.parse(raw[i]); } catch { continue; }
       if (msg.nick === oldNick && !msg.admin) {
+        const cur = await kv('lindex', 'chat:messages', String(i));
+        if (cur.result !== raw[i]) continue;
         msg.nick = name;
         await kv('lset', 'chat:messages', String(i), JSON.stringify(msg));
         count++;
