@@ -4,7 +4,7 @@
       "id": "index.html",
       "label": "index.html",
       "type": "file",
-      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat)."
+      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout)."
     },
     {
       "id": "api/reactions.js",
@@ -292,7 +292,7 @@
       "id": "DesktopLayout",
       "label": "Layout desktop du player",
       "type": "feature",
-      "summary": "A partir de 1024px : grille CSS 2 colonnes. Redesign 2026-07-20 (2 iterations) : (1) la colonne laterale scrolle desormais comme un bloc (overflow-y:auto) au lieu de faire jongler les hauteurs des panneaux via flex-grow/shrink — fragile des que 3+ panneaux sont ouverts (chevauchement observe) ; (2) Top 5 deplace dans .main-col juste sous Historique (regroupement logique lecture/popularite), Supporters ouvert par defaut en tete de .sidebar-col juste sous Chat (mis en avant, contributeurs reels de la radio). Mobile inchange (display:contents + order, aucun impact du deplacement HTML)."
+      "summary": "A partir de 1024px : grille CSS 2 colonnes. Redesign 2026-07-20 (2 iterations), puis 3e iteration meme jour : (1) colonne laterale en scroll de bloc, abandonnee ensuite ; (2) Top 5 sous Historique, Supporters en tete de .sidebar-col ; (3) le scroll de bloc laissait un grand vide sous Chat/Supporters quand leur contenu cumule etait plus court que .main-col — remplace par .sidebar-col qui matche a nouveau la hauteur de .main-col (height:0/min-height:100%) mais c'est desormais #chatPanel qui s'etire en flex (flex:1) pour absorber tout l'espace restant, Supporters gardant sa hauteur naturelle plafonnee (#supportersList max-height:240px+scroll interne, garde-fou vu l'absence de plafond cote serveur). Contournement necessaire : le pseudo-element Chrome ::details-content (enveloppe le contenu d'un <details> ouvert pour l'animation) est display:block par defaut et casse la chaine flex meme si panel-body a flex:1 — doit etre force en display:flex explicitement. Mobile inchange (display:contents + order, .chat-list garde ses 260px fixes)."
     },
     {
       "id": "api/supporters.js",
@@ -785,8 +785,8 @@
     {
       "source": "DesktopLayout",
       "target": "ChatFeature",
-      "relation": "place en colonne laterale",
-      "weight": 1
+      "relation": "fait du chat l'element flexible qui comble l'espace vertical restant de la colonne laterale",
+      "weight": 2
     },
     {
       "source": "DesktopLayout",
