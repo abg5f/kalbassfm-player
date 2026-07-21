@@ -14,10 +14,9 @@
 const MAX_SCORE = 100000;
 const MAX_LEADERBOARD_SIZE = 500; // borne la croissance, on ne garde que le Top
 
-// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
-// mensuel depasse a repetition, voir CONTEXT.md) — a remettre a false
-// EN MEME TEMPS que REDIS_PAUSED dans api/chat.js et api/supporters.js.
-const REDIS_PAUSED = true;
+// Reactive le 2026-07-21 : Upstash passe en Pay As You Go + Top 5 retire
+// (gros consommateur), donc quota nettement moins a risque.
+const REDIS_PAUSED = false;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -14,14 +14,9 @@
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
 const STATION = 'kalbassfm';
 
-// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
-// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
-// a false pour reactiver. kvClient() renvoie null pendant la pause, donc
-// chaque commande Redis (/ban, /rename, /pin, /msg, /recent, /stats, etc.)
-// echoue proprement avec son message "store non configure" existant, sans
-// toucher Upstash. Les commandes qui ne touchent que AzuraCast (/skip,
-// /jingle, /delete_track, /np) ou Claude (/ask) continuent de fonctionner.
-const REDIS_PAUSED = true;
+// Reactive le 2026-07-21 : Upstash passe en Pay As You Go + Top 5 retire
+// (gros consommateur), donc quota nettement moins a risque.
+const REDIS_PAUSED = false;
 
 // Marge large : les autres commandes (AzuraCast, Redis) sont deja rapides,
 // mais /ask attend une reponse Claude avant de repondre a Telegram — sur le

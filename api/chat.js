@@ -16,11 +16,9 @@
 */
 const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|me|tv|info|biz|xyz|gg|app|shop))/i;
 
-// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
-// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
-// a false pour reactiver. Se comporte exactement comme un store non
-// configure (le front bascule deja proprement sur ce cas).
-const REDIS_PAUSED = true;
+// Reactive le 2026-07-21 : Upstash passe en Pay As You Go + Top 5 retire
+// (gros consommateur), donc quota nettement moins a risque.
+const REDIS_PAUSED = false;
 
 // Messages automatiques d'animation du chat, postes "paresseusement" au fil
 // des GET (le chat est polle toutes les 3s par les auditeurs — pas besoin de

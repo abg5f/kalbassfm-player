@@ -45,13 +45,9 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
-// Coupure manuelle le temps de statuer sur la suite pour Upstash (quota
-// mensuel depasse a repetition, voir la conversation du 2026-07-21) — remettre
-// a false pour reactiver. Se comporte exactement comme un store non
-// configure (le front bascule deja proprement sur ce cas). Coupe aussi le
-// webhook Buy Me a Coffee (POST) : mieux vaut rater un remerciement en direct
-// que de continuer a consommer le quota pendant la pause.
-const REDIS_PAUSED = true;
+// Reactive le 2026-07-21 : Upstash passe en Pay As You Go + Top 5 retire
+// (gros consommateur), donc quota nettement moins a risque.
+const REDIS_PAUSED = false;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
