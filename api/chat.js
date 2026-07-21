@@ -74,9 +74,13 @@ export default async function handler(req, res) {
       const deletedFields = dj.result || [];
       const deletedIds = new Set();
       for (let i = 0; i < deletedFields.length; i += 2) deletedIds.add(deletedFields[i]);
+      // clientId n'est stocke dans le message que pour permettre a /rename
+      // (api/telegram.js) de reecrire l'historique — jamais expose aux
+      // auditeurs, meme principe que chat:banned/chat:nicknames.
       const messages = raw
         .map((s) => { try { return JSON.parse(s); } catch { return null; } })
-        .filter((m) => m && !deletedIds.has(m.id));
+        .filter((m) => m && !deletedIds.has(m.id))
+        .map(({ clientId, ...m }) => m);
       return res.status(200).json({ enabled: true, messages, pinned: pj.result || null });
     } catch {
       return res.status(200).json({ enabled: false, messages: [] });
@@ -126,8 +130,8 @@ export default async function handler(req, res) {
     // sur celui choisi par le client.
     const finalNick = supporterName || renamedNick || nick;
     const msg = supporterName
-      ? { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), supporter: true }
-      : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now() };
+      ? { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), supporter: true, clientId }
+      : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), clientId };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
     // Compteur quotidien (jour Martinique UTC-4) lu par /stats du bot Telegram.

@@ -133,7 +133,8 @@ async function handleMessage(token, message) {
     const name = spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim();
     if (!id || !name) return sendMessage(token, chatId, 'Usage : /rename <clientId> <nouveau pseudo> (copie le clientId depuis une notification de chat)');
     const ok = await setChatNickname(id, name);
-    return sendMessage(token, chatId, ok ? `✏️ ${id} apparaîtra désormais comme "${name}" dans le chat.` : '❌ Echec (store non configure ?).');
+    if (ok) await renameHistory(id, name);
+    return sendMessage(token, chatId, ok ? `✏️ ${id} apparaîtra désormais comme "${name}" dans le chat (historique compris).` : '❌ Echec (store non configure ?).');
   }
 
   if (text.startsWith('/unrename')) {
@@ -718,6 +719,28 @@ async function setChatNickname(clientId, name) {
   if (name) await kv('hset', 'chat:nicknames', clientId, name.slice(0, 30));
   else await kv('hdel', 'chat:nicknames', clientId);
   return true;
+}
+
+// Reecrit le pseudo dans les messages deja postes par ce clientId (pas
+// seulement les messages a venir). Necessite que chaque message stocke son
+// clientId (ajoute cote api/chat.js, jamais renvoye au GET public — voir le
+// commentaire associe la-bas). LSET met a jour en place, sans reordonner la
+// liste. Best effort silencieux : n'affecte jamais le resultat de /rename.
+async function renameHistory(clientId, name) {
+  const kv = kvClient();
+  if (!kv || !clientId) return;
+  try {
+    const lj = await kv('lrange', 'chat:messages', '0', '-1');
+    const raw = lj.result || [];
+    for (let i = 0; i < raw.length; i++) {
+      let msg;
+      try { msg = JSON.parse(raw[i]); } catch { continue; }
+      if (msg.clientId === clientId) {
+        msg.nick = name;
+        await kv('lset', 'chat:messages', String(i), JSON.stringify(msg));
+      }
+    }
+  } catch {}
 }
 
 async function setPaused(paused) {
