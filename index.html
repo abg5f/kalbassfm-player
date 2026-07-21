@@ -683,8 +683,9 @@
       font-size: .74rem;
       word-break: break-word;
     }
-    /* Messages admin (bot Telegram, flag serveur) : texte en gras */
+    /* Messages admin (bot Telegram, flag serveur) : texte en gras, pseudo en orange */
     .chat-item-admin .chat-text { font-weight: 700; }
+    .chat-item-admin .chat-nick { color: var(--accent-2); }
     /* Supporters (lien clientId<->nom pose par l'admin via /mark_supporter,
        jamais derive du pseudo client) : pseudo en couleur secondaire */
     .chat-item-supporter .chat-nick { color: var(--accent-2); }

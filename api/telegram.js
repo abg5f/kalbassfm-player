@@ -153,6 +153,16 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? `✅ Pseudo réinitialisé : ${id}` : '❌ Echec (store non configure ?).');
   }
 
+  if (text.startsWith('/rename_nick')) {
+    const body = text.slice('/rename_nick'.length).trim();
+    const spaceIdx = body.indexOf(' ');
+    const oldNick = stripAngles(spaceIdx === -1 ? body : body.slice(0, spaceIdx));
+    const name = stripAngles(spaceIdx === -1 ? '' : body.slice(spaceIdx + 1).trim());
+    if (!oldNick || !name) return sendMessage(token, chatId, 'Usage : /rename_nick <ancien pseudo exact> <nouveau pseudo> — rattrape les messages postés avant que /rename ne connaisse le clientId (ex: "Listener-2216"). Ne renomme pas les messages à venir : utilise /rename pour ça.');
+    const n = await renameHistoryByNick(oldNick, name);
+    return sendMessage(token, chatId, n > 0 ? `✏️ ${n} message(s) renommé(s) de "${oldNick}" vers "${name}".` : `Aucun message trouvé avec le pseudo exact "${oldNick}".`);
+  }
+
   if (text === '/pause_chat') {
     const ok = await setPaused(true);
     return sendMessage(token, chatId, ok ? '⏸ Chat en pause — plus personne ne peut poster.' : '❌ Echec (store non configure ?).');
@@ -309,6 +319,7 @@ async function handleMessage(token, message) {
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
     '/mark_supporter <clientId> <nom> / /unmark_supporter <clientId> — badge ☕ dans le chat\n' +
     '/rename <clientId> <pseudo> / /unrename <clientId> — imposer un pseudo (moderation)\n' +
+    '/rename_nick <ancien pseudo exact> <nouveau pseudo> — rattrape l\'historique quand /rename ne trouve pas de clientId\n' +
     '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
     '🤖 Assistant\n' +
@@ -750,6 +761,32 @@ async function renameHistory(clientId, name) {
       }
     }
   } catch {}
+}
+
+// Rattrapage pour l'historique poste AVANT l'ajout du clientId dans chaque
+// message (voir renameHistory ci-dessus) : matche sur le pseudo affiche tel
+// quel plutot que sur le clientId. A manier avec discernement — le pseudo
+// auto-genere ("Listener-XXXX", derive du clientId modulo 9000) n'est pas
+// garanti unique entre auditeurs differents, contrairement au clientId.
+// Exclut les messages admin (nick "KALBASSFM") par securite.
+async function renameHistoryByNick(oldNick, name) {
+  const kv = kvClient();
+  if (!kv) return 0;
+  let count = 0;
+  try {
+    const lj = await kv('lrange', 'chat:messages', '0', '-1');
+    const raw = lj.result || [];
+    for (let i = 0; i < raw.length; i++) {
+      let msg;
+      try { msg = JSON.parse(raw[i]); } catch { continue; }
+      if (msg.nick === oldNick && !msg.admin) {
+        msg.nick = name;
+        await kv('lset', 'chat:messages', String(i), JSON.stringify(msg));
+        count++;
+      }
+    }
+  } catch {}
+  return count;
 }
 
 async function setPaused(paused) {
