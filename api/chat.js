@@ -27,15 +27,13 @@ const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|
    BPM n'existe nulle part dans l'API AzuraCast elle-meme (verifie : le champ
    custom_fields est vide) -- cette table est la seule source de verite.
 
-   Charge via fs.readFileSync plutot qu'un import JSON direct : evite toute
-   dependance a l'assertion d'import JSON (`with { type: 'json' }`), pas
-   uniformement supportee selon la version de Node -- readFileSync fonctionne
-   partout, bundle ou non. */
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-const bpmTable = JSON.parse(
-  fs.readFileSync(fileURLToPath(new URL('./bpm-table.json', import.meta.url)), 'utf8')
-);
+   Import JSON statique + assertion de type : la premiere version utilisait
+   fs.readFileSync(import.meta.url), qui plantait la fonction entiere en prod
+   (500 sur /api/chat, chat invisible pour tous les auditeurs) -- evite donc
+   totalement import.meta.url ici. L'assertion `with { type: 'json' }` est
+   necessaire pour le loader ESM natif de Node (verifie en local) ; les
+   bundlers (esbuild, utilise par Vercel) la respectent aussi sans probleme. */
+import bpmTable from './bpm-table.json' with { type: 'json' };
 
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
 const STATION = 'kalbassfm';
