@@ -699,6 +699,19 @@
       word-break: break-word;
     }
     .chat-pinned.show { display: block; }
+    /* Pseudo courant + bouton pour le changer (au-dessus du chat) */
+    .nick-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: .62rem;
+      color: var(--muted);
+    }
+    .nick-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .nick-form { display: none; gap: 8px; margin-bottom: 8px; }
+    .nick-form.show { display: flex; }
     /* Formulaire de demande / dedicace (masque par defaut) */
     .request-form { display: none; gap: 8px; margin-top: 8px; }
     .request-form.show { display: flex; }
@@ -1102,6 +1115,15 @@
         <span class="chev">›</span>
       </summary>
       <div class="panel-body">
+        <div class="nick-row">
+          <span class="nick-current" id="nickCurrent"></span>
+          <button class="chip" id="nickBtn" type="button" aria-label="Set your chat nickname">✎ Set nickname</button>
+        </div>
+        <form class="nick-form" id="nickForm">
+          <input class="chat-input" id="nickInput" type="text" maxlength="30" placeholder="Choose a nickname..." autocomplete="off" aria-label="Nickname">
+          <button class="chip" id="nickSend" type="submit">Save</button>
+        </form>
+        <p class="request-note" id="nickNote"></p>
         <div class="chat-pinned" id="chatPinned"></div>
         <div class="chat-list" id="chatList"></div>
         <p class="chat-error" id="chatError" style="display:none"></p>
@@ -1220,6 +1242,12 @@
   const chatInput = document.getElementById('chatInput');
   const chatSend  = document.getElementById('chatSend');
   const chatError = document.getElementById('chatError');
+  const nickCurrent = document.getElementById('nickCurrent');
+  const nickBtn     = document.getElementById('nickBtn');
+  const nickForm    = document.getElementById('nickForm');
+  const nickInput   = document.getElementById('nickInput');
+  const nickSend    = document.getElementById('nickSend');
+  const nickNote    = document.getElementById('nickNote');
 
   document.getElementById('stationName').textContent = CONFIG.stationName;
   document.title = CONFIG.stationName + ' — Caribbean FM';
@@ -1464,7 +1492,58 @@
     return v;
   }
   const clientId = getClientId();
-  const chatNick = 'Listener-' + (parseInt(clientId.replace(/[^0-9]/g, '').slice(0, 8) || '0', 10) % 9000 + 1000);
+  const defaultNick = 'Listener-' + (parseInt(clientId.replace(/[^0-9]/g, '').slice(0, 8) || '0', 10) % 9000 + 1000);
+  // Pseudo choisi via "Set nickname" : garde en local pour cet appareil et
+  // miroir cote serveur (chat:pseudos, cf. api/chat.js) pour rester la source
+  // de verite si le cache local est efface mais pas kfm_client_id. Retombe
+  // sur le pseudo Listener-XXXX par defaut tant qu'aucun n'a ete choisi, ou
+  // sur un autre appareil/navigateur.
+  let chatNick = localStorage.getItem('kfm_nick') || defaultNick;
+
+  function renderNickCurrent() {
+    nickCurrent.textContent = 'Chatting as ' + chatNick;
+  }
+  renderNickCurrent();
+
+  let nickNoteTimer = null;
+  function showNickNote(msg) {
+    nickNote.textContent = msg;
+    clearTimeout(nickNoteTimer);
+    nickNoteTimer = setTimeout(() => { nickNote.textContent = ''; }, 4000);
+  }
+  nickBtn.addEventListener('click', () => {
+    if (nickForm.classList.toggle('show')) {
+      nickInput.value = chatNick === defaultNick ? '' : chatNick;
+      nickInput.focus();
+    }
+  });
+  let nickCooldown = false;
+  nickForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const desired = nickInput.value.trim();
+    if (!desired || nickCooldown) return;
+    nickCooldown = true;
+    nickSend.disabled = true;
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, setNick: desired }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        chatNick = j.nick;
+        localStorage.setItem('kfm_nick', chatNick);
+        renderNickCurrent();
+        nickForm.classList.remove('show');
+        showNickNote('Nickname saved!');
+      } else {
+        showNickNote('That nickname is not allowed — try another one.');
+      }
+    } catch { showNickNote('Could not save — try again.'); }
+    nickCooldown = false;
+    nickSend.disabled = false;
+  });
 
   function formatChatTime(ts) {
     const d = new Date(ts);
