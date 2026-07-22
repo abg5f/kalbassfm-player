@@ -16,6 +16,71 @@
 */
 const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|me|tv|info|biz|xyz|gg|app|shop))/i;
 
+/* ---- Jeu "devine le BPM" ----
+   Un message compose uniquement d'un nombre plausible (60-200) est traite
+   comme une tentative de deviner le BPM du morceau en cours -- il reste
+   affiche normalement dans le chat (rien de special cote front), mais
+   declenche en plus une reponse automatique du bot juste apres. bpm-table.json
+   (genere par tools/export_bpm_table.py a partir des tags ID3 reels + du BPM
+   Essentia de tools/metadata.json) associe artiste+titre exacts -> BPM ; ce
+   sont les memes tags qu'AzuraCast affiche, donc le matching est direct. Le
+   BPM n'existe nulle part dans l'API AzuraCast elle-meme (verifie : le champ
+   custom_fields est vide) -- cette table est la seule source de verite.
+
+   Charge via fs.readFileSync plutot qu'un import JSON direct : evite toute
+   dependance a l'assertion d'import JSON (`with { type: 'json' }`), pas
+   uniformement supportee selon la version de Node -- readFileSync fonctionne
+   partout, bundle ou non. */
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+const bpmTable = JSON.parse(
+  fs.readFileSync(fileURLToPath(new URL('./bpm-table.json', import.meta.url)), 'utf8')
+);
+
+const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
+const STATION = 'kalbassfm';
+// AzuraCast rejette parfois les requetes API sans User-Agent credible
+// (detection anti-crawler, deja rencontre sur /requests dans api/telegram.js).
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function normalizeKey(s) {
+  return (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+// Index construit une fois au chargement du module, reutilise tant que
+// l'instance serverless reste chaude (pas de cout par requete).
+const BPM_INDEX = new Map();
+for (const t of bpmTable) {
+  BPM_INDEX.set(normalizeKey(t.artist) + '|' + normalizeKey(t.title), t.bpm);
+}
+
+function parseBpmGuess(text) {
+  const m = /^(\d{2,3})$/.exec(text);
+  if (!m) return null;
+  const n = parseInt(m[1], 10);
+  return (n >= 60 && n <= 200) ? n : null;
+}
+
+// Retourne null si le morceau en cours n'est pas dans bpm-table.json (jamais
+// analyse par le pipeline Essentia) ou en cas d'erreur reseau -- le jeu reste
+// alors silencieux plutot que de repondre "je ne sais pas" a chaque tentative.
+async function getCurrentTrackBpm() {
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/nowplaying/${STATION}`, {
+      headers: { 'User-Agent': BROWSER_UA },
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    const song = (d.now_playing && d.now_playing.song) || {};
+    if (!song.title) return null;
+    const bpm = BPM_INDEX.get(normalizeKey(song.artist) + '|' + normalizeKey(song.title));
+    if (bpm === undefined) return null;
+    return { bpm, artist: song.artist, title: song.title };
+  } catch {
+    return null;
+  }
+}
+
 // Reactive le 2026-07-21 : Upstash passe en Pay As You Go + Top 5 retire
 // (gros consommateur), donc quota nettement moins a risque.
 const REDIS_PAUSED = false;
@@ -169,6 +234,28 @@ export default async function handler(req, res) {
     await kv('incr', `stats:msg:${day}`);
     await kv('expire', `stats:msg:${day}`, '172800');
     await notifyTelegram(kv, msg, clientId);
+
+    // Jeu "devine le BPM" : le message du joueur reste un message normal
+    // (ci-dessus) ; s'il ressemble a une tentative, le bot repond en plus.
+    // getCurrentTrackBpm() ne leve jamais -- un echec ne doit jamais faire
+    // regresser la reponse ok:true deja acquise pour le message du joueur.
+    const guess = parseBpmGuess(text);
+    if (guess !== null) {
+      const track = await getCurrentTrackBpm();
+      if (track) {
+        const correct = Math.abs(guess - Math.round(track.bpm)) <= 1;
+        const reply = correct
+          ? `🎉 NICE ONE ${finalNick}! ${track.artist} — ${track.title} is indeed ${Math.round(track.bpm)} BPM!`
+          : `😅 NOT QUITE ${finalNick} — try again!`;
+        const botMsg = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+          nick: '📻 KALBASSFM', text: reply, ts: Date.now(), admin: true,
+        };
+        await kv('lpush', 'chat:messages', JSON.stringify(botMsg));
+        await kv('ltrim', 'chat:messages', '0', '99');
+      }
+    }
+
     return res.status(200).json({ enabled: true, ok: true });
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
