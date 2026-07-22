@@ -325,7 +325,7 @@ async function handleMessage(token, message) {
     '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
     '📊 Stats\n' +
     '/stats — auditeurs et messages du jour\n\n' +
-    'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous 📻 KALBASSFM.');
+    'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous Admin.');
 }
 
 async function handleCallback(token, cb) {
@@ -351,7 +351,7 @@ async function handleCallback(token, cb) {
     await setPendingReply(fromId, orig);
     await answerCallback(token, cb.id, 'Écris ta réponse maintenant');
     await sendMessage(token, cb.message.chat.id,
-      `✍️ Écris ta réponse à « ${orig.nick} » — je la posterai dans le chat live sous 📻 KALBASSFM.`,
+      `✍️ Écris ta réponse à « ${orig.nick} » — je la posterai dans le chat live sous Admin.`,
       { reply_markup: { force_reply: true } });
   } else if (data.startsWith('del:')) {
     const id = data.slice(4);
@@ -610,7 +610,7 @@ async function postAdminMessage(text) {
   if (!kv) return null;
   // admin:true est pose UNIQUEMENT ici (cote serveur) — le front l'utilise pour
   // mettre le message en valeur, un client ne peut pas le forger.
-  const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: '📻 KALBASSFM', text: text.slice(0, 200), ts: Date.now(), admin: true };
+  const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: 'Admin', text: text.slice(0, 200), ts: Date.now(), admin: true };
   await kv('lpush', 'chat:messages', JSON.stringify(msg));
   await kv('ltrim', 'chat:messages', '0', '99');
   return msg.id;
@@ -629,7 +629,7 @@ async function postAdminReply(text, orig) {
   if (!kv) return null;
   const msg = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-    nick: '📻 KALBASSFM',
+    nick: 'Admin',
     text: text.slice(0, 200),
     ts: Date.now(),
     admin: true,
@@ -783,7 +783,7 @@ async function renameHistory(clientId, name) {
 // quel plutot que sur le clientId. A manier avec discernement — le pseudo
 // auto-genere ("Listener-XXXX", derive du clientId modulo 9000) n'est pas
 // garanti unique entre auditeurs differents, contrairement au clientId.
-// Exclut les messages admin (nick "KALBASSFM") par securite. Meme garde-fou
+// Exclut les messages admin (nick "Admin") par securite. Meme garde-fou
 // LINDEX que renameHistory contre les LPUSH concurrents — voir ce commentaire.
 // Idempotent : si le compte renvoye est inferieur au nombre attendu (des
 // entrees ont decale pendant la boucle), relancer la meme commande rattrape

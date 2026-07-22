@@ -125,7 +125,7 @@ export default async function handler(req, res) {
     // admin:true est pose UNIQUEMENT cote serveur, meme convention que
     // partout ailleurs (api/telegram.js, api/chat.js) — affiche en gras.
     const thankYou = message ? `☕ ${prefix}Thanks ${name} for the coffee! "${message}"` : `☕ ${prefix}Thanks ${name} for the coffee!`;
-    const chatMsg = { id, nick: '📻 KALBASSFM', text: thankYou.slice(0, 200), ts: Date.now(), admin: true };
+    const chatMsg = { id, nick: 'Admin', text: thankYou.slice(0, 200), ts: Date.now(), admin: true };
     await kv('lpush', 'chat:messages', JSON.stringify(chatMsg));
     await kv('ltrim', 'chat:messages', '0', '99');
 

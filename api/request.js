@@ -1,7 +1,7 @@
 /* Demande de titre / dedicace d'un auditeur, relayee UNIQUEMENT a l'admin
    Telegram (jamais postee directement dans le chat public — l'admin decide).
    L'admin peut y repondre depuis Telegram (bouton "↩️ Repondre" ou reponse
-   native) : la reponse apparait alors dans le chat live sous 📻 KALBASSFM,
+   native) : la reponse apparait alors dans le chat live sous Admin,
    grace au meme mapping chat:tgmap:<message_id> que api/chat.js.
 
    Sans bot configure (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID), renvoie

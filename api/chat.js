@@ -110,7 +110,7 @@ async function maybeAnnounce(kv) {
     const day = mq.toISOString().slice(0, 10);
     const lock = await kv('set', `chat:auto:${a.key}:${day}`, '1', 'EX', '90000', 'NX');
     if (lock.result !== 'OK') return;
-    const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: '📻 KALBASSFM', text: a.text, ts: Date.now(), admin: true, auto: true };
+    const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: 'Admin', text: a.text, ts: Date.now(), admin: true, auto: true };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
   } catch {}
@@ -126,7 +126,7 @@ async function maybeAnnounceOnce(kv) {
     if (lock.result !== 'OK') return;
     const msg = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      nick: '📻 KALBASSFM',
+      nick: 'Admin',
       text: '🐦 New: Flappy Kalbass is live — tap the bird icon up top and go smash the leaderboard!',
       ts: Date.now(),
       admin: true,
@@ -190,7 +190,7 @@ export default async function handler(req, res) {
   // BpmGuesser, flag admin:true pose cote serveur dans les deux cas) ne
   // peuvent pas etre pris par un auditeur.
   let nick = (body.nick || 'Listener').toString().slice(0, 30);
-  if (/kalbassfm|^bpmguesser$/i.test(nick)) nick = 'Listener';
+  if (/kalbassfm|^admin$|^bpmguesser$/i.test(nick)) nick = 'Listener';
   const text = (body.text || '').toString().trim().slice(0, 200);
 
   if (!clientId || !text) return res.status(200).json({ enabled: true, ok: false });
