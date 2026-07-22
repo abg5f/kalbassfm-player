@@ -9,8 +9,6 @@
         "manifest.webmanifest",
         "PWAFeature",
         "EqualizerFeature",
-        "ReactionsFeature",
-        "TopFiveFeature",
         "ChatFeature",
         "ContactPopup",
         "ProgrammeGrid",
@@ -19,7 +17,8 @@
         "SupportersFeature",
         "VibeStreakFeature",
         "PinnedBannerFeature",
-        "RequestFeature"
+        "RequestFeature",
+        "FlappyKalbassFeature"
       ]
     },
     {
@@ -39,19 +38,21 @@
     },
     {
       "id": "serverless-api",
-      "label": "Serverless / API (vote + chat + bot Telegram admin) + vote playlist planifie",
+      "label": "Serverless / API (chat + bot Telegram admin + Flappy) + vote playlist planifie",
       "members": [
-        "api/reactions.js",
         "api/chat.js",
         "VercelKV",
-        "TopFiveFeature",
         "ChatFeature",
         "VotingSystemPlan",
         "api/telegram.js",
         "TelegramBotFeature",
         "api/supporters.js",
+        "api/flappy.js",
+        "FlappyKalbassFeature",
         "ReplyFeature",
-        "SupporterBadgeFeature"
+        "SupporterBadgeFeature",
+        "ChatRenameFeature",
+        "RedisQuotaIncident"
       ]
     },
     {

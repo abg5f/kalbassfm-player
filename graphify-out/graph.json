@@ -7,12 +7,6 @@
       "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout)."
     },
     {
-      "id": "api/reactions.js",
-      "label": "api/reactions.js",
-      "type": "file",
-      "summary": "Fonction serverless Vercel : votes 🔥 par morceau + endpoint classement Top 5 (sorted set Redis ZINCRBY/ZRANGE), backée par Upstash Redis REST. Depuis 2026-07-20 : plafond de 10 votes par clientId et par morceau (hash votes:<epoch>:<id>, HINCRBY + rollback si depassement), clientId desormais obligatoire (rejet sinon, faille de contournement fermee). Reset du classement via compteur d'epoch (top5:epoch) pilote par /reset_top5 du bot Telegram — incrementer l'epoch vide instantanement leaderboard ET plafonds sans lister/supprimer de cles."
-    },
-    {
       "id": "sw.js",
       "label": "sw.js",
       "type": "file",
@@ -124,13 +118,7 @@
       "id": "VercelKV",
       "label": "Upstash for Redis (via Vercel Storage)",
       "type": "infra",
-      "summary": "Store clé-valeur REST utilisé par api/reactions.js (et prévu pour api/vote.js) ; connecté en prod (Production+Preview) le 2026-07-16, région Washington D.C., plan Free — remplace l'ancien produit natif 'Vercel KV'."
-    },
-    {
-      "id": "TopFiveFeature",
-      "label": "Classement Top 5 🔥",
-      "type": "feature",
-      "summary": "Panneau #topPanel/#topList dans index.html : jauges proportionnelles au score, poll toutes les 4s + re-poll immédiat après chaque vote (effet 'live'). Repli 'Classement bientôt disponible.' si KV désactivé."
+      "summary": "Store cle-valeur REST Upstash (via Vercel Storage), backend commun a api/chat.js, api/supporters.js, api/flappy.js et api/telegram.js. Incident 2026-07-21 (voir RedisQuotaIncident) : plan gratuit (500k commandes/mois) epuise plusieurs fois par le polling front (99% lectures), remis a plat (Top 5 retire) puis passe en Pay As You Go — plus de plafond dur."
     },
     {
       "id": "tools/build_rotation.py",
@@ -173,12 +161,6 @@
       "label": "AzuraCast Admin/Playlists API",
       "type": "concept",
       "summary": "API REST protégée par clé (GET /station/{id}/playlists, POST /station/{id}/playlist/{id}/toggle) — nécessaire pour le futur système de vote, jamais appelée depuis le navigateur."
-    },
-    {
-      "id": "ReactionsFeature",
-      "label": "Votes 🔥",
-      "type": "feature",
-      "summary": "Vote libre et illimité par morceau (plus de limite 1/auditeur — retirée le 2026-07-16), optimiste côté client, réconcilié via api/reactions.js + Upstash Redis."
     },
     {
       "id": "EqualizerFeature",
@@ -238,7 +220,7 @@
       "id": "api/chat.js",
       "label": "api/chat.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM à 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation (chat:auto:<key>:<day>), anti-usurpation du pseudo KALBASSFM. Depuis 2026-07-20 : mapping chat:tgmap:<message_id_telegram> -> message live (TTL 3j) pour permettre a l'admin de repondre nativement depuis Telegram (fonctionnalite Reply, portee par api/telegram.js) ; bandeau chat:pinned pour l'annonce epinglee pilotee par /pin /unpin ; lookup chat:supporters (hash clientId->nom, pose par /mark_supporter) a chaque POST pour surclasser le pseudo + poser supporter:true, meme principe de confiance server-only que admin:true."
+      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM a 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation (chat:auto:<key>:<day>) + annonce ponctuelle unique verrou SET NX sans expiration (chat:announced:flappy, lancement Flappy Kalbass), anti-usurpation du pseudo KALBASSFM. Mapping chat:tgmap (reponse Telegram citee), bandeau chat:pinned (+ chat:pinned:backup restaure automatiquement a la reprise apres /pause_chat), lookup chat:supporters (badge) et chat:nicknames (pseudo impose par /rename, cf ChatRenameFeature) a chaque POST, priorite supporter > rename > pseudo client. clientId stocke sur chaque message (jamais renvoye au GET public) pour permettre a /rename de reecrire l'historique. Depuis l'incident Redis (2026-07-21) : detection d'erreur Upstash (result manquant = echec, pas une liste vide) au lieu de la traiter silencieusement comme vide ; flag REDIS_PAUSED (kill-switch manuel, actuellement false)."
     },
     {
       "id": "ChatFeature",
@@ -274,13 +256,13 @@
       "id": "tools/triage_new_tracks.py",
       "label": "triage_new_tracks.py",
       "type": "file",
-      "summary": "Pipeline d'ingestion _incoming : nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 8 bacs via classify_bins (seuils auto-calibres), depot sous nom propre (plus de prefixe d'ordre). Rapport HTML live auto-refresh."
+      "summary": "Pipeline d'ingestion _incoming : nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 8 bacs via classify_bins, depot sous nom propre. Rapport HTML live auto-refresh. File de retry (tools/pending_uploads.json) : memorise les morceaux classes localement mais dont l'envoi SFTP a echoue (serveur injoignable), retentes automatiquement en debut de run suivant sans intervention manuelle."
     },
     {
       "id": "api/telegram.js",
       "label": "api/telegram.js",
       "type": "file",
-      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes historiques : /skip, /msg, /jingle, /ban /unban, /pause_chat /resume_chat. Ajouts 2026-07-19/20 : reponse native Telegram (Reply) OU bouton dedie -> postee comme reponse citee dans le chat live ; /recent et /recent_supporters (suppression retroactive avec boutons) ; /add_supporter (ajout manuel, don recu avant webhook BMC) ; /reset_top5 (incremente top5:epoch) ; /pin /unpin (bandeau chat:pinned) ; /np /stats ; /delete_track /delete_current_track (recherche+suppression bibliotheque AzuraCast, fallback progressif titre/artiste/phrase) ; /ask (brainstorm via l'API Claude, requete HTTP brute, pas de SDK) ; /mark_supporter /unmark_supporter (lie un clientId a un nom de supporter dans le hash chat:supporters, meme patron que /ban)."
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (epingle desormais un bandeau d'avertissement, sauvegarde/restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (cf ChatRenameFeature, avec stripAngles() tolerant aux chevrons colles depuis l'usage et garde-fou LINDEX contre les LPUSH concurrents). handleCallback repond desormais toujours au tap (try/catch, message d'echec explicite au lieu du silence total en cas d'erreur Redis). kvClient() retourne null pendant REDIS_PAUSED (kill-switch manuel, actuellement false) exactement comme un store non configure. /reset_top5 retire avec le Top 5."
     },
     {
       "id": "TelegramBotFeature",
@@ -292,13 +274,13 @@
       "id": "DesktopLayout",
       "label": "Layout desktop du player",
       "type": "feature",
-      "summary": "A partir de 1024px : grille CSS 2 colonnes. Redesign 2026-07-20 (2 iterations), puis 3e iteration meme jour : (1) colonne laterale en scroll de bloc, abandonnee ensuite ; (2) Top 5 sous Historique, Supporters en tete de .sidebar-col ; (3) le scroll de bloc laissait un grand vide sous Chat/Supporters quand leur contenu cumule etait plus court que .main-col — remplace par .sidebar-col qui matche a nouveau la hauteur de .main-col (height:0/min-height:100%) mais c'est desormais #chatPanel qui s'etire en flex (flex:1) pour absorber tout l'espace restant, Supporters gardant sa hauteur naturelle plafonnee (#supportersList max-height:240px+scroll interne, garde-fou vu l'absence de plafond cote serveur). Contournement necessaire : le pseudo-element Chrome ::details-content (enveloppe le contenu d'un <details> ouvert pour l'animation) est display:block par defaut et casse la chaine flex meme si panel-body a flex:1 — doit etre force en display:flex explicitement. Mobile inchange (display:contents + order, .chat-list garde ses 260px fixes)."
+      "summary": "A partir de 1024px : grille CSS 2 colonnes (lecteur + colonne laterale Chat/Supporters). Redesign 2026-07-20 (voir historique) ; Top 5 retire du layout le 2026-07-21 avec la suppression de la feature. Contournement necessaire : le pseudo-element Chrome ::details-content (enveloppe le contenu d'un <details> ouvert pour l'animation) est display:block par defaut et casse la chaine flex meme si panel-body a flex:1. Mobile inchange (display:contents + order)."
     },
     {
       "id": "api/supporters.js",
       "label": "api/supporters.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel (2026-07-20) : recoit le webhook Buy Me a Coffee (donation.created), verifie la signature HMAC-SHA256 sur le corps brut (lu manuellement avant que le parseur JSON de Vercel ne consomme le flux). Sur un don valide : pousse dans la liste Redis supporters (LPUSH/LTRIM 49), poste un message de remerciement admin dans chat:messages (meme schema que api/chat.js), notifie l'admin sur Telegram. Evenements de test BMC (live_mode:false) etiquetes '🧪 [TEST]' plutot que postes comme reels. GET public pour le panneau front, filtre les entrees supprimees via supporters:deleted (ecrit par api/telegram.js)."
+      "summary": "Fonction serverless Vercel : recoit le webhook Buy Me a Coffee (donation.created), verifie la signature HMAC-SHA256 sur le corps brut. Sur un don valide : pousse dans la liste Redis supporters (LPUSH/LTRIM 49), poste un message de remerciement admin dans chat:messages, notifie l'admin sur Telegram. Evenements de test BMC (live_mode:false) etiquetes. GET public filtre les entrees supprimees via supporters:deleted. Detection d'erreur Upstash (result manquant = echec) + flag REDIS_PAUSED (kill-switch manuel, actuellement false) — repond quand meme 200 au webhook BMC pendant une pause pour ne pas le faire desactiver cote BMC (don alors non enregistre)."
     },
     {
       "id": "SupportersFeature",
@@ -328,7 +310,7 @@
       "id": "PinnedBannerFeature",
       "label": "Bandeau d'annonce epinglee",
       "type": "feature",
-      "summary": "Annonce mise en avant en haut du chat live, pilotee par /pin et /unpin depuis Telegram (stockee dans chat:pinned via api/chat.js)."
+      "summary": "Annonce mise en avant en haut du chat live, pilotee par /pin et /unpin depuis Telegram (stockee dans chat:pinned via api/chat.js). /pause_chat epingle automatiquement un bandeau d'avertissement (sauvegardant l'annonce existante dans chat:pinned:backup) ; /resume_chat la restaure au lieu de la perdre."
     },
     {
       "id": "RequestFeature",
@@ -347,6 +329,30 @@
       "label": "Badge supporter dans le chat",
       "type": "feature",
       "summary": "Un supporter marque par l'admin (/mark_supporter <clientId> <nom>) voit son pseudo surclasse et affiche en couleur distincte (--accent-2) dans le chat live, quel que soit le pseudo qu'il a lui-meme choisi. Aucun lien automatique don<->clientId n'existe (pas de comptes, checkout sur BMC) : le rapprochement est manuel, fait par l'admin quand le supporter se manifeste dans le chat."
+    },
+    {
+      "id": "api/flappy.js",
+      "label": "api/flappy.js",
+      "type": "file",
+      "summary": "Fonction serverless Vercel (2026-07-21, nouveau) : backend du mini-jeu Flappy Kalbass — classement global des scores via Redis (meme pattern serverless+REST que l'ancien api/reactions.js, qu'il remplace comme exemple de leaderboard partage). Soumission de score + lecture du classement."
+    },
+    {
+      "id": "FlappyKalbassFeature",
+      "label": "Mini-jeu Flappy Kalbass",
+      "type": "feature",
+      "summary": "Mini-jeu popup (canvas) accessible via une icone oiseau dans le header du player, avec classement global des scores et decompte 3-2-1 au lancement (vitesse ralentie apres un premier retour). Lancement annonce une seule fois dans le chat live (verrou SET NX sans expiration dans api/chat.js)."
+    },
+    {
+      "id": "ChatRenameFeature",
+      "label": "Renommage moderateur du pseudo (chat)",
+      "type": "feature",
+      "summary": "L'admin impose un pseudo a un auditeur (/rename <clientId> <pseudo>, hash chat:nicknames dans api/chat.js — meme patron de confiance server-only que admin:true/supporter:true) sans lui donner le badge supporter. Reecrit aussi l'historique deja poste (renameHistory, LSET protege par verification LINDEX contre les LPUSH concurrents). /rename_nick <ancien pseudo exact> <nouveau> rattrape les messages postes avant que le clientId ne soit stocke sur chaque message (limitation initiale). Pseudo des messages admin (bot Telegram) colore en orange (--accent-2) pour se distinguer."
+    },
+    {
+      "id": "RedisQuotaIncident",
+      "label": "Incident quota Upstash (2026-07-21)",
+      "type": "event",
+      "summary": "Le plan gratuit Upstash (500k commandes/mois) a ete epuise plusieurs fois de suite : 99% des commandes etaient des lectures issues du polling front (chat 3-6s, Top 5 4-8s, supporters 30-45s) plutot que des ecritures admin. Symptome observe : le chat/Top 5/supporters clignotaient vers un etat vide (le code traitait silencieusement une reponse d'erreur Upstash comme une liste vide) et les boutons de suppression Telegram restaient sans effet visible (l'echec Redis interrompait handleCallback avant le retour au tap). Resolu par : espacement du polling, detection explicite des erreurs Upstash, coupure temporaire complete (REDIS_PAUSED) le temps de la reflexion, suppression definitive du Top 5/vote (plus gros consommateur), puis passage d'Upstash en Pay As You Go (plus de plafond dur) — REDIS_PAUSED repasse a false."
     }
   ],
   "edges": [
@@ -355,12 +361,6 @@
       "target": "NowPlayingAPI",
       "relation": "poll toutes les 8s",
       "weight": 3
-    },
-    {
-      "source": "index.html",
-      "target": "ReactionsFeature",
-      "relation": "implémente l'UI de",
-      "weight": 2
     },
     {
       "source": "index.html",
@@ -379,24 +379,6 @@
       "target": "PWAFeature",
       "relation": "expose bandeau d'installation pour",
       "weight": 1
-    },
-    {
-      "source": "ReactionsFeature",
-      "target": "api/reactions.js",
-      "relation": "appelle en GET/POST",
-      "weight": 3
-    },
-    {
-      "source": "api/reactions.js",
-      "target": "VercelKV",
-      "relation": "lit/écrit via REST",
-      "weight": 3
-    },
-    {
-      "source": "api/reactions.js",
-      "target": "Vercel",
-      "relation": "déployée sur",
-      "weight": 2
     },
     {
       "source": "PWAFeature",
@@ -514,14 +496,8 @@
     },
     {
       "source": "VotingSystemPlan",
-      "target": "api/reactions.js",
-      "relation": "réutilise le pattern serverless+KV de",
-      "weight": 2
-    },
-    {
-      "source": "VotingSystemPlan",
       "target": "VercelKV",
-      "relation": "stockera les votes dans",
+      "relation": "stockera les votes dans (pattern desormais illustre par api/chat.js / api/flappy.js)",
       "weight": 2
     },
     {
@@ -603,24 +579,6 @@
       "weight": 1
     },
     {
-      "source": "index.html",
-      "target": "TopFiveFeature",
-      "relation": "implémente l'UI de",
-      "weight": 2
-    },
-    {
-      "source": "TopFiveFeature",
-      "target": "api/reactions.js",
-      "relation": "poll ?top=5 sur",
-      "weight": 3
-    },
-    {
-      "source": "ReactionsFeature",
-      "target": "TopFiveFeature",
-      "relation": "alimente le classement de",
-      "weight": 2
-    },
-    {
       "source": "tools/build_rotation.py",
       "target": "tools/analyze_essentia.py",
       "relation": "consomme metadata.json produit par",
@@ -655,12 +613,6 @@
       "target": "tools/build_rotation.py",
       "relation": "indépendante de (pas de collision au ré-export)",
       "weight": 1
-    },
-    {
-      "source": "VercelKV",
-      "target": "TopFiveFeature",
-      "relation": "rend fonctionnel le classement partagé de",
-      "weight": 2
     },
     {
       "source": "index.html",
@@ -789,12 +741,6 @@
       "weight": 2
     },
     {
-      "source": "DesktopLayout",
-      "target": "TopFiveFeature",
-      "relation": "place en colonne laterale",
-      "weight": 1
-    },
-    {
       "source": "AzuraCast",
       "target": "ProgrammeGrid",
       "relation": "execute l'horloge via playlists Shuffled+poids",
@@ -909,12 +855,6 @@
       "weight": 2
     },
     {
-      "source": "VotingSystemPlan",
-      "target": "TopFiveFeature",
-      "relation": "distinct du classement libre existant de",
-      "weight": 1
-    },
-    {
       "source": "SupporterBadgeFeature",
       "target": "api/telegram.js",
       "relation": "pilotée par /mark_supporter /unmark_supporter dans",
@@ -936,6 +876,78 @@
       "source": "SupporterBadgeFeature",
       "target": "SupportersFeature",
       "relation": "prolonge dans le chat le statut de",
+      "weight": 1
+    },
+    {
+      "source": "index.html",
+      "target": "FlappyKalbassFeature",
+      "relation": "implémente l'UI de",
+      "weight": 2
+    },
+    {
+      "source": "FlappyKalbassFeature",
+      "target": "api/flappy.js",
+      "relation": "appelle en GET/POST pour le classement",
+      "weight": 3
+    },
+    {
+      "source": "api/flappy.js",
+      "target": "VercelKV",
+      "relation": "lit/écrit le leaderboard via REST",
+      "weight": 3
+    },
+    {
+      "source": "api/flappy.js",
+      "target": "Vercel",
+      "relation": "déployée sur",
+      "weight": 2
+    },
+    {
+      "source": "api/chat.js",
+      "target": "FlappyKalbassFeature",
+      "relation": "annonce le lancement de (message auto unique)",
+      "weight": 1
+    },
+    {
+      "source": "ChatRenameFeature",
+      "target": "api/telegram.js",
+      "relation": "pilotée par /rename /rename_nick /unrename dans",
+      "weight": 2
+    },
+    {
+      "source": "ChatRenameFeature",
+      "target": "api/chat.js",
+      "relation": "appliquée via lookup chat:nicknames + réécriture d'historique dans",
+      "weight": 2
+    },
+    {
+      "source": "ChatRenameFeature",
+      "target": "ChatFeature",
+      "relation": "impose un pseudo de modération dans",
+      "weight": 1
+    },
+    {
+      "source": "RedisQuotaIncident",
+      "target": "VercelKV",
+      "relation": "a révélé la sur-consommation de",
+      "weight": 2
+    },
+    {
+      "source": "RedisQuotaIncident",
+      "target": "api/chat.js",
+      "relation": "a conduit à l'espacement du polling + détection d'erreur dans",
+      "weight": 2
+    },
+    {
+      "source": "RedisQuotaIncident",
+      "target": "api/telegram.js",
+      "relation": "a conduit au kill-switch REDIS_PAUSED + résilience handleCallback dans",
+      "weight": 2
+    },
+    {
+      "source": "RedisQuotaIncident",
+      "target": "api/supporters.js",
+      "relation": "a conduit au kill-switch REDIS_PAUSED dans",
       "weight": 1
     }
   ]

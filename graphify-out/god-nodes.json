@@ -1,8 +1,13 @@
 [
   {
     "id": "index.html",
-    "degree": 16,
+    "degree": 15,
     "label": "index.html"
+  },
+  {
+    "id": "api/telegram.js",
+    "degree": 11,
+    "label": "api/telegram.js"
   },
   {
     "id": "AzuraCast",
@@ -10,18 +15,13 @@
     "label": "AzuraCast"
   },
   {
-    "id": "api/telegram.js",
+    "id": "api/chat.js",
+    "degree": 10,
+    "label": "api/chat.js"
+  },
+  {
+    "id": "ChatFeature",
     "degree": 9,
-    "label": "api/telegram.js"
-  },
-  {
-    "id": "ProgrammeGrid",
-    "degree": 8,
-    "label": "Horloge a bacs ponderes (8 bacs)"
-  },
-  {
-    "id": "VotingSystemPlan",
-    "degree": 8,
-    "label": "Système de vote playlist (planifié)"
+    "label": "Chat live"
   }
 ]
