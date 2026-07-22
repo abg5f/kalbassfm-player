@@ -629,7 +629,7 @@
     /* Messages admin (bot Telegram, flag serveur) : texte en gras, pseudo en orange */
     .chat-item-admin .chat-text { font-weight: 700; }
     .chat-item-admin .chat-nick { color: var(--accent-2); }
-    /* BpmGuesser (jeu "devine le BPM") : meme flag admin:true que Admin, mais
+    /* BPM GUESSER (jeu "devine le BPM") : meme flag admin:true que Admin, mais
        pseudo distingue en vert fluo -- doit venir apres la regle .chat-item-admin
        ci-dessus (meme specificite, l'ordre dans la feuille de style tranche). */
     .chat-item-bpm .chat-nick { color: var(--accent-3); }
@@ -1479,9 +1479,9 @@
     messages.forEach((m) => {
       const el = document.createElement('div');
       // m.admin / m.supporter sont poses exclusivement cote serveur — fiables.
-      // Le pseudo "BpmGuesser" est reserve cote serveur (anti-usurpation dans
+      // Le pseudo "BPM GUESSER" est reserve cote serveur (anti-usurpation dans
       // api/chat.js), donc tout aussi fiable pour le distinguer visuellement.
-      el.className = 'chat-item' + (m.admin ? ' chat-item-admin' : '') + (m.supporter ? ' chat-item-supporter' : '') + (m.nick === 'BpmGuesser' ? ' chat-item-bpm' : '');
+      el.className = 'chat-item' + (m.admin ? ' chat-item-admin' : '') + (m.supporter ? ' chat-item-supporter' : '') + (m.nick === 'BPM GUESSER' ? ' chat-item-bpm' : '');
       const head = document.createElement('div');
       head.className = 'chat-item-head';
       const nick = document.createElement('span');
