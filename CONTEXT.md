@@ -2,7 +2,12 @@
 
 > Dernière mise à jour : 2026-07-21
 
-## État actuel (2026-07-21, suite de session — après le checkpoint précédent)
+## État actuel (2026-07-21, fin de session)
+
+- ✅ **Pseudo du bot BPM renommé "BPM GUESSER"** (au lieu de "BpmGuesser", peu lisible en casse mêlée dans le chat). Anti-usurpation étendue pour bloquer les deux variantes (avec/sans espace)
+- ✅ **Fusion de la branche `claude/chat-persistent-user-id-7iol95`** (créée depuis une autre session, après le dernier commit de `main` — donc mergée sans conflit) : nouvelle feature **pseudo persistant choisi par l'auditeur** — bouton "Set nickname" au-dessus du chat, stocké côté serveur dans le hash Redis `chat:pseudos` (clientId → pseudo, endpoint `POST /api/chat {clientId, setNick}`) et en miroir `localStorage` (`kfm_nick`). Coexiste proprement avec le renommage modérateur existant : priorité finale = badge supporter > rename forcé par l'admin (`chat:nicknames`) > pseudo choisi par l'auditeur (`chat:pseudos`) > `Listener-XXXX` par défaut. Perdu si le cache local est effacé ou sur un autre appareil (pas de compte)
+
+## État antérieur (2026-07-21, suite de session précédente)
 
 - ✅ **Mini-jeu "devine le BPM" dans le chat live** — un message composé uniquement d'un nombre plausible (60-200) déclenche une réponse automatique du bot **BPM GUESSER** (pseudo vert fluo `--accent-3`, distinct d'Admin/orange), sans nouvelle UI. Le BPM n'existe **pas** dans les métadonnées exposées par l'API AzuraCast (`custom_fields` vide, vérifié en direct) et n'était fiable à parser depuis le titre que pour ~3% des morceaux. `tools/export_bpm_table.py` (nouveau, one-off réexécutable) lit les tags ID3 réels (mutagen, même pattern que `clean_local_tracks.py`) pour associer chaque BPM Essentia (`tools/metadata.json`) à l'artiste+titre EXACT qu'AzuraCast affiche → `api/bpm-table.json` (749/825 morceaux couverts, committé). `api/chat.js` matche le morceau en cours (fetch nowplaying server-side, jamais le titre envoyé par le client) contre cette table au POST. Tolérance ±1 BPM pour "NICE ONE", silence total si le morceau n'est pas dans la table. **À relancer + commit après chaque session de triage** pour couvrir les nouveaux morceaux
 - 🔥 **Incident prod : crash 500 de `/api/chat` après le déploiement du jeu BPM** — `fs.readFileSync(fileURLToPath(new URL('./bpm-table.json', import.meta.url)))` plantait la fonction entière une fois bundlée par Vercel (chat invisible pour tous les auditeurs, confirmé par fetch direct : 500 sur `/api/chat`, `/api/supporters` OK). Corrigé par un import JSON statique avec assertion (`import bpmTable from './bpm-table.json' with { type: 'json' }`) — le chemin standard/documenté pour Vercel, vérifié en local par chargement réel du module (pas juste `node --check`, qui n'aurait pas détecté le problème). **Leçon retenue : toujours vérifier le chargement effectif d'un module Node avant de pousser, `node --check` ne valide que la syntaxe**
@@ -145,7 +150,7 @@
 | `tools/build_rotation.py`, `tools/export_rotation.py` | Ancien calcul/export d'ordre | ⚠️ Superseded (en-têtes marqués) |
 | `tools/orphans_report.txt` | 97 fichiers jamais analysés + 14 doublons physiques | ⏳ À traiter (gitignored) |
 | `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause avec bandeau auto, reply avec citation, supporters, rename/rename_nick, np/stats, suppression bibliothèque, /ask Claude), handleCallback resilient, pseudo "Admin" | ✅ Déployé |
-| `api/chat.js` | Chat live + modération + rename (chat:nicknames) + jeu BPM (BPM GUESSER) + pseudo "Admin" + messages auto EN + detection erreur Upstash | ✅ Déployé (crash 500 corrigé le 2026-07-21, voir État actuel) |
+| `api/chat.js` | Chat live + modération + rename admin (chat:nicknames) + pseudo choisi par l'auditeur (chat:pseudos) + jeu BPM (BPM GUESSER) + pseudo "Admin" + messages auto EN + detection erreur Upstash | ✅ Déployé (crash 500 corrigé le 2026-07-21) |
 | `api/flappy.js` | Mini-jeu Flappy Kalbass — classement global (ajouté depuis une autre session) | ✅ Déployé |
 | `api/bpm-table.json` | Table artiste+titre → BPM (749/825 morceaux), générée par tools/export_bpm_table.py | ✅ À régénérer après chaque triage |
 | `tools/export_bpm_table.py` | **Nouveau** — lit les tags ID3 réels (mutagen) + BPM Essentia, exporte api/bpm-table.json | ✅ Créé le 2026-07-21 |
@@ -166,10 +171,10 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-20 (construction manuelle via /graphify, pas de CLI)
+> Mis à jour le 2026-07-21 (construction manuelle via /graphify, pas de CLI) — 62 nœuds, 109 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 16), `AzuraCast` (infra + exécution de l'horloge, 10), `api/telegram.js` (hub des commandes admin, degré 9, dépasse ProgrammeGrid/VotingSystemPlan), `ProgrammeGrid`/horloge à bacs pondérés (8), `VotingSystemPlan` (8, toujours non codé), Upstash Redis (5 fonctions serverless), `classify_bins.py` (source de vérité classification).
-Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes [dons+IA, nouveau], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
+God nodes (concepts centraux) : `index.html` (hub front, degré 16), `api/chat.js` (chat + modération + rename admin/auditeur + jeu BPM, degré 12, désormais le nœud serveur le plus connecté), `ChatFeature` (11), `api/telegram.js` (bot admin, degré 11), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (8), `classify_bins.py` (source de vérité classification).
+Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram+Flappy+BPM, Intégrations externes [dons+IA], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

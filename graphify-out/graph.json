@@ -220,7 +220,7 @@
       "id": "api/chat.js",
       "label": "api/chat.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM a 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation + annonce ponctuelle Flappy (chat:announced:flappy), anti-usurpation des pseudos reserves (kalbassfm/admin/bpm guesser). Mapping chat:tgmap (reponse Telegram citee), bandeau chat:pinned (+ backup pendant /pause_chat), lookup chat:supporters (badge) et chat:nicknames (ChatRenameFeature), priorite supporter > rename > pseudo client. clientId stocke sur chaque message (jamais renvoye au GET public). Detection d'erreur Upstash (result manquant = echec) ; flag REDIS_PAUSED (kill-switch, actuellement false). Depuis le 2026-07-21 : jeu 'devine le BPM' integre au POST handler (BpmGuesserFeature) — matche le morceau en cours contre api/bpm-table.json, repond en tant que pseudo reserve 'BPM GUESSER'. Pseudo admin renomme 'Admin'. A subi un incident de prod (crash 500 total, chat invisible) cause par un chargement JSON via fs.readFileSync(import.meta.url) qui ne se comportait pas comme attendu une fois la fonction empaquetee par Vercel — corrige par un import JSON statique avec assertion (`with { type: 'json' }`)."
+      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM a 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation + annonce ponctuelle Flappy (chat:announced:flappy), anti-usurpation des pseudos reserves (kalbassfm/admin/bpm guesser). Mapping chat:tgmap (reponse Telegram citee), bandeau chat:pinned (+ backup pendant /pause_chat), lookup chat:supporters (badge), chat:nicknames (ChatRenameFeature, moderation) et chat:pseudos (ChatNicknameFeature, choix libre de l'auditeur, clientId -> pseudo, POST {setNick}). Priorite du pseudo affiche : supporter > rename admin > pseudo choisi par l'auditeur > pseudo Listener-XXXX par defaut envoye avec le message. clientId stocke sur chaque message (jamais renvoye au GET public). Detection d'erreur Upstash (result manquant = echec) ; flag REDIS_PAUSED (kill-switch, actuellement false). Jeu 'devine le BPM' integre au POST handler (BpmGuesserFeature). Pseudo admin 'Admin'. A subi un incident de prod (crash 500 total) cause par un chargement JSON via fs.readFileSync(import.meta.url), corrige par un import JSON statique avec assertion."
     },
     {
       "id": "ChatFeature",
@@ -365,6 +365,12 @@
       "label": "export_bpm_table.py",
       "type": "file",
       "summary": "Script one-off reexecutable (2026-07-21) : lit tools/metadata.json (BPM Essentia), ouvre chaque fichier local avec mutagen (meme pattern que clean_local_tracks.py) pour recuperer les tags ID3 artist/title REELS -- les memes qu'AzuraCast affiche -- et exporte api/bpm-table.json (749/825 morceaux couverts). A relancer + commit/push apres chaque session de triage pour couvrir les nouveaux morceaux."
+    },
+    {
+      "id": "ChatNicknameFeature",
+      "label": "Pseudo persistant choisi par l'auditeur",
+      "type": "feature",
+      "summary": "Bouton 'Set nickname' au-dessus du chat (index.html : nick-row/nick-form) permettant a un auditeur de choisir son propre pseudo, sans compte. Stocke cote serveur dans le hash Redis chat:pseudos (clientId -> pseudo, POST {clientId, setNick} sur api/chat.js) et en miroir localStorage (kfm_nick) pour un affichage immediat. Attache au seul clientId de cet appareil/navigateur : perdu si le cache local est efface ou sur un autre appareil, retombe alors sur le pseudo Listener-XXXX par defaut. Meme regle anti-usurpation que le pseudo envoye avec un message (ne peut pas prendre kalbassfm/admin/bpm guesser). Fusionne dans main le 2026-07-21 depuis la branche claude/chat-persistent-user-id-7iol95, creee apres coup mais compatible avec ChatRenameFeature (priorite : rename admin > pseudo choisi)."
     }
   ],
   "edges": [
@@ -997,6 +1003,30 @@
       "target": "BpmGuesserFeature",
       "relation": "contexte de vigilance Redis dans lequel le jeu a ete ajoute (cout marginal, pas de polling)",
       "weight": 1
+    },
+    {
+      "source": "ChatNicknameFeature",
+      "target": "api/chat.js",
+      "relation": "implementee dans le POST handler de",
+      "weight": 3
+    },
+    {
+      "source": "ChatNicknameFeature",
+      "target": "index.html",
+      "relation": "UI (bouton 'Set nickname') dans",
+      "weight": 2
+    },
+    {
+      "source": "ChatNicknameFeature",
+      "target": "ChatFeature",
+      "relation": "personnalisation integree a",
+      "weight": 1
+    },
+    {
+      "source": "ChatNicknameFeature",
+      "target": "ChatRenameFeature",
+      "relation": "coexiste avec (priorite : rename admin > pseudo choisi par l'auditeur)",
+      "weight": 2
     }
   ]
 }

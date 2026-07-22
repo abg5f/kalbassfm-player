@@ -52,6 +52,8 @@
         "ReplyFeature",
         "SupporterBadgeFeature",
         "ChatRenameFeature",
+        "ChatNicknameFeature",
+        "BpmGuesserFeature",
         "RedisQuotaIncident"
       ]
     },
@@ -76,7 +78,8 @@
         "tools/classify_bins.py",
         "tools/migrate_grid.py",
         "tools/resync_metadata.py",
-        "tools/triage_new_tracks.py"
+        "tools/triage_new_tracks.py",
+        "tools/export_bpm_table.py"
       ]
     },
     {
