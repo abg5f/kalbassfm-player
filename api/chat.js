@@ -186,10 +186,11 @@ export default async function handler(req, res) {
   const body = req.body || {};
   const rawClientId = (body.clientId || '').toString();
   const clientId = rawClientId.slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, '') || null;
-  // Anti-usurpation : le pseudo reserve a l'admin (messages du bot Telegram,
-  // flag admin:true pose cote serveur) ne peut pas etre pris par un auditeur.
+  // Anti-usurpation : les pseudos reserves aux bots (admin Telegram et
+  // BpmGuesser, flag admin:true pose cote serveur dans les deux cas) ne
+  // peuvent pas etre pris par un auditeur.
   let nick = (body.nick || 'Listener').toString().slice(0, 30);
-  if (/kalbassfm/i.test(nick)) nick = 'Listener';
+  if (/kalbassfm|^bpmguesser$/i.test(nick)) nick = 'Listener';
   const text = (body.text || '').toString().trim().slice(0, 200);
 
   if (!clientId || !text) return res.status(200).json({ enabled: true, ok: false });
@@ -249,7 +250,7 @@ export default async function handler(req, res) {
           : `😅 NOT QUITE ${finalNick} — try again!`;
         const botMsg = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-          nick: '📻 KALBASSFM', text: reply, ts: Date.now(), admin: true,
+          nick: 'BpmGuesser', text: reply, ts: Date.now(), admin: true,
         };
         await kv('lpush', 'chat:messages', JSON.stringify(botMsg));
         await kv('ltrim', 'chat:messages', '0', '99');
