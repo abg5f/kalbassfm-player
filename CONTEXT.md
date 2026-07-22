@@ -2,7 +2,15 @@
 
 > Dernière mise à jour : 2026-07-21
 
-## État actuel (2026-07-21, fin de session)
+## État actuel (2026-07-21, suite de session — après le checkpoint précédent)
+
+- ✅ **Mini-jeu "devine le BPM" dans le chat live** — un message composé uniquement d'un nombre plausible (60-200) déclenche une réponse automatique du bot **BPM GUESSER** (pseudo vert fluo `--accent-3`, distinct d'Admin/orange), sans nouvelle UI. Le BPM n'existe **pas** dans les métadonnées exposées par l'API AzuraCast (`custom_fields` vide, vérifié en direct) et n'était fiable à parser depuis le titre que pour ~3% des morceaux. `tools/export_bpm_table.py` (nouveau, one-off réexécutable) lit les tags ID3 réels (mutagen, même pattern que `clean_local_tracks.py`) pour associer chaque BPM Essentia (`tools/metadata.json`) à l'artiste+titre EXACT qu'AzuraCast affiche → `api/bpm-table.json` (749/825 morceaux couverts, committé). `api/chat.js` matche le morceau en cours (fetch nowplaying server-side, jamais le titre envoyé par le client) contre cette table au POST. Tolérance ±1 BPM pour "NICE ONE", silence total si le morceau n'est pas dans la table. **À relancer + commit après chaque session de triage** pour couvrir les nouveaux morceaux
+- 🔥 **Incident prod : crash 500 de `/api/chat` après le déploiement du jeu BPM** — `fs.readFileSync(fileURLToPath(new URL('./bpm-table.json', import.meta.url)))` plantait la fonction entière une fois bundlée par Vercel (chat invisible pour tous les auditeurs, confirmé par fetch direct : 500 sur `/api/chat`, `/api/supporters` OK). Corrigé par un import JSON statique avec assertion (`import bpmTable from './bpm-table.json' with { type: 'json' }`) — le chemin standard/documenté pour Vercel, vérifié en local par chargement réel du module (pas juste `node --check`, qui n'aurait pas détecté le problème). **Leçon retenue : toujours vérifier le chargement effectif d'un module Node avant de pousser, `node --check` ne valide que la syntaxe**
+- ✅ **Pseudo admin renommé "Admin"** (au lieu de "📻 KALBASSFM") sur toutes les sources de messages admin : `/msg`/réponses Telegram (`api/telegram.js`), annonces automatiques horaires + lancement Flappy (`api/chat.js`), remerciements Buy Me a Coffee (`api/supporters.js`). Anti-usurpation étendue pour réserver aussi "Admin"
+- ✅ **Fix mobile de Flappy Kalbass** — boucle à pas de temps fixe (accumulateur 1/60s) pour découpler la physique du taux de rafraîchissement écran (l'oiseau tombait ~2x trop vite sur téléphone 90/120Hz, gravité appliquée par frame rendue plutôt que par temps réel) + nouvel état "get ready" entre le décompte et le jeu (oiseau flottant, "TAP TO START", zéro gravité jusqu'au premier tap qui déclenche le premier battement d'ailes — comme le jeu original). Vérifié par inspection directe des variables d'état en conditions réelles (pas juste des captures d'écran, sujettes à la latence du outil d'automatisation)
+- ✅ **Changements faits depuis une autre session (remote control)** entre-temps : Redis réactivé (`REDIS_PAUSED=false`, Upstash passé en Pay As You Go), **Top 5/vote retiré définitivement** (`api/reactions.js` supprimé — plus gros consommateur Redis identifié), nouveau mini-jeu Flappy Kalbass (`api/flappy.js`, classement global, icône oiseau header)
+
+## État antérieur (2026-07-21, checkpoint précédent)
 
 - ✅ **Incident de quota Upstash résolu** — le plan gratuit (500k commandes/mois) a été épuisé plusieurs fois de suite : ~99% des commandes étaient des lectures du polling front (chat/Top 5/supporters), pas des écritures admin. Symptômes en prod : chat/Top 5/supporters clignotant vers un état vide (`lj.result` manquant = erreur Upstash, traité à tort comme une liste vide), boutons de suppression Telegram sans effet visible (l'échec Redis interrompait `handleCallback` avant `answerCallback`). Corrigé par étapes : espacement du polling (chat 3s→6s, Top 5 4s→8s, supporters 30s→45s), détection explicite des erreurs Upstash (`result === undefined` → throw), coupure complète temporaire (`REDIS_PAUSED=true` dans `api/chat.js`/`api/reactions.js`/`api/supporters.js`/`api/telegram.js` via `kvClient()`) le temps de la réflexion, puis (depuis une autre session/remote) **suppression définitive du Top 5/vote** (`api/reactions.js` retiré du repo — plus gros consommateur) et **passage d'Upstash en Pay As You Go** → `REDIS_PAUSED` repassé à `false`, Redis réactivé partout
 - ✅ **Nouveau mini-jeu Flappy Kalbass** (`api/flappy.js` + popup canvas dans `index.html`, icône oiseau dans le header) — classement global des scores via Redis, décompte 3-2-1 au lancement, vitesse ralentie. Lancement annoncé une seule fois dans le chat live (verrou `SET NX` sans expiration sur `chat:announced:flappy`, `api/chat.js`)
@@ -86,6 +94,9 @@
 | **Rename par clientId (`/rename`) + rattrapage par pseudo affiché (`/rename_nick`) comme deux commandes distinctes (2026-07-21)** | Les messages postés avant l'ajout du `clientId` sur chaque entrée `chat:messages` ne peuvent pas être retrouvés par `/rename` (clé absente). `/rename_nick` matche sur le pseudo littéralement affiché (`Listener-XXXX`), pas garanti unique entre auditeurs contrairement au clientId — feature de rattrapage explicitement "à manier avec discernement", pas le mécanisme par défaut |
 | **`renameHistory`/`renameHistoryByNick` vérifient `LINDEX` avant chaque `LSET` (2026-07-21)** | `chat:messages` reçoit des `LPUSH` concurrents d'autres auditeurs pendant qu'une commande de rename boucle sur un snapshot `LRANGE` figé — sans vérification, un `LSET` par index périmé pouvait écraser le message d'un autre auditeur. Une entrée décalée est sautée plutôt que corrompue ; la commande est idempotente donc la relancer rattrape ce qui a été sauté |
 | **Annonce de lancement de feature en verrou `SET NX` sans expiration, distincte des annonces horaires quotidiennes (2026-07-21)** | Le mécanisme existant (`ANNOUNCEMENTS`) est conçu pour se répéter chaque jour à heure fixe — un lancement de feature (Flappy Kalbass) ne doit partir qu'une seule fois, jamais répété : verrou permanent (`chat:announced:flappy`, pas de `EX`) plutôt qu'un verrou quotidien |
+| **BPM du jeu "devine le BPM" = table repo (artiste+titre → BPM), pas les métadonnées AzuraCast (2026-07-21)** | Vérifié en direct : l'API AzuraCast n'expose pas de BPM (`custom_fields` vide), et le parser depuis le titre n'est fiable que pour ~3% des morceaux. Le vrai BPM (Essentia) existait déjà en local dans `tools/metadata.json` — `tools/export_bpm_table.py` l'associe aux tags ID3 réels (mêmes tags qu'AzuraCast affiche) pour un matching fiable, sans toucher à AzuraCast ni backfill risqué de la bibliothèque live |
+| **Jeu BPM intégré au chat existant, pas de nouvelle UI (2026-07-21)** | Demande explicite de l'utilisateur : un guess est juste un nombre tapé dans le chat, le bot ("BPM GUESSER", vert fluo `--accent-3`) répond juste après. Zéro bouton/modale à construire, réutilise entièrement le pipeline `api/chat.js` existant |
+| **Import JSON via `with { type: 'json' }` plutôt que `fs.readFileSync(import.meta.url)` (2026-07-21)** | La version `fs.readFileSync` a fait planter `/api/chat` en prod (500, chat invisible pour tous) — `import.meta.url` ne s'est pas comporté comme attendu une fois la fonction empaquetée par Vercel. **Leçon : toujours charger réellement le module en local avant de pousser (`node -e "import('./api/x.js')"`), `node --check` ne valide que la syntaxe, pas le chargement runtime** |
 
 ## En cours / TODOs
 
@@ -109,6 +120,8 @@
 - [ ] **Repérer d'autres morceaux uploadés hors pipeline** — le cas Arachnida suggère qu'il en existe potentiellement d'autres en plus des 97 déjà connus dans `orphans_report.txt`. Un script de rapprochement serveur↔local (comparer la liste AzuraCast à `metadata.json`) permettrait de tous les repérer d'un coup
 - [ ] **Surveiller la facture Upstash Pay As You Go** les premières semaines pour valider que le volume de commandes reste raisonnable après suppression du Top 5 (2026-07-21)
 - [ ] **Vérifier qu'aucun don Buy Me a Coffee n'a été perdu** pendant la fenêtre `REDIS_PAUSED` (2026-07-21) — le webhook répondait 200 à BMC (pour ne pas se faire désactiver) mais n'enregistrait rien côté Redis
+- [ ] **Relancer `tools/export_bpm_table.py` + commit/push `api/bpm-table.json`** après chaque session de triage — sinon les nouveaux morceaux ne sont jamais couverts par le jeu BPM (749/825 actuellement, 74 sans tags ID3 exploitables + 2 fichiers introuvables)
+- [ ] **Vérifier `/api/chat` reste stable en prod** après le fix du crash 500 (2026-07-21) — surveiller les prochains jours, pas de régression connue mais c'était un vrai incident (chat totalement invisible le temps du fix)
 
 ## Problèmes connus
 
@@ -131,13 +144,16 @@
 | `tools/triage_new_tracks.py` | Pipeline ingestion → 8 bacs, nom propre, plus d'étape d'ordre | ✅ Mis à jour, à retester sur les 97 orphelins |
 | `tools/build_rotation.py`, `tools/export_rotation.py` | Ancien calcul/export d'ordre | ⚠️ Superseded (en-têtes marqués) |
 | `tools/orphans_report.txt` | 97 fichiers jamais analysés + 14 doublons physiques | ⏳ À traiter (gitignored) |
-| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause, reply avec citation, supporters, badge supporter, reset Top 5, bandeau épinglé, np/stats, suppression bibliothèque, /ask Claude) | ✅ Déployé, très étendu le 2026-07-20 |
-| `api/chat.js` | Chat live + modération + mapping `chat:tgmap` (reply) + `chat:pinned` (bandeau) + lookup `chat:supporters` (badge) + messages auto EN + anti-usurpation pseudo | ✅ Déployé |
-| `api/reactions.js` | Vote 🔥 plafonné 10/auditeur/morceau (clientId obligatoire) + Top 5 + reset par epoch | ✅ Déployé, durci le 2026-07-20 |
-| `api/supporters.js` | **Nouveau** — webhook Buy Me a Coffee (HMAC), remerciement chat + panneau Supporters + notif Telegram | ✅ Déployé, testé de bout en bout |
-| `index.html` | Player complet EN, layout desktop réorganisé (Top 5 sous Historique, Supporters en avant), Vibe Streak, bandeau épinglé, Request, reconnexion durcie | ✅ Live |
+| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause avec bandeau auto, reply avec citation, supporters, rename/rename_nick, np/stats, suppression bibliothèque, /ask Claude), handleCallback resilient, pseudo "Admin" | ✅ Déployé |
+| `api/chat.js` | Chat live + modération + rename (chat:nicknames) + jeu BPM (BPM GUESSER) + pseudo "Admin" + messages auto EN + detection erreur Upstash | ✅ Déployé (crash 500 corrigé le 2026-07-21, voir État actuel) |
+| `api/flappy.js` | Mini-jeu Flappy Kalbass — classement global (ajouté depuis une autre session) | ✅ Déployé |
+| `api/bpm-table.json` | Table artiste+titre → BPM (749/825 morceaux), générée par tools/export_bpm_table.py | ✅ À régénérer après chaque triage |
+| `tools/export_bpm_table.py` | **Nouveau** — lit les tags ID3 réels (mutagen) + BPM Essentia, exporte api/bpm-table.json | ✅ Créé le 2026-07-21 |
+| `api/supporters.js` | Webhook Buy Me a Coffee (HMAC), remerciement chat + panneau Supporters + notif Telegram, pseudo "Admin" | ✅ Déployé, testé de bout en bout |
+| `api/reactions.js` | Vote 🔥 + Top 5 | ❌ Supprimé le 2026-07-21 (gros consommateur Redis, feature peu utilisée) |
+| `index.html` | Player complet EN, Top 5 retiré, Flappy Kalbass (fix mobile 2026-07-21), Vibe Streak, bandeau épinglé, Request, reconnexion durcie | ✅ Live |
 | `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v14` | ✅ Live |
-| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances | ✅ À jour 2026-07-20 |
+| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances | ✅ À jour 2026-07-21 |
 
 ## Infrastructure
 

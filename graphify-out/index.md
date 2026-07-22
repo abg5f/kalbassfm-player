@@ -1,11 +1,11 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois) puis le 2026-07-21 via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois) puis le 2026-07-21 (2 fois) via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
 
 ## Vue d'ensemble
 
-- **59 nœuds**, **99 relations**, **8 communautés** détectées.
-- Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeu, Upstash Redis), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, et le plan (non codé) du système de vote de playlist par genre.
+- **61 nœuds**, **105 relations**, **8 communautés** détectées.
+- Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, et le plan (non codé) du système de vote de playlist par genre.
 
 ## Communautés
 
@@ -13,9 +13,9 @@
 |---|---|
 | Player / Frontend | index.html, layout desktop, sw.js, manifest, PWA, égaliseur, chat live, popup contact, now-playing, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass |
 | Infra / Streaming | AzuraCast, Icecast, Liquidsoap, VPS, DuckDNS, GitHub, Vercel, Admin API, playlist Jingles |
-| Serverless / API (chat + bot Telegram admin + Flappy) | api/chat.js, api/telegram.js, api/supporters.js, api/flappy.js, Upstash Redis, chat live, bot admin, réponse admin, badge supporter, renommage modérateur, incident quota Upstash, vote playlist (planifié) |
+| Serverless / API (chat + bot Telegram admin + Flappy + BPM) | api/chat.js, api/telegram.js, api/supporters.js, api/flappy.js, Upstash Redis, chat live, bot admin, réponse admin, badge supporter, renommage modérateur, jeu BPM, incident quota Upstash, vote playlist (planifié) |
 | Intégrations externes (dons, IA) | Buy Me a Coffee, API Claude, api/supporters.js |
-| Outillage / Pipeline musique | pipeline Rekordbox, import-rekordbox.ps1, clean_local_tracks.py, RaiDrive, iTunes Search API, triage (file de retry SFTP), migrations |
+| Outillage / Pipeline musique | pipeline Rekordbox, import-rekordbox.ps1, clean_local_tracks.py, RaiDrive, iTunes Search API, triage (file de retry SFTP), export_bpm_table.py, migrations |
 | Pipeline Essentia / Grille 8 bacs | analyze_essentia.py, classify_bins.py, migrate_grid.py, resync_metadata.py, build_rotation.py (superseded) |
 | Planning / Business | PROJECT.md, ROADMAP.md, PLAN.md, REQUIREMENTS.md, EXECUTION_CHECKLIST.md, STATE.md, SACEM |
 | Contexte de session | CONTEXT.md, README.md |
@@ -23,16 +23,20 @@
 ## God nodes (les plus connectés)
 
 1. **index.html** (degré 15) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, PWA).
-2. **api/telegram.js** (degré 11) — bot admin, désormais le nœud le plus connecté côté serveur : toutes les commandes (reply, supporters, badge supporter, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque), résilience handleCallback, kill-switch Redis.
-3. **AzuraCast** (degré 10) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
-4. **api/chat.js** (degré 10) — chat live + modération + renommage + annonce Flappy + détection d'erreur Upstash.
-5. **ChatFeature** (degré 9) — panneau chat live, cible de la plupart des features de modération.
+2. **api/chat.js** (degré 11) — chat live + modération + renommage + jeu BPM (BpmGuesserFeature) + annonce Flappy + détection d'erreur Upstash. A rejoint api/telegram.js en tête côté serveur avec l'ajout du jeu BPM.
+3. **api/telegram.js** (degré 11) — bot admin, toutes les commandes (reply, supporters, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque), résilience handleCallback, kill-switch Redis.
+4. **AzuraCast** (degré 10) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
+5. **ChatFeature** (degré 10) — panneau chat live, cible de la plupart des features de modération et du jeu BPM.
 6. **ProgrammeGrid / Horloge à bacs pondérés** (degré 8) — grille 8 bacs, remplace les 4 créneaux à ordre figé.
 7. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles).
 
 ## Note — 2026-07-21 : incident de quota Upstash et suppression du Top 5
 
 Le plan gratuit Upstash (500k commandes/mois) a été épuisé plusieurs fois : le polling front (chat, Top 5, supporters) représentait ~99% des commandes (lectures), contre ~1% pour les écritures admin. Symptômes en prod : chat/Top 5/supporters clignotant vers un état vide (une erreur Upstash était traitée silencieusement comme une liste vide) et boutons de suppression Telegram sans effet visible. Résolution en plusieurs étapes : espacement du polling, détection explicite des erreurs Upstash, coupure temporaire complète (`REDIS_PAUSED`) le temps de la réflexion, **suppression définitive du Top 5/vote** (`api/reactions.js`, plus gros consommateur), puis passage d'Upstash en Pay As You Go — `REDIS_PAUSED` repassé à `false`. Voir le nœud `RedisQuotaIncident` pour le détail.
+
+## Note — 2026-07-21 (suite) : jeu "devine le BPM" et incident de prod associé
+
+Le BPM n'existe pas dans les métadonnées exposées par l'API AzuraCast (`custom_fields` vide, vérifié en direct). `tools/export_bpm_table.py` lit les tags ID3 réels (mutagen) pour associer le BPM déjà calculé par Essentia à l'artiste+titre exact qu'AzuraCast affiche → `api/bpm-table.json` (749/825 morceaux). `api/chat.js` matche le morceau en cours contre cette table dès qu'un message ressemble à un guess numérique, et répond via le pseudo réservé `BPM GUESSER` (vert fluo). Le déploiement a d'abord cassé `/api/chat` en prod (500, chat invisible pour tous) à cause d'un chargement JSON via `fs.readFileSync(import.meta.url)` qui ne s'est pas comporté comme attendu une fois la fonction empaquetée par Vercel — corrigé par un import JSON statique avec assertion (`with { type: 'json' }`), vérifié cette fois par chargement réel du module en local (pas seulement `node --check`).
 
 ## Comment explorer
 

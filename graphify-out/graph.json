@@ -220,7 +220,7 @@
       "id": "api/chat.js",
       "label": "api/chat.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM a 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation (chat:auto:<key>:<day>) + annonce ponctuelle unique verrou SET NX sans expiration (chat:announced:flappy, lancement Flappy Kalbass), anti-usurpation du pseudo KALBASSFM. Mapping chat:tgmap (reponse Telegram citee), bandeau chat:pinned (+ chat:pinned:backup restaure automatiquement a la reprise apres /pause_chat), lookup chat:supporters (badge) et chat:nicknames (pseudo impose par /rename, cf ChatRenameFeature) a chaque POST, priorite supporter > rename > pseudo client. clientId stocke sur chaque message (jamais renvoye au GET public) pour permettre a /rename de reecrire l'historique. Depuis l'incident Redis (2026-07-21) : detection d'erreur Upstash (result manquant = echec, pas une liste vide) au lieu de la traiter silencieusement comme vide ; flag REDIS_PAUSED (kill-switch manuel, actuellement false)."
+      "summary": "Fonction serverless Vercel : chat live anonyme entre auditeurs. Liste Redis chat:messages (LPUSH/LTRIM a 100), rate-limit serveur, anti-lien, moderation via bot Telegram (chat:deleted/chat:banned/chat:paused), messages automatiques d'animation + annonce ponctuelle Flappy (chat:announced:flappy), anti-usurpation des pseudos reserves (kalbassfm/admin/bpm guesser). Mapping chat:tgmap (reponse Telegram citee), bandeau chat:pinned (+ backup pendant /pause_chat), lookup chat:supporters (badge) et chat:nicknames (ChatRenameFeature), priorite supporter > rename > pseudo client. clientId stocke sur chaque message (jamais renvoye au GET public). Detection d'erreur Upstash (result manquant = echec) ; flag REDIS_PAUSED (kill-switch, actuellement false). Depuis le 2026-07-21 : jeu 'devine le BPM' integre au POST handler (BpmGuesserFeature) — matche le morceau en cours contre api/bpm-table.json, repond en tant que pseudo reserve 'BPM GUESSER'. Pseudo admin renomme 'Admin'. A subi un incident de prod (crash 500 total, chat invisible) cause par un chargement JSON via fs.readFileSync(import.meta.url) qui ne se comportait pas comme attendu une fois la fonction empaquetee par Vercel — corrige par un import JSON statique avec assertion (`with { type: 'json' }`)."
     },
     {
       "id": "ChatFeature",
@@ -256,13 +256,13 @@
       "id": "tools/triage_new_tracks.py",
       "label": "triage_new_tracks.py",
       "type": "file",
-      "summary": "Pipeline d'ingestion _incoming : nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 8 bacs via classify_bins, depot sous nom propre. Rapport HTML live auto-refresh. File de retry (tools/pending_uploads.json) : memorise les morceaux classes localement mais dont l'envoi SFTP a echoue (serveur injoignable), retentes automatiquement en debut de run suivant sans intervention manuelle."
+      "summary": "Pipeline d'ingestion _incoming : nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 8 bacs via classify_bins, depot sous nom propre. Rapport HTML live auto-refresh. File de retry (tools/pending_uploads.json) pour les envois SFTP echoues. Note : ne regenere PAS automatiquement api/bpm-table.json — tools/export_bpm_table.py doit etre relance separement apres chaque session de triage."
     },
     {
       "id": "api/telegram.js",
       "label": "api/telegram.js",
       "type": "file",
-      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (epingle desormais un bandeau d'avertissement, sauvegarde/restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (cf ChatRenameFeature, avec stripAngles() tolerant aux chevrons colles depuis l'usage et garde-fou LINDEX contre les LPUSH concurrents). handleCallback repond desormais toujours au tap (try/catch, message d'echec explicite au lieu du silence total en cas d'erreur Redis). kvClient() retourne null pendant REDIS_PAUSED (kill-switch manuel, actuellement false) exactement comme un store non configure. /reset_top5 retire avec le Top 5."
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (bandeau d'avertissement auto-epingle, restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (ChatRenameFeature, stripAngles() + garde-fou LINDEX). handleCallback repond toujours au tap (try/catch, message d'echec explicite). kvClient() retourne null pendant REDIS_PAUSED. Pseudo admin renomme 'Admin' (etait '📻 KALBASSFM'). /reset_top5 retire avec le Top 5."
     },
     {
       "id": "TelegramBotFeature",
@@ -280,7 +280,7 @@
       "id": "api/supporters.js",
       "label": "api/supporters.js",
       "type": "file",
-      "summary": "Fonction serverless Vercel : recoit le webhook Buy Me a Coffee (donation.created), verifie la signature HMAC-SHA256 sur le corps brut. Sur un don valide : pousse dans la liste Redis supporters (LPUSH/LTRIM 49), poste un message de remerciement admin dans chat:messages, notifie l'admin sur Telegram. Evenements de test BMC (live_mode:false) etiquetes. GET public filtre les entrees supprimees via supporters:deleted. Detection d'erreur Upstash (result manquant = echec) + flag REDIS_PAUSED (kill-switch manuel, actuellement false) — repond quand meme 200 au webhook BMC pendant une pause pour ne pas le faire desactiver cote BMC (don alors non enregistre)."
+      "summary": "Fonction serverless Vercel : recoit le webhook Buy Me a Coffee (donation.created), verifie la signature HMAC-SHA256 sur le corps brut. Sur un don valide : pousse dans la liste Redis supporters, poste un message de remerciement admin (pseudo 'Admin', etait '📻 KALBASSFM') dans chat:messages, notifie l'admin sur Telegram. Evenements de test BMC etiquetes. Detection d'erreur Upstash + flag REDIS_PAUSED — repond 200 au webhook BMC meme en pause pour ne pas le faire desactiver cote BMC."
     },
     {
       "id": "SupportersFeature",
@@ -353,6 +353,18 @@
       "label": "Incident quota Upstash (2026-07-21)",
       "type": "event",
       "summary": "Le plan gratuit Upstash (500k commandes/mois) a ete epuise plusieurs fois de suite : 99% des commandes etaient des lectures issues du polling front (chat 3-6s, Top 5 4-8s, supporters 30-45s) plutot que des ecritures admin. Symptome observe : le chat/Top 5/supporters clignotaient vers un etat vide (le code traitait silencieusement une reponse d'erreur Upstash comme une liste vide) et les boutons de suppression Telegram restaient sans effet visible (l'echec Redis interrompait handleCallback avant le retour au tap). Resolu par : espacement du polling, detection explicite des erreurs Upstash, coupure temporaire complete (REDIS_PAUSED) le temps de la reflexion, suppression definitive du Top 5/vote (plus gros consommateur), puis passage d'Upstash en Pay As You Go (plus de plafond dur) — REDIS_PAUSED repasse a false."
+    },
+    {
+      "id": "BpmGuesserFeature",
+      "label": "Jeu \"devine le BPM\" (chat)",
+      "type": "feature",
+      "summary": "Un message du chat compose uniquement d'un nombre plausible (60-200) est traite comme une tentative de deviner le BPM du morceau en cours. Le bot 'BPM GUESSER' (pseudo reserve, vert fluo --accent-3) repond 'NICE ONE'/'NOT QUITE' juste apres, tolerance +/-1 BPM, silencieux si le morceau n'est pas dans la table. Aucune nouvelle UI : tout vit dans le POST handler existant de api/chat.js. Le BPM n'existe pas dans l'API AzuraCast (custom_fields vide, verifie en direct) ; la table de correspondance (artiste+titre -> BPM) est generee a partir des tags ID3 reels + du BPM deja calcule par Essentia."
+    },
+    {
+      "id": "tools/export_bpm_table.py",
+      "label": "export_bpm_table.py",
+      "type": "file",
+      "summary": "Script one-off reexecutable (2026-07-21) : lit tools/metadata.json (BPM Essentia), ouvre chaque fichier local avec mutagen (meme pattern que clean_local_tracks.py) pour recuperer les tags ID3 artist/title REELS -- les memes qu'AzuraCast affiche -- et exporte api/bpm-table.json (749/825 morceaux couverts). A relancer + commit/push apres chaque session de triage pour couvrir les nouveaux morceaux."
     }
   ],
   "edges": [
@@ -948,6 +960,42 @@
       "source": "RedisQuotaIncident",
       "target": "api/supporters.js",
       "relation": "a conduit au kill-switch REDIS_PAUSED dans",
+      "weight": 1
+    },
+    {
+      "source": "BpmGuesserFeature",
+      "target": "api/chat.js",
+      "relation": "implementee dans le POST handler de",
+      "weight": 3
+    },
+    {
+      "source": "BpmGuesserFeature",
+      "target": "tools/export_bpm_table.py",
+      "relation": "consomme la table generee par",
+      "weight": 2
+    },
+    {
+      "source": "BpmGuesserFeature",
+      "target": "ChatFeature",
+      "relation": "mini-jeu integre a",
+      "weight": 1
+    },
+    {
+      "source": "tools/export_bpm_table.py",
+      "target": "tools/analyze_essentia.py",
+      "relation": "reutilise le BPM calcule par",
+      "weight": 2
+    },
+    {
+      "source": "tools/export_bpm_table.py",
+      "target": "tools/clean_local_tracks.py",
+      "relation": "reutilise le pattern de lecture ID3 (mutagen) de",
+      "weight": 1
+    },
+    {
+      "source": "RedisQuotaIncident",
+      "target": "BpmGuesserFeature",
+      "relation": "contexte de vigilance Redis dans lequel le jeu a ete ajoute (cout marginal, pas de polling)",
       "weight": 1
     }
   ]

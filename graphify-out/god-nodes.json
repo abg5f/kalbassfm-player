@@ -5,6 +5,11 @@
     "label": "index.html"
   },
   {
+    "id": "api/chat.js",
+    "degree": 11,
+    "label": "api/chat.js"
+  },
+  {
     "id": "api/telegram.js",
     "degree": 11,
     "label": "api/telegram.js"
@@ -15,13 +20,8 @@
     "label": "AzuraCast"
   },
   {
-    "id": "api/chat.js",
-    "degree": 10,
-    "label": "api/chat.js"
-  },
-  {
     "id": "ChatFeature",
-    "degree": 9,
+    "degree": 10,
     "label": "Chat live"
   }
 ]
