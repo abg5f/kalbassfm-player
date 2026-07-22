@@ -1899,8 +1899,14 @@
   const flappyStartBtn = document.getElementById('flappyStartBtn');
   const flappyLbList = document.getElementById('flappyLbList');
 
-  let fState = 'ready'; // 'ready' | 'countdown' | 'playing' | 'dead'
-  let fBirdY, fBirdV, fPipes, fScore, fGroundOff, fRaf, fCountdownFrames;
+  let fState = 'ready'; // 'ready' | 'countdown' | 'getready' | 'playing' | 'dead'
+  let fBirdY, fBirdV, fPipes, fScore, fGroundOff, fRaf, fCountdownFrames, fGetReadyT;
+  // Boucle a pas de temps fixe : la physique avance par pas logiques de 1/60 s
+  // quel que soit le taux de rafraichissement de l'ecran. Sans ca, les
+  // telephones 90/120 Hz appliquaient la gravite 1,5-2x plus souvent (RAF plus
+  // rapide) et l'oiseau tombait ~2x trop vite -> mort quasi immediate.
+  const STEP_MS = 1000 / 60;
+  let fAccum = 0, fLastTs = 0;
 
   function flappyResetWorld() {
     fBirdY = FLAPPY.H / 2;
@@ -1988,6 +1994,16 @@
     fctx.textBaseline = 'alphabetic';
   }
 
+  function drawFlappyTapToStart() {
+    fctx.font = '700 22px "Space Grotesk", sans-serif';
+    fctx.textAlign = 'center';
+    fctx.lineWidth = 5;
+    fctx.strokeStyle = '#0D0D0D';
+    fctx.strokeText('TAP TO START', FLAPPY.W / 2, FLAPPY.H / 2 - 60);
+    fctx.fillStyle = '#FFFFFF';
+    fctx.fillText('TAP TO START', FLAPPY.W / 2, FLAPPY.H / 2 - 60);
+  }
+
   function flappyCollides() {
     if (fBirdY + FLAPPY.BIRD_R >= FLAPPY.H - FLAPPY.GROUND_H) return true;
     for (const p of fPipes) {
@@ -2015,20 +2031,39 @@
     fPipes.forEach((p) => {
       if (!p.passed && p.x + FLAPPY.PIPE_W < FLAPPY.BIRD_X) { p.passed = true; fScore += 1; }
     });
-    if (flappyCollides()) return flappyDie();
+    if (flappyCollides()) flappyDie();
   }
 
-  function flappyLoop() {
+  // Une avancee logique de 1/60s, quel que soit le state — appelee un nombre
+  // de fois variable par frame rendue selon flappyLoop (accumulateur), pour
+  // que la physique tourne a vitesse identique sur un ecran 60Hz ou 120Hz.
+  function flappyStep() {
     if (fState === 'countdown') {
       fCountdownFrames -= 1;
-      drawFlappy(); // oiseau et decor restent statiques, aucune gravite appliquee ici
-      drawFlappyCountdown();
-      if (fCountdownFrames <= 0) fState = 'playing';
+      if (fCountdownFrames <= 0) fState = 'getready';
+    } else if (fState === 'getready') {
+      fGetReadyT += 1;
+      fBirdY = FLAPPY.H / 2 + Math.sin(fGetReadyT / 18) * 6; // flottement visuel, pas de gravite
     } else if (fState === 'playing') {
       flappyUpdate();
-      drawFlappy();
     }
-    if (fState === 'countdown' || fState === 'playing') fRaf = requestAnimationFrame(flappyLoop);
+  }
+
+  function flappyLoop(ts) {
+    if (!fLastTs) fLastTs = ts;
+    let elapsed = ts - fLastTs;
+    fLastTs = ts;
+    if (elapsed > 250) elapsed = 250; // onglet revenu au premier plan apres une pause : pas de rattrapage massif
+    fAccum += elapsed;
+    while (fAccum >= STEP_MS) { flappyStep(); fAccum -= STEP_MS; }
+
+    drawFlappy();
+    if (fState === 'countdown') drawFlappyCountdown();
+    else if (fState === 'getready') drawFlappyTapToStart();
+
+    if (fState === 'countdown' || fState === 'getready' || fState === 'playing') {
+      fRaf = requestAnimationFrame(flappyLoop);
+    }
   }
 
   function flappyShowOverlay(mode, score, best) {
@@ -2038,7 +2073,7 @@
       flappyStartBtn.textContent = '▶ Play again';
     } else {
       flappyOverlayTitle.textContent = 'Flappy Kalbass';
-      flappyOverlayText.innerHTML = 'Tap, click or press Space to flap.<br>A 3-2-1 countdown gets you started!';
+      flappyOverlayText.innerHTML = 'Get ready for a 3-2-1 countdown, then tap, click or press Space to fly!';
       flappyStartBtn.textContent = '▶ Play';
     }
     flappyOverlay.hidden = false;
@@ -2049,8 +2084,11 @@
     flappyOverlay.hidden = true;
     flappyResetWorld();
     fCountdownFrames = FLAPPY.COUNTDOWN_STEP * 3;
+    fGetReadyT = 0;
+    fLastTs = 0;
+    fAccum = 0;
     if (fRaf) cancelAnimationFrame(fRaf);
-    flappyLoop();
+    fRaf = requestAnimationFrame(flappyLoop);
   }
 
   function flappyDie() {
@@ -2064,6 +2102,10 @@
   }
 
   function flappyFlap() {
+    // Le tout premier tap apres le decompte lance a la fois la gravite ET le
+    // premier battement d'ailes (comme le jeu original) — jusque la l'oiseau
+    // flotte sans risque de mourir avant que le joueur ait pu reagir.
+    if (fState === 'getready') { fState = 'playing'; fBirdV = FLAPPY.FLAP_V; return; }
     if (fState === 'playing') fBirdV = FLAPPY.FLAP_V;
   }
 
