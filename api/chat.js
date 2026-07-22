@@ -9,6 +9,12 @@
    Structure Redis :
    - liste "chat:messages"       : JSON {id, nick, text, ts} par entree, LPUSH + LTRIM a 99
    - cle "chat:rate:<clientId>"  : pose avec EX 3 NX, bloque l'envoi suivant pendant 3s
+   - hash "chat:pseudos"         : clientId -> pseudo choisi par l'auditeur via
+                                   "Set nickname" (POST {clientId, setNick}).
+                                   Pas de compte : attache au seul clientId
+                                   local, donc perdu si le cache/localStorage
+                                   est efface ou sur un autre appareil (retombe
+                                   alors sur le pseudo Listener-XXXX par defaut).
 
    Anti-autopromo : tout message contenant un lien (http(s)://, www., ou un
    domaine du type "motacle.com") est refuse avant meme le rate-limit — pas
@@ -184,6 +190,25 @@ export default async function handler(req, res) {
   const body = req.body || {};
   const rawClientId = (body.clientId || '').toString();
   const clientId = rawClientId.slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, '') || null;
+
+  // ---- POST (action) : choisir son pseudo, stocke dans chat:pseudos
+  // (clientId -> pseudo) pour rester attache a cet appareil/navigateur tant
+  // que kfm_client_id vit en local -- pas de compte, pas de sync cross-device.
+  // Meme regle anti-usurpation que le pseudo envoye avec un message.
+  if (typeof body.setNick === 'string') {
+    if (!clientId) return res.status(200).json({ enabled: true, ok: false });
+    const desired = body.setNick.toString().trim().slice(0, 30);
+    if (!desired || /kalbassfm|^admin$|^bpm\s*guesser$/i.test(desired)) {
+      return res.status(200).json({ enabled: true, ok: false });
+    }
+    try {
+      await kv('hset', 'chat:pseudos', clientId, desired);
+      return res.status(200).json({ enabled: true, ok: true, nick: desired });
+    } catch {
+      return res.status(200).json({ enabled: false, ok: false });
+    }
+  }
+
   // Anti-usurpation : les pseudos reserves aux bots (admin Telegram et
   // BPM GUESSER, flag admin:true pose cote serveur dans les deux cas) ne
   // peuvent pas etre pris par un auditeur.
@@ -195,17 +220,20 @@ export default async function handler(req, res) {
 
   let supporterName = null;
   let renamedNick = null;
+  let userPseudo = null;
   try {
-    const [pausedJ, bannedJ, supporterJ, nicknameJ] = await Promise.all([
+    const [pausedJ, bannedJ, supporterJ, nicknameJ, pseudoJ] = await Promise.all([
       kv('get', 'chat:paused'),
       kv('sismember', 'chat:banned', clientId),
       kv('hget', 'chat:supporters', clientId),
       kv('hget', 'chat:nicknames', clientId),
+      kv('hget', 'chat:pseudos', clientId),
     ]);
     if (pausedJ.result) return res.status(200).json({ enabled: true, ok: false, paused: true });
     if (bannedJ.result) return res.status(200).json({ enabled: true, ok: false, banned: true });
     supporterName = supporterJ.result || null;
     renamedNick = nicknameJ.result || null;
+    userPseudo = pseudoJ.result || null;
   } catch {
     return res.status(200).json({ enabled: false, ok: false });
   }
@@ -219,10 +247,11 @@ export default async function handler(req, res) {
     // supporter:true et le nom associe viennent EXCLUSIVEMENT du hash Redis
     // chat:supporters (pose par /mark_supporter dans api/telegram.js) —
     // jamais du pseudo envoye par le client, meme principe que admin:true.
-    // A defaut de badge supporter, un pseudo impose par l'admin via /rename
-    // (hash chat:nicknames, moderation d'un pseudo offensant) prend le pas
-    // sur celui choisi par le client.
-    const finalNick = supporterName || renamedNick || nick;
+    // Ordre de priorite : badge supporter > renommage force par l'admin
+    // (moderation d'un pseudo offensant) > pseudo choisi par l'auditeur via
+    // "Set nickname" (chat:pseudos, source de verite serveur pour cet
+    // appareil) > pseudo envoye avec le message (fallback, ex: Listener-XXXX).
+    const finalNick = supporterName || renamedNick || userPseudo || nick;
     const msg = supporterName
       ? { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), supporter: true, clientId }
       : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), clientId };
