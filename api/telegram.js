@@ -301,19 +301,44 @@ async function handleMessage(token, message) {
       { reply_markup: { inline_keyboard: rows } });
   }
 
-  if (text.startsWith('/move_track')) {
-    const q = text.slice('/move_track'.length).trim();
-    if (!q) return sendMessage(token, chatId, 'Usage : /move_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast et propose un changement de playlist.');
-    const r = await searchTracks(q);
-    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche (${r.status}).`);
-    if (!r.list.length) return sendMessage(token, chatId, `Aucune piste trouvée pour « ${q} ».`);
-    const top = r.list.slice(0, 8);
-    const lines = top.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
-    const buttons = top.map((f, i) => ({ text: '➡️ ' + (i + 1), callback_data: 'movesel:' + f.id }));
+  if (text === '/move') {
+    const d = await nowPlaying();
+    if (!d) return sendMessage(token, chatId, '❌ Impossible de joindre AzuraCast.');
+    const song = (d.now_playing && d.now_playing.song) || {};
+    if (!song.title) return sendMessage(token, chatId, '❌ Aucun morceau identifiable en cours.');
+    // Même logique que /delete_current_track : cherche d'abord par titre seul,
+    // puis par artiste seul, puis les deux combinés en dernier recours.
+    let r = await searchTracks(song.title);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length && song.artist) r = await searchTracks(song.artist);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length) r = await searchTracks(`${song.artist || ''} ${song.title}`.trim());
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length) {
+      return sendMessage(token, chatId,
+        `Aucune piste de bibliothèque ne correspond à « ${song.artist || '?'} — ${song.title} » ` +
+        `(morceau en direct, requête externe, ou jingle ?).`);
+    }
+    // Tente une correspondance exacte pour éviter les erreurs
+    const exact = r.list.filter((f) =>
+      (f.title || '').toLowerCase() === song.title.toLowerCase() &&
+      (!song.artist || (f.artist || '').toLowerCase() === song.artist.toLowerCase()));
+    const candidate = exact.length ? exact[0] : r.list[0];
+    const playlists = await getPlaylists();
+    if (!playlists.ok || !playlists.list.length) {
+      return sendMessage(token, chatId, '❌ Impossible de récupérer les playlists.');
+    }
+    // Extraire le dossier source
+    const currentPath = candidate.path || '';
+    const pathMatch = currentPath.match(/Progv2\/([^\/]+)\//);
+    const currentPlaylist = pathMatch ? pathMatch[1] : '?';
+    const label = `${song.artist || '?'} — ${song.title}`;
+    const lines = playlists.list.map((p) => p.name);
+    const buttons = playlists.list.map((p) => ({ text: p.name.slice(0, 12), callback_data: 'movecur:' + candidate.id + ':' + p.id }));
     const rows = [];
-    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
     return sendMessage(token, chatId,
-      `Résultats pour « ${q} » — clique ➡️ pour choisir la nouvelle playlist :\n` + lines.join('\n'), {
+      `▶️ En cours : ${label}\n📁 Actuellement : ${currentPlaylist}\n\nVers quelle playlist ?\n\n` + lines.join('\n'), {
         reply_markup: { inline_keyboard: rows },
       });
   }
@@ -324,9 +349,9 @@ async function handleMessage(token, message) {
     '/np — morceau en cours + auditeurs\n' +
     '/skip — passer au morceau suivant\n' +
     '/jingle — declencher un jingle (best effort)\n' +
+    '/move — deplacer le morceau en cours vers une autre playlist\n' +
     '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
-    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n' +
-    '/move_track <recherche> — deplacer une piste vers une autre playlist\n\n' +
+    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n\n' +
     '💬 Chat live\n' +
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -417,34 +442,8 @@ async function handleCallback(token, cb) {
     await markDeletedSupporter(id);
     await answerCallback(token, cb.id, 'Supprimé ✅');
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
-  } else if (data.startsWith('movesel:')) {
-    const trackId = data.slice(8);
-    const info = await getTrack(trackId);
-    if (!info.ok || !info.data) {
-      await answerCallback(token, cb.id, '❌ Piste introuvable.');
-      return;
-    }
-    const playlists = await getPlaylists();
-    if (!playlists.ok || !playlists.list.length) {
-      await answerCallback(token, cb.id, '❌ Impossible de récupérer les playlists.');
-      return;
-    }
-    const label = `${info.data.artist || '?'} — ${info.data.title || info.data.text || trackId}`;
-    const lines = playlists.list.map((p, i) => `${i + 1}. ${p.name}`);
-    const buttons = playlists.list.map((p) => ({ text: p.name.slice(0, 10), callback_data: 'moveto:' + trackId + ':' + p.id }));
-    const rows = [];
-    for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
-    await answerCallback(token, cb.id, '');
-    // Extraire le dossier source depuis le chemin du fichier
-    const currentPath = info.data.path || '';
-    const pathMatch = currentPath.match(/Progv2\/([^\/]+)\//);
-    const currentPlaylist = pathMatch ? pathMatch[1] : '?';
-    await sendMessage(token, cb.message.chat.id,
-      `Déplacer vers quelle playlist ?\n\n${label}\n📁 Actuellement : ${currentPlaylist}\n\n` + lines.join('\n'), {
-        reply_markup: { inline_keyboard: rows },
-      });
-  } else if (data.startsWith('moveto:')) {
-    const parts = data.slice(7).split(':');
+  } else if (data.startsWith('movecur:')) {
+    const parts = data.slice(8).split(':');
     const trackId = parts[0];
     const playlistId = parts[1];
     if (!trackId || !playlistId) {
@@ -477,7 +476,7 @@ async function handleCallback(token, cb) {
         `(Copier/déplacer le fichier sur votre PC avec FileZilla)`
       : '';
     await sendMessage(token, cb.message.chat.id,
-      `✅ Piste déplacée sur AzuraCast : ${label}\n${summary}`);
+      `✅ Morceau déplacé : ${label}\n${summary}`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
