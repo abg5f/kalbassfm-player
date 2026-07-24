@@ -262,7 +262,7 @@
       "id": "api/telegram.js",
       "label": "api/telegram.js",
       "type": "file",
-      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (bandeau d'avertissement auto-epingle, restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (ChatRenameFeature, stripAngles() + garde-fou LINDEX). handleCallback repond toujours au tap (try/catch, message d'echec explicite). kvClient() retourne null pendant REDIS_PAUSED. Pseudo admin renomme 'Admin' (etait '📻 KALBASSFM'). /reset_top5 retire avec le Top 5."
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (bandeau d'avertissement auto-epingle, restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (ChatRenameFeature, stripAngles() + garde-fou LINDEX), /move (MoveTrackFeature, migration du morceau en cours vers un des 8 bacs). handleCallback repond toujours au tap (try/catch, message d'echec explicite). kvClient() retourne null pendant REDIS_PAUSED. Pseudo admin renomme 'Admin' (etait '📻 KALBASSFM'). /reset_top5 retire avec le Top 5."
     },
     {
       "id": "TelegramBotFeature",
@@ -371,6 +371,12 @@
       "label": "Pseudo persistant choisi par l'auditeur",
       "type": "feature",
       "summary": "Bouton 'Set nickname' au-dessus du chat (index.html : nick-row/nick-form) permettant a un auditeur de choisir son propre pseudo, sans compte. Stocke cote serveur dans le hash Redis chat:pseudos (clientId -> pseudo, POST {clientId, setNick} sur api/chat.js) et en miroir localStorage (kfm_nick) pour un affichage immediat. Attache au seul clientId de cet appareil/navigateur : perdu si le cache local est efface ou sur un autre appareil, retombe alors sur le pseudo Listener-XXXX par defaut. Meme regle anti-usurpation que le pseudo envoye avec un message (ne peut pas prendre kalbassfm/admin/bpm guesser). Fusionne dans main le 2026-07-21 depuis la branche claude/chat-persistent-user-id-7iol95, creee apres coup mais compatible avec ChatRenameFeature (priorite : rename admin > pseudo choisi)."
+    },
+    {
+      "id": "MoveTrackFeature",
+      "label": "Commande /move (migration de morceau entre bacs)",
+      "type": "feature",
+      "summary": "Commande Telegram /move (api/telegram.js, fusionnee dans main le 2026-07-24 depuis la branche claude/telegram-move-music-playlists-11xd5s) : recupere le morceau en cours de lecture (now-playing) et affiche les 8 bacs de ProgrammeGrid sous forme de boutons inline. Un clic migre le morceau (dossier source -> destination) et affiche le chemin source/filename/destination pour le sync manuel FileZilla derriere (upload SFTP manuel volontaire, pas d'automatisation). Simplifiee le meme jour depuis une premiere version en deux etapes (/move_track <recherche>) vers un flux en une seule commande partant directement du morceau courant."
     }
   ],
   "edges": [
@@ -1027,6 +1033,36 @@
       "target": "ChatRenameFeature",
       "relation": "coexiste avec (priorite : rename admin > pseudo choisi par l'auditeur)",
       "weight": 2
+    },
+    {
+      "source": "MoveTrackFeature",
+      "target": "api/telegram.js",
+      "relation": "implementee par la commande /move dans",
+      "weight": 3
+    },
+    {
+      "source": "MoveTrackFeature",
+      "target": "TelegramBotFeature",
+      "relation": "nouvelle commande de",
+      "weight": 1
+    },
+    {
+      "source": "MoveTrackFeature",
+      "target": "NowPlayingAPI",
+      "relation": "recupere le morceau courant via",
+      "weight": 2
+    },
+    {
+      "source": "MoveTrackFeature",
+      "target": "ProgrammeGrid",
+      "relation": "migre un morceau entre les bacs de",
+      "weight": 2
+    },
+    {
+      "source": "MoveTrackFeature",
+      "target": "RekordboxPipeline",
+      "relation": "cree un ecart local/serveur reconcilie manuellement via FileZilla, meme principe que",
+      "weight": 1
     }
   ]
 }

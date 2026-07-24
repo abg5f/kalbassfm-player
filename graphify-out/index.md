@@ -1,11 +1,11 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois) puis le 2026-07-21 (3 fois) via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois) puis le 2026-07-24 via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
 
 ## Vue d'ensemble
 
-- **62 nœuds**, **109 relations**, **8 communautés** détectées.
-- Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, et le plan (non codé) du système de vote de playlist par genre.
+- **63 nœuds**, **114 relations**, **8 communautés** détectées.
+- Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), la **commande Telegram `/move`** pour migrer le morceau en cours entre les 8 bacs (`MoveTrackFeature`, 2026-07-24), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, et le plan (non codé) du système de vote de playlist par genre.
 
 ## Communautés
 
@@ -13,7 +13,7 @@
 |---|---|
 | Player / Frontend | index.html, layout desktop, sw.js, manifest, PWA, égaliseur, chat live, popup contact, now-playing, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass |
 | Infra / Streaming | AzuraCast, Icecast, Liquidsoap, VPS, DuckDNS, GitHub, Vercel, Admin API, playlist Jingles |
-| Serverless / API (chat + bot Telegram admin + Flappy + BPM) | api/chat.js, api/telegram.js, api/supporters.js, api/flappy.js, Upstash Redis, chat live, bot admin, réponse admin, badge supporter, renommage modérateur, pseudo choisi par l'auditeur, jeu BPM, incident quota Upstash, vote playlist (planifié) |
+| Serverless / API (chat + bot Telegram admin + Flappy + BPM) | api/chat.js, api/telegram.js, api/supporters.js, api/flappy.js, Upstash Redis, chat live, bot admin, réponse admin, badge supporter, renommage modérateur, pseudo choisi par l'auditeur, jeu BPM, commande /move (migration entre bacs), incident quota Upstash, vote playlist (planifié) |
 | Intégrations externes (dons, IA) | Buy Me a Coffee, API Claude, api/supporters.js |
 | Outillage / Pipeline musique | pipeline Rekordbox, import-rekordbox.ps1, clean_local_tracks.py, RaiDrive, iTunes Search API, triage (file de retry SFTP), export_bpm_table.py, migrations |
 | Pipeline Essentia / Grille 8 bacs | analyze_essentia.py, classify_bins.py, migrate_grid.py, resync_metadata.py, build_rotation.py (superseded) |
@@ -23,12 +23,12 @@
 ## God nodes (les plus connectés)
 
 1. **index.html** (degré 16) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, PWA).
-2. **api/chat.js** (degré 12) — chat live + modération + renommage (admin et auditeur) + jeu BPM (BpmGuesserFeature) + annonce Flappy + détection d'erreur Upstash. Devient le nœud serveur le plus connecté avec l'ajout du pseudo choisi par l'auditeur.
+2. **api/chat.js** (degré 12) — chat live + modération + renommage (admin et auditeur) + jeu BPM (BpmGuesserFeature) + annonce Flappy + détection d'erreur Upstash.
+2. **api/telegram.js** (degré 12) — bot admin, toutes les commandes (reply, supporters, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque, **/move** de migration entre bacs), résilience handleCallback, kill-switch Redis. Rejoint `api/chat.js` en tête des nœuds serveur avec l'ajout de `/move`.
 3. **ChatFeature** (degré 11) — panneau chat live, cible de la plupart des features de modération, du jeu BPM et du choix de pseudo.
-4. **api/telegram.js** (degré 11) — bot admin, toutes les commandes (reply, supporters, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque), résilience handleCallback, kill-switch Redis.
-5. **AzuraCast** (degré 10) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
-6. **ProgrammeGrid / Horloge à bacs pondérés** (degré 8) — grille 8 bacs, remplace les 4 créneaux à ordre figé.
-7. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles).
+4. **AzuraCast** (degré 10) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
+5. **ProgrammeGrid / Horloge à bacs pondérés** (degré 8) — grille 8 bacs, remplace les 4 créneaux à ordre figé.
+6. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles).
 
 ## Note — 2026-07-21 : incident de quota Upstash et suppression du Top 5
 
@@ -41,6 +41,10 @@ Le BPM n'existe pas dans les métadonnées exposées par l'API AzuraCast (`custo
 ## Note — 2026-07-21 (suite) : pseudo persistant fusionné depuis une branche externe
 
 Branche `claude/chat-persistent-user-id-7iol95` (créée après le dernier commit de `main`, fusionnée sans conflit) : bouton "Set nickname" au-dessus du chat, pseudo choisi par l'auditeur stocké dans le hash Redis `chat:pseudos` (clientId → pseudo) et en miroir `localStorage`. Coexiste avec `ChatRenameFeature` (modération admin) : priorité finale = badge supporter > renommage forcé par l'admin > pseudo choisi par l'auditeur > `Listener-XXXX` par défaut. Voir le nœud `ChatNicknameFeature`.
+
+## Note — 2026-07-24 : commande /move (migration de morceau entre bacs)
+
+Fusionnée dans `main` depuis la branche `claude/telegram-move-music-playlists-11xd5s` (déjà mergée à l'arrivée sur cette session, récupérée par un simple `git pull`). `/move` récupère le morceau en cours de lecture (now-playing) et affiche les 8 bacs de `ProgrammeGrid` sous forme de boutons Telegram ; un clic migre le fichier et affiche le chemin source/destination pour le sync manuel FileZilla — cohérent avec le choix déjà établi d'upload SFTP manuel volontaire (pas d'automatisation du transfert serveur). Simplifiée le même jour d'un flux en deux étapes (`/move_track <recherche>`) vers un flux en une commande partant directement du morceau courant. Voir le nœud `MoveTrackFeature`.
 
 ## Comment explorer
 

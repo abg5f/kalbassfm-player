@@ -1,8 +1,13 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-21
+> Dernière mise à jour : 2026-07-24
 
-## État actuel (2026-07-21, fin de session)
+## État actuel (2026-07-24, session courte — récupération distante uniquement)
+
+- ✅ **`git pull` a récupéré 3 commits déjà pushés depuis une autre session** (branche `claude/telegram-move-music-playlists-11xd5s`, mergée dans `main` avant cette session) : nouvelle commande Telegram **`/move`** dans `api/telegram.js` — récupère le morceau en cours de lecture (now-playing) et affiche les 8 bacs de la grille en boutons inline ; un clic migre le fichier (dossier source → destination) et affiche le chemin source/nom de fichier/destination pour le sync manuel FileZilla (upload SFTP resté volontairement manuel, cohérent avec le reste du pipeline). Simplifiée le même jour d'un flux en deux étapes (`/move_track <recherche>`) vers un flux en une seule commande partant directement du morceau courant
+- ✅ **Graphe graphify mis à jour** pour refléter `/move` (nouveau nœud `MoveTrackFeature`, 63 nœuds / 114 relations) — pas de code produit cette session, uniquement synchronisation contexte + graphe
+
+## État antérieur (2026-07-21, fin de session)
 
 - ✅ **Pseudo du bot BPM renommé "BPM GUESSER"** (au lieu de "BpmGuesser", peu lisible en casse mêlée dans le chat). Anti-usurpation étendue pour bloquer les deux variantes (avec/sans espace)
 - ✅ **Fusion de la branche `claude/chat-persistent-user-id-7iol95`** (créée depuis une autre session, après le dernier commit de `main` — donc mergée sans conflit) : nouvelle feature **pseudo persistant choisi par l'auditeur** — bouton "Set nickname" au-dessus du chat, stocké côté serveur dans le hash Redis `chat:pseudos` (clientId → pseudo, endpoint `POST /api/chat {clientId, setNick}`) et en miroir `localStorage` (`kfm_nick`). Coexiste proprement avec le renommage modérateur existant : priorité finale = badge supporter > rename forcé par l'admin (`chat:nicknames`) > pseudo choisi par l'auditeur (`chat:pseudos`) > `Listener-XXXX` par défaut. Perdu si le cache local est effacé ou sur un autre appareil (pas de compte)
@@ -102,6 +107,8 @@
 | **BPM du jeu "devine le BPM" = table repo (artiste+titre → BPM), pas les métadonnées AzuraCast (2026-07-21)** | Vérifié en direct : l'API AzuraCast n'expose pas de BPM (`custom_fields` vide), et le parser depuis le titre n'est fiable que pour ~3% des morceaux. Le vrai BPM (Essentia) existait déjà en local dans `tools/metadata.json` — `tools/export_bpm_table.py` l'associe aux tags ID3 réels (mêmes tags qu'AzuraCast affiche) pour un matching fiable, sans toucher à AzuraCast ni backfill risqué de la bibliothèque live |
 | **Jeu BPM intégré au chat existant, pas de nouvelle UI (2026-07-21)** | Demande explicite de l'utilisateur : un guess est juste un nombre tapé dans le chat, le bot ("BPM GUESSER", vert fluo `--accent-3`) répond juste après. Zéro bouton/modale à construire, réutilise entièrement le pipeline `api/chat.js` existant |
 | **Import JSON via `with { type: 'json' }` plutôt que `fs.readFileSync(import.meta.url)` (2026-07-21)** | La version `fs.readFileSync` a fait planter `/api/chat` en prod (500, chat invisible pour tous) — `import.meta.url` ne s'est pas comporté comme attendu une fois la fonction empaquetée par Vercel. **Leçon : toujours charger réellement le module en local avant de pousser (`node -e "import('./api/x.js')"`), `node --check` ne valide que la syntaxe, pas le chargement runtime** |
+| **`/move` déplace le fichier serveur + affiche les chemins, mais ne synchronise pas le disque local automatiquement (2026-07-24)** | Cohérent avec la décision déjà en place ("Anciennes décisions toujours valables" : upload SFTP manuel volontaire) — le bot affiche juste les infos nécessaires (dossier source, nom de fichier, destination) pour que l'admin fasse le sync manuel via FileZilla derrière |
+| **`/move` simplifié en une seule commande plutôt que `/move_track <recherche>` en deux étapes (2026-07-24)** | Le morceau à déplacer est quasi toujours celui en cours de lecture (auditeur/admin qui l'entend en direct) — partir du now-playing plutôt que de demander une recherche texte élimine une étape sans perte de cas d'usage réel |
 
 ## En cours / TODOs
 
@@ -149,7 +156,7 @@
 | `tools/triage_new_tracks.py` | Pipeline ingestion → 8 bacs, nom propre, plus d'étape d'ordre | ✅ Mis à jour, à retester sur les 97 orphelins |
 | `tools/build_rotation.py`, `tools/export_rotation.py` | Ancien calcul/export d'ordre | ⚠️ Superseded (en-têtes marqués) |
 | `tools/orphans_report.txt` | 97 fichiers jamais analysés + 14 doublons physiques | ⏳ À traiter (gitignored) |
-| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause avec bandeau auto, reply avec citation, supporters, rename/rename_nick, np/stats, suppression bibliothèque, /ask Claude), handleCallback resilient, pseudo "Admin" | ✅ Déployé |
+| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause avec bandeau auto, reply avec citation, supporters, rename/rename_nick, np/stats, suppression bibliothèque, /ask Claude, **/move** migration de morceau entre bacs), handleCallback resilient, pseudo "Admin" | ✅ Déployé |
 | `api/chat.js` | Chat live + modération + rename admin (chat:nicknames) + pseudo choisi par l'auditeur (chat:pseudos) + jeu BPM (BPM GUESSER) + pseudo "Admin" + messages auto EN + detection erreur Upstash | ✅ Déployé (crash 500 corrigé le 2026-07-21) |
 | `api/flappy.js` | Mini-jeu Flappy Kalbass — classement global (ajouté depuis une autre session) | ✅ Déployé |
 | `api/bpm-table.json` | Table artiste+titre → BPM (749/825 morceaux), générée par tools/export_bpm_table.py | ✅ À régénérer après chaque triage |
@@ -171,10 +178,10 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-21 (construction manuelle via /graphify, pas de CLI) — 62 nœuds, 109 relations
+> Mis à jour le 2026-07-24 (construction manuelle via /graphify, pas de CLI) — 63 nœuds, 114 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 16), `api/chat.js` (chat + modération + rename admin/auditeur + jeu BPM, degré 12, désormais le nœud serveur le plus connecté), `ChatFeature` (11), `api/telegram.js` (bot admin, degré 11), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (8), `classify_bins.py` (source de vérité classification).
-Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram+Flappy+BPM, Intégrations externes [dons+IA], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
+God nodes (concepts centraux) : `index.html` (hub front, degré 16), `api/chat.js` et `api/telegram.js` (ex-æquo, degré 12 — `/move` fait passer `api/telegram.js` au même niveau que `api/chat.js`), `ChatFeature` (11), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (8), `classify_bins.py` (source de vérité classification).
+Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram+Flappy+BPM+`/move`, Intégrations externes [dons+IA], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

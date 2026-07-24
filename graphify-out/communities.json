@@ -54,7 +54,8 @@
         "ChatRenameFeature",
         "ChatNicknameFeature",
         "BpmGuesserFeature",
-        "RedisQuotaIncident"
+        "RedisQuotaIncident",
+        "MoveTrackFeature"
       ]
     },
     {
