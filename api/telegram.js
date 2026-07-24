@@ -435,8 +435,12 @@ async function handleCallback(token, cb) {
     const rows = [];
     for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
     await answerCallback(token, cb.id, '');
+    // Extraire le dossier source depuis le chemin du fichier
+    const currentPath = info.data.path || '';
+    const pathMatch = currentPath.match(/Progv2\/([^\/]+)\//);
+    const currentPlaylist = pathMatch ? pathMatch[1] : '?';
     await sendMessage(token, cb.message.chat.id,
-      `Déplacer vers quelle playlist ?\n\n${label}\n\n` + lines.join('\n'), {
+      `Déplacer vers quelle playlist ?\n\n${label}\n📁 Actuellement : ${currentPlaylist}\n\n` + lines.join('\n'), {
         reply_markup: { inline_keyboard: rows },
       });
   } else if (data.startsWith('moveto:')) {
@@ -449,6 +453,8 @@ async function handleCallback(token, cb) {
     }
     const info = await getTrack(trackId);
     const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || trackId}` : trackId;
+    const playlists = await getPlaylists();
+    const targetPlaylist = playlists.ok ? playlists.list.find(p => String(p.id) === String(playlistId)) : null;
     const r = await moveTrackToPlaylist(trackId, playlistId);
     if (!r.ok) {
       await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
@@ -457,8 +463,21 @@ async function handleCallback(token, cb) {
       return;
     }
     await answerCallback(token, cb.id, '✅ Déplacé');
+    // Extraire les informations de chemin pour le résumé local
+    const currentPath = info.ok && info.data ? (info.data.path || '') : '';
+    const pathMatch = currentPath.match(/Progv2\/([^\/]+)\/(.+)$/);
+    const sourceBac = pathMatch ? pathMatch[1] : '?';
+    const filename = pathMatch ? pathMatch[2] : '?';
+    const targetBac = targetPlaylist ? targetPlaylist.name : 'Destination';
+    const summary = currentPath
+      ? `📋 Résumé pour synchronisation locale :\n\n` +
+        `Fichier : ${filename}\n` +
+        `De : Progv2\\${sourceBac}\\\n` +
+        `Vers : Progv2\\${targetBac}\\\n\n` +
+        `(Copier/déplacer le fichier sur votre PC avec FileZilla)`
+      : '';
     await sendMessage(token, cb.message.chat.id,
-      `✅ Piste déplacée : ${label}`);
+      `✅ Piste déplacée sur AzuraCast : ${label}\n${summary}`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
