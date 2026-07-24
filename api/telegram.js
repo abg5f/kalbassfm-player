@@ -301,6 +301,23 @@ async function handleMessage(token, message) {
       { reply_markup: { inline_keyboard: rows } });
   }
 
+  if (text.startsWith('/move_track')) {
+    const q = text.slice('/move_track'.length).trim();
+    if (!q) return sendMessage(token, chatId, 'Usage : /move_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast et propose un changement de playlist.');
+    const r = await searchTracks(q);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche (${r.status}).`);
+    if (!r.list.length) return sendMessage(token, chatId, `Aucune piste trouvée pour « ${q} ».`);
+    const top = r.list.slice(0, 8);
+    const lines = top.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
+    const buttons = top.map((f, i) => ({ text: '➡️ ' + (i + 1), callback_data: 'movesel:' + f.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId,
+      `Résultats pour « ${q} » — clique ➡️ pour choisir la nouvelle playlist :\n` + lines.join('\n'), {
+        reply_markup: { inline_keyboard: rows },
+      });
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n\n' +
     '🎵 Diffusion\n' +
@@ -308,7 +325,8 @@ async function handleMessage(token, message) {
     '/skip — passer au morceau suivant\n' +
     '/jingle — declencher un jingle (best effort)\n' +
     '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
-    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n\n' +
+    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n' +
+    '/move_track <recherche> — deplacer une piste vers une autre playlist\n\n' +
     '💬 Chat live\n' +
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -398,6 +416,49 @@ async function handleCallback(token, cb) {
     const id = data.slice(7);
     await markDeletedSupporter(id);
     await answerCallback(token, cb.id, 'Supprimé ✅');
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('movesel:')) {
+    const trackId = data.slice(8);
+    const info = await getTrack(trackId);
+    if (!info.ok || !info.data) {
+      await answerCallback(token, cb.id, '❌ Piste introuvable.');
+      return;
+    }
+    const playlists = await getPlaylists();
+    if (!playlists.ok || !playlists.list.length) {
+      await answerCallback(token, cb.id, '❌ Impossible de récupérer les playlists.');
+      return;
+    }
+    const label = `${info.data.artist || '?'} — ${info.data.title || info.data.text || trackId}`;
+    const lines = playlists.list.map((p, i) => `${i + 1}. ${p.name}`);
+    const buttons = playlists.list.map((p) => ({ text: p.name.slice(0, 10), callback_data: 'moveto:' + trackId + ':' + p.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
+    await answerCallback(token, cb.id, '');
+    await sendMessage(token, cb.message.chat.id,
+      `Déplacer vers quelle playlist ?\n\n${label}\n\n` + lines.join('\n'), {
+        reply_markup: { inline_keyboard: rows },
+      });
+  } else if (data.startsWith('moveto:')) {
+    const parts = data.slice(7).split(':');
+    const trackId = parts[0];
+    const playlistId = parts[1];
+    if (!trackId || !playlistId) {
+      await answerCallback(token, cb.id, '❌ Paramètres invalides.');
+      return;
+    }
+    const info = await getTrack(trackId);
+    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || trackId}` : trackId;
+    const r = await moveTrackToPlaylist(trackId, playlistId);
+    if (!r.ok) {
+      await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
+      await sendMessage(token, cb.message.chat.id,
+        `❌ Impossible de déplacer « ${label} » (${r.status}).`);
+      return;
+    }
+    await answerCallback(token, cb.id, '✅ Déplacé');
+    await sendMessage(token, cb.message.chat.id,
+      `✅ Piste déplacée : ${label}`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else {
     await answerCallback(token, cb.id, '');
@@ -502,6 +563,41 @@ async function deleteTrack(id) {
       method: 'DELETE',
       headers: { 'X-API-Key': apiKey },
     });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Recupere la liste des playlists de la station
+async function getPlaylists() {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/playlists`, {
+      headers: { 'X-API-Key': apiKey },
+    });
+    if (!r.ok) return { ok: false, status: r.status };
+    const body = await r.json();
+    const list = Array.isArray(body) ? body : (body.playlists || body.rows || []);
+    return { ok: true, list };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Ajoute une piste a une playlist
+async function moveTrackToPlaylist(trackId, playlistId) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(
+      `${AZURACAST_BASE}/api/station/${STATION}/playlist/${encodeURIComponent(playlistId)}/media/${encodeURIComponent(trackId)}`,
+      {
+        method: 'POST',
+        headers: { 'X-API-Key': apiKey },
+      }
+    );
     return { ok: r.ok, status: r.status };
   } catch {
     return { ok: false, status: 'network-error' };
