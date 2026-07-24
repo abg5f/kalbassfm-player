@@ -604,16 +604,22 @@ async function getPlaylists() {
   }
 }
 
-// Ajoute une piste a une playlist
+// Reaffecte une piste a une (seule) playlist. Il n'existe pas d'endpoint
+// AzuraCast dedie "media -> playlist" (un POST vers .../playlist/{id}/media/{id}
+// renvoie 405, verifie en prod le 2026-07-24) : l'appartenance aux playlists
+// est un champ ecrivable de la ressource file elle-meme (Api_StationMedia.playlists,
+// tableau d'IDs), donc on passe par le meme endpoint que getTrack/deleteTrack
+// (PUT au lieu de GET/DELETE) avec { playlists: [playlistId] }.
 async function moveTrackToPlaylist(trackId, playlistId) {
   const apiKey = process.env.AZURACAST_API_KEY;
   if (!apiKey) return { ok: false, status: 'no-api-key' };
   try {
     const r = await fetch(
-      `${AZURACAST_BASE}/api/station/${STATION}/playlist/${encodeURIComponent(playlistId)}/media/${encodeURIComponent(trackId)}`,
+      `${AZURACAST_BASE}/api/station/${STATION}/file/${encodeURIComponent(trackId)}`,
       {
-        method: 'POST',
-        headers: { 'X-API-Key': apiKey },
+        method: 'PUT',
+        headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playlists: [Number(playlistId)] }),
       }
     );
     return { ok: r.ok, status: r.status };
