@@ -561,6 +561,41 @@
       letter-spacing: .06em;
     }
 
+    /* ── Mes titres sauvegardes (localStorage, reutilise les lignes .hist-*) ── */
+    .saved-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .saved-day {
+      font-family: 'Space Mono', monospace;
+      font-size: .54rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin: 12px 0 2px;
+    }
+    .saved-day:first-child { margin-top: 0; }
+    .saved-item .hist-meta { flex: 1; }
+    .saved-item-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .saved-mini {
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      line-height: 1;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid #333;
+      padding: 5px 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .saved-mini:hover { color: var(--accent); border-color: var(--accent); }
+
     /* ── Supporters (Buy Me a Coffee) ── */
     .supporter-item {
       padding: 6px 0;
@@ -847,6 +882,57 @@
       padding: 4px 6px;
     }
 
+    /* ── Popup "What's new" : catalogue des features cote auditeur ── */
+    .whatsnew-box { max-width: 430px; max-height: 82vh; overflow-y: auto; }
+    .wn-intro {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      line-height: 1.6;
+      color: var(--muted);
+      margin: -6px 0 12px;
+    }
+    .wn-item {
+      display: flex;
+      gap: 10px;
+      padding: 9px 0;
+      border-top: 1px solid #222;
+    }
+    .wn-ico {
+      font-size: .95rem;
+      line-height: 1.3;
+      width: 20px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .wn-body { min-width: 0; }
+    .wn-name { font-size: .72rem; font-weight: 700; letter-spacing: .04em; }
+    .wn-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: .48rem;
+      letter-spacing: .12em;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 2px 5px;
+      margin-left: 6px;
+      vertical-align: 1px;
+    }
+    .wn-desc {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      line-height: 1.55;
+      color: #999;
+      margin-top: 3px;
+    }
+    .wn-desc b { color: var(--accent); font-weight: 700; }
+    .wn-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--bg);
+      border-radius: 50%;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
     /* ── Popup Flappy Kalbass ── */
     .flappy-box { max-width: 320px; }
     .flappy-stage {
@@ -1055,6 +1141,7 @@
       <p class="streak-badge" id="streakBadge"></p>
 
       <div class="actions-row" id="actionsRow" style="display:none">
+        <button class="chip" id="saveBtn" type="button" aria-label="Save this track to your list">♡ Save</button>
         <button class="chip" id="shareBtn" aria-label="Share this track">↗ Share</button>
         <a class="chip" id="findYT" target="_blank" rel="noopener noreferrer">▶ YouTube</a>
         <button class="chip" id="requestBtn" type="button" aria-label="Request a track or send a shout-out">🎵 Request</button>
@@ -1143,6 +1230,21 @@
         <div id="supportersList"></div>
       </div>
     </details>
+
+    <details class="panel" id="savedPanel">
+      <summary>
+        <span class="panel-summary-label">My tracks ❤ <span class="hist-preview" id="savedCount"></span></span>
+        <span class="chev">›</span>
+      </summary>
+      <div class="panel-body">
+        <div class="saved-actions">
+          <button class="chip" id="savedCopy" type="button" aria-label="Copy your track list">⧉ Copy</button>
+          <button class="chip" id="savedDownload" type="button" aria-label="Download your track list">⬇ Download</button>
+          <button class="chip" id="savedClear" type="button" aria-label="Clear your track list">✕ Clear</button>
+        </div>
+        <div id="savedList"></div>
+      </div>
+    </details>
     </div>
 
     <div class="footer">
@@ -1152,6 +1254,7 @@
         <span id="footerStatus">STANDBY</span>
       </div>
       <div class="footer-donate">
+        <button type="button" class="donate-link" id="whatsNewBtn">✨ What's new<span class="wn-dot" id="whatsNewDot"></span></button>
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
         <button type="button" class="donate-link" id="ownedByBtn">Owned by Lupari</button>
       </div>
@@ -1160,6 +1263,94 @@
   </main>
 
   <div class="streak-toast" id="streakToast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="whatsNewModal" role="dialog" aria-modal="true" aria-label="What's new on KALBASS FM">
+    <div class="modal-box whatsnew-box">
+      <button class="modal-close" id="whatsNewClose" aria-label="Close">✕</button>
+      <div class="modal-title">✨ What's new</div>
+      <p class="wn-intro">Everything you can do here — no account, nothing to install.</p>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">❤</span>
+        <div class="wn-body">
+          <div class="wn-name">My tracks<span class="wn-tag">NEW</span></div>
+          <p class="wn-desc">Heard something you liked? Hit <b>♡ Save</b> under the track. Everything you save lands in the <b>My tracks</b> panel, grouped by day — with a YouTube link for each one. Copy the whole list or download it as a <b>.txt</b> to take it anywhere.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">⌨</span>
+        <div class="wn-body">
+          <div class="wn-name">Chat commands<span class="wn-tag">NEW</span></div>
+          <p class="wn-desc">Type <b>!save</b> in the chat to save the track that's playing, <b>!saved</b> to open your list, <b>!help</b> to reopen this window. These never get posted to the chat.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">🎵</span>
+        <div class="wn-body">
+          <div class="wn-name">Request &amp; shout-outs</div>
+          <p class="wn-desc">Ask for a track or send a message straight to the DJ — it goes to him, not to the public chat.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">💬</span>
+        <div class="wn-body">
+          <div class="wn-name">Live chat &amp; nickname</div>
+          <p class="wn-desc">Talk to the other listeners, and hit <b>✎ Set nickname</b> to pick the name you show up as.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">🎯</span>
+        <div class="wn-body">
+          <div class="wn-name">Guess the BPM</div>
+          <p class="wn-desc">Think you've got the ear for it? Type a number in the chat and find out how close you were on the track that's playing.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">🔥</span>
+        <div class="wn-body">
+          <div class="wn-name">Vibe Streak</div>
+          <p class="wn-desc">Listen a few minutes a day and your streak keeps climbing. Private, stays on your device.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">🐦</span>
+        <div class="wn-body">
+          <div class="wn-name">Flappy Kalbass</div>
+          <p class="wn-desc">Tap the bird up top for the mini game — the radio keeps playing, and there's a global leaderboard.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">☕</span>
+        <div class="wn-body">
+          <div class="wn-name">Supporters</div>
+          <p class="wn-desc">Buy the station a coffee and your name shows up in the Supporters panel — and in the chat.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">📲</span>
+        <div class="wn-body">
+          <div class="wn-name">Install the app</div>
+          <p class="wn-desc">Add KALBASS FM to your home screen and it opens like a real app, full screen.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">💤</span>
+        <div class="wn-body">
+          <div class="wn-name">Sleep timer</div>
+          <p class="wn-desc">Next to the volume — set it and the stream stops on its own once you're asleep.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-backdrop" id="contactModal" role="dialog" aria-modal="true" aria-label="Contact Lupari">
     <div class="modal-box">
@@ -1232,8 +1423,12 @@
   const listenersEl = document.getElementById('listeners');
   const listenersCount = document.getElementById('listenersCount');
   const actionsRow = document.getElementById('actionsRow');
+  const saveBtn   = document.getElementById('saveBtn');
   const shareBtn  = document.getElementById('shareBtn');
   const findYT    = document.getElementById('findYT');
+  const savedPanel = document.getElementById('savedPanel');
+  const savedList  = document.getElementById('savedList');
+  const savedCount = document.getElementById('savedCount');
   const historyList = document.getElementById('historyList');
   const supportersList = document.getElementById('supportersList');
   const histPreview = document.getElementById('histPreview');
@@ -1447,6 +1642,218 @@
     }
   });
 
+  /* ── Mes titres : sauvegarde 100% locale (localStorage), aucun appel serveur ──
+     Meme choix que le Vibe Streak et le best score Flappy. L'identite d'un
+     auditeur EST deja un clientId de localStorage (cf. getClientId plus bas) :
+     un stockage serveur indexe par clientId ne survivrait donc pas mieux a un
+     vidage du cache, il couterait juste des commandes Upstash a chaque like et
+     a chaque lecture — exactement le patron qui a epuise le quota et fait
+     supprimer le Top 5 (incident du 2026-07-21). La contrepartie assumee : pas
+     de sync multi-appareils, donc la sortie de la liste (copie / .txt) est la
+     vraie fonctionnalite de recuperation, pas un bonus. */
+  const SAVED_KEY = 'kfm_saved';
+  const SAVED_MAX = 200;
+
+  // Meme normalisation que normalizeKey dans api/chat.js : dedoublonne les
+  // rediffusions d'un meme morceau.
+  function savedKeyOf(artist, title) {
+    const n = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    return n(artist) + '|' + n(title);
+  }
+  function loadSaved() {
+    try { const v = JSON.parse(localStorage.getItem(SAVED_KEY)); return Array.isArray(v) ? v : []; }
+    catch { return []; }
+  }
+  function writeSaved(list) {
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, SAVED_MAX))); } catch {}
+  }
+  function isSaved(track) {
+    if (!track || !track.title) return false;
+    const k = savedKeyOf(track.artist, track.title);
+    return loadSaved().some((s) => savedKeyOf(s.a, s.t) === k);
+  }
+  // 'added' | 'removed' | null (null = rien en cours de lecture).
+  function toggleSaved(track) {
+    if (!track || !track.title || track.title === '—') return null;
+    const k = savedKeyOf(track.artist, track.title);
+    const list = loadSaved();
+    const i = list.findIndex((s) => savedKeyOf(s.a, s.t) === k);
+    if (i >= 0) { list.splice(i, 1); writeSaved(list); return 'removed'; }
+    list.unshift({ t: track.title, a: track.artist, art: track.art || '', ts: Date.now() });
+    writeSaved(list);
+    return 'added';
+  }
+
+  function renderSaveBtn() {
+    const on = isSaved(current);
+    saveBtn.textContent = on ? '❤ Saved' : '♡ Save';
+    saveBtn.classList.toggle('chip-fire', on);
+    saveBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  saveBtn.addEventListener('click', () => {
+    const r = toggleSaved(current);
+    if (!r) { showToast('Nothing playing right now.'); return; }
+    renderSaveBtn();
+    renderSaved();
+    showToast(r === 'added' ? '❤ Saved — find it in "My tracks"' : 'Removed from your tracks');
+  });
+
+  function savedDayLabel(ts) {
+    const sameDay = (a, b) => a.toDateString() === b.toDateString();
+    const d = new Date(ts);
+    const today = new Date();
+    if (sameDay(d, today)) return 'Today';
+    if (sameDay(d, new Date(today.getTime() - 86400000))) return 'Yesterday';
+    // Locale forcee : l'UI est entierement en anglais, une date localisee
+    // ("21 juil. 2026") jurerait au milieu du reste.
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function renderSaved() {
+    const list = loadSaved();
+    savedCount.textContent = list.length ? '· ' + list.length : '';
+    if (!list.length) {
+      savedList.innerHTML = '<p class="prog-note">No saved tracks yet — hit ♡ Save while a track is playing.</p>';
+      return;
+    }
+    savedList.innerHTML = '';
+    let lastDay = null;
+    list.forEach((s) => {
+      const day = savedDayLabel(s.ts);
+      if (day !== lastDay) {
+        lastDay = day;
+        const h = document.createElement('div');
+        h.className = 'saved-day';
+        h.textContent = day;
+        savedList.appendChild(h);
+      }
+      // createElement + textContent (comme renderChat) plutot que innerHTML
+      // (comme renderHistory) : ces titres sortent du localStorage.
+      const el = document.createElement('div');
+      el.className = 'hist-item saved-item';
+      const art = document.createElement('div');
+      art.className = 'hist-art';
+      if (/^https?:\/\//.test(s.art || '')) art.style.backgroundImage = 'url("' + s.art + '")';
+      const meta = document.createElement('div');
+      meta.className = 'hist-meta';
+      const t = document.createElement('div');
+      t.className = 'hist-title'; t.textContent = s.t || '—';
+      const a = document.createElement('div');
+      a.className = 'hist-artist'; a.textContent = s.a || '';
+      meta.appendChild(t); meta.appendChild(a);
+      const acts = document.createElement('div');
+      acts.className = 'saved-item-actions';
+      const yt = document.createElement('a');
+      yt.className = 'saved-mini';
+      yt.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(((s.a || '') + ' ' + (s.t || '')).trim());
+      yt.target = '_blank'; yt.rel = 'noopener noreferrer';
+      yt.textContent = '▶'; yt.title = 'Find on YouTube';
+      const rm = document.createElement('button');
+      rm.className = 'saved-mini'; rm.type = 'button';
+      rm.textContent = '✕'; rm.title = 'Remove';
+      rm.addEventListener('click', () => {
+        const k = savedKeyOf(s.a, s.t);
+        writeSaved(loadSaved().filter((x) => savedKeyOf(x.a, x.t) !== k));
+        renderSaved();
+        renderSaveBtn();
+      });
+      acts.appendChild(yt); acts.appendChild(rm);
+      el.appendChild(art); el.appendChild(meta); el.appendChild(acts);
+      savedList.appendChild(el);
+    });
+  }
+
+  // Sortie texte : le seul moyen de faire quitter la liste au navigateur sans
+  // compte ni serveur (a coller dans Spotify, les Notes, un mail...).
+  function savedAsText() {
+    const lines = ['KALBASS FM — my tracks (' + new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ')'];
+    let lastDay = null;
+    loadSaved().forEach((s) => {
+      const day = savedDayLabel(s.ts);
+      if (day !== lastDay) { lastDay = day; lines.push('', '— ' + day); }
+      lines.push((s.a || '?') + ' — ' + (s.t || '?'));
+    });
+    lines.push('', 'https://kalbassfm-player.vercel.app/');
+    return lines.join('\n');
+  }
+  // Repli execCommand pour les contextes non securises / navigateurs sans
+  // Clipboard API (le player tourne aussi en http en local).
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {}
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch { return false; }
+  }
+  document.getElementById('savedCopy').addEventListener('click', async () => {
+    if (!loadSaved().length) { showToast('Your track list is empty.'); return; }
+    const ok = await copyText(savedAsText());
+    showToast(ok ? 'Track list copied ⧉' : 'Could not copy — try Download.');
+  });
+  document.getElementById('savedDownload').addEventListener('click', () => {
+    if (!loadSaved().length) { showToast('Your track list is empty.'); return; }
+    try {
+      const url = URL.createObjectURL(new Blob([savedAsText()], { type: 'text/plain;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'kalbassfm-tracks.txt';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { showToast('Could not download — try Copy.'); }
+  });
+  document.getElementById('savedClear').addEventListener('click', () => {
+    if (!loadSaved().length) return;
+    if (!confirm('Clear your saved tracks? This cannot be undone.')) return;
+    writeSaved([]);
+    renderSaved();
+    renderSaveBtn();
+    showToast('Track list cleared.');
+  });
+  renderSaved();
+
+  // Commandes tapees dans le chat, traitees ENTIEREMENT cote client : le
+  // message n'est jamais poste, donc zero ecriture Redis, zero notification
+  // Telegram admin, et pas de pollution du fil public.
+  function handleChatCommand(text) {
+    if (text[0] !== '!' && text[0] !== '/') return false;
+    const cmd = text.slice(1).trim().toLowerCase();
+    if (cmd === 'save' || cmd === 'like') {
+      const r = toggleSaved(current);
+      if (!r) { showToast('Nothing playing right now.'); return true; }
+      renderSaveBtn();
+      renderSaved();
+      showToast(r === 'added' ? '❤ Saved — find it in "My tracks"' : 'Removed from your tracks');
+      return true;
+    }
+    if (cmd === 'saved' || cmd === 'mytracks' || cmd === 'list') {
+      savedPanel.open = true;
+      savedPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const n = loadSaved().length;
+      showToast(n ? '❤ ' + n + ' saved track' + (n > 1 ? 's' : '') : 'No saved tracks yet — try !save');
+      return true;
+    }
+    if (cmd === 'help' || cmd === 'new') {
+      openWhatsNew();
+      return true;
+    }
+    return false;
+  }
+
 
   /* ── Supporters (Buy Me a Coffee) — evenement rare, poll peu frequent ── */
   function renderSupporters(list) {
@@ -1624,6 +2031,9 @@
     e.preventDefault();
     const text = chatInput.value.trim();
     if (!text || chatCooldown) return;
+    // Commandes locales (!save, !saved, !help) : traitees ici et jamais
+    // envoyees au serveur — donc pas de rate-limit, pas de cout Redis.
+    if (handleChatCommand(text)) { chatInput.value = ''; return; }
     if (LINK_RE.test(text)) { showChatError('Links are not allowed in the chat.'); return; }
     chatCooldown = true;
     chatSend.disabled = true;
@@ -1740,6 +2150,7 @@
 
       actionsRow.style.display = 'flex';
       updateFindLinks();
+      renderSaveBtn();
       updateMediaSession();
     } catch { /* silent */ }
   }
@@ -1957,6 +2368,34 @@
   document.getElementById('installToastLater').addEventListener('click', dismissInstallToast);
 
   /* ── Popup de contact ("Owned by Lupari") ── */
+  /* ── Popup "What's new" : catalogue des features cote auditeur (elles sont
+     nombreuses et peu decouvrables — chat commands, jeu BPM, streak...).
+     S'ouvre d'elle-meme UNE seule fois par version (localStorage kfm_whatsnew,
+     compare a WHATS_NEW_V) puis a la demande via le pied de page ou !help.
+     Bumper WHATS_NEW_V a la prochaine feature pour la re-annoncer a tous. ── */
+  const WHATS_NEW_V = '2026-07-mytracks';
+  const whatsNewModal = document.getElementById('whatsNewModal');
+  const whatsNewDot = document.getElementById('whatsNewDot');
+  function openWhatsNew() {
+    whatsNewModal.classList.add('show');
+    whatsNewModal.scrollTop = 0;
+    if (whatsNewDot) whatsNewDot.style.display = 'none';
+    try { localStorage.setItem('kfm_whatsnew', WHATS_NEW_V); } catch {}
+  }
+  function closeWhatsNew() { whatsNewModal.classList.remove('show'); }
+  document.getElementById('whatsNewBtn').addEventListener('click', openWhatsNew);
+  document.getElementById('whatsNewClose').addEventListener('click', closeWhatsNew);
+  whatsNewModal.addEventListener('click', (e) => { if (e.target === whatsNewModal) closeWhatsNew(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeWhatsNew(); });
+  let whatsNewSeen = null;
+  try { whatsNewSeen = localStorage.getItem('kfm_whatsnew'); } catch {}
+  if (whatsNewSeen === WHATS_NEW_V) {
+    if (whatsNewDot) whatsNewDot.style.display = 'none';
+  } else {
+    // Laisse la page s'afficher d'abord : la popup n'est pas un mur d'entree.
+    setTimeout(openWhatsNew, 1800);
+  }
+
   const contactModal = document.getElementById('contactModal');
   function closeContactModal() { contactModal.classList.remove('show'); }
   document.getElementById('ownedByBtn').addEventListener('click', () => contactModal.classList.add('show'));
