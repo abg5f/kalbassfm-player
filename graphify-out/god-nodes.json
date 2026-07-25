@@ -1,18 +1,18 @@
 [
   {
     "id": "index.html",
-    "degree": 16,
+    "degree": 18,
     "label": "index.html"
+  },
+  {
+    "id": "ChatFeature",
+    "degree": 13,
+    "label": "Chat live"
   },
   {
     "id": "api/chat.js",
     "degree": 12,
     "label": "api/chat.js"
-  },
-  {
-    "id": "ChatFeature",
-    "degree": 11,
-    "label": "Chat live"
   },
   {
     "id": "api/telegram.js",
@@ -23,5 +23,10 @@
     "id": "AzuraCast",
     "degree": 10,
     "label": "AzuraCast"
+  },
+  {
+    "id": "ProgrammeGrid",
+    "degree": 9,
+    "label": "Horloge a bacs ponderes (8 bacs)"
   }
 ]

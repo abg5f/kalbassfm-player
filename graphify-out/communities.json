@@ -18,7 +18,9 @@
         "VibeStreakFeature",
         "PinnedBannerFeature",
         "RequestFeature",
-        "FlappyKalbassFeature"
+        "FlappyKalbassFeature",
+        "MyTracksFeature",
+        "WhatsNewModal"
       ]
     },
     {

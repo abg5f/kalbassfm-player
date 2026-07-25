@@ -2,7 +2,15 @@
 
 > Dernière mise à jour : 2026-07-24
 
-## État actuel (2026-07-24, session courte — récupération distante uniquement)
+## État actuel (2026-07-24, suite — correctif `/move` + feature « My tracks »)
+
+- 🔥 **Correctif prod du `/move` fraîchement récupéré : erreur 405** (`❌ Impossible de déplacer « … » (405)`, signalée depuis Telegram). `moveTrackToPlaylist()` appelait `POST /api/station/{station}/playlist/{id}/media/{id}` — **route inexistante** dans l'API AzuraCast. Diagnostic fait en consultant la spec OpenAPI de l'instance elle-même (`/static/openapi.yml`) plutôt qu'en devinant : **l'appartenance aux playlists est un champ écrivable de la ressource file** (`Api_StationMedia.playlists`, tableau d'IDs), il n'existe aucun endpoint « media → playlist » dédié. Corrigé en `PUT /api/station/{station}/file/{id}` avec `{ playlists: [id] }`, même endpoint que `getTrack`/`deleteTrack`. Commit `c5a67ec`, poussé — **non reconfirmé en prod**, à retester au prochain `/move`
+- ✅ **Nouvelle feature « My tracks »** (`index.html`, commit `3674ea9`) — répond à la question récurrente des auditeurs « comment garder une trace des titres que j'aime ? ». Chip **`♡ Save`** dans la barre d'actions (toggle → `❤ Saved`), commandes chat **`!save` / `!saved` / `!help`**, panneau repliable **« My tracks »** groupé par jour avec lien YouTube + retrait par ligne, et export **Copy / Download .txt / Clear**. **100 % `localStorage`** (`kfm_saved`, 200 max, dédoublonné sur artiste+titre normalisé) : **aucun fichier `api/` touché, zéro commande Redis, zéro invocation de fonction Vercel**
+- ✅ **Popup « ✨ What's new »** — catalogue les 10 features côté auditeur (beaucoup étaient invisibles : commandes chat, jeu BPM, Vibe Streak, Flappy, sleep timer). S'ouvre **une seule fois par version** (`kfm_whatsnew` comparé à la constante `WHATS_NEW_V`), puis à la demande via le pied de page ou `!help`. Bumper `WHATS_NEW_V` la ré-annonce à tous
+- ✅ **Vérifié en local dans le navigateur, pas supposé** : `!save` ne produit **aucun POST** (que les GET de polling) alors qu'un message normal en produit toujours un (pas de régression) ; persistance après reload ; repli `execCommand` fonctionnel quand l'API Clipboard est refusée ; aucun débordement en 375×812 ; console vide. Diff `index.html` : **439 insertions, 0 suppression**
+- ✅ **Graphe graphify** : 65 nœuds / 123 relations (nouveaux nœuds `MyTracksFeature` et `WhatsNewModal`)
+
+## État antérieur (2026-07-24, début de session — récupération distante uniquement)
 
 - ✅ **`git pull` a récupéré 3 commits déjà pushés depuis une autre session** (branche `claude/telegram-move-music-playlists-11xd5s`, mergée dans `main` avant cette session) : nouvelle commande Telegram **`/move`** dans `api/telegram.js` — récupère le morceau en cours de lecture (now-playing) et affiche les 8 bacs de la grille en boutons inline ; un clic migre le fichier (dossier source → destination) et affiche le chemin source/nom de fichier/destination pour le sync manuel FileZilla (upload SFTP resté volontairement manuel, cohérent avec le reste du pipeline). Simplifiée le même jour d'un flux en deux étapes (`/move_track <recherche>`) vers un flux en une seule commande partant directement du morceau courant
 - ✅ **Graphe graphify mis à jour** pour refléter `/move` (nouveau nœud `MoveTrackFeature`, 63 nœuds / 114 relations) — pas de code produit cette session, uniquement synchronisation contexte + graphe
@@ -109,6 +117,10 @@
 | **Import JSON via `with { type: 'json' }` plutôt que `fs.readFileSync(import.meta.url)` (2026-07-21)** | La version `fs.readFileSync` a fait planter `/api/chat` en prod (500, chat invisible pour tous) — `import.meta.url` ne s'est pas comporté comme attendu une fois la fonction empaquetée par Vercel. **Leçon : toujours charger réellement le module en local avant de pousser (`node -e "import('./api/x.js')"`), `node --check` ne valide que la syntaxe, pas le chargement runtime** |
 | **`/move` déplace le fichier serveur + affiche les chemins, mais ne synchronise pas le disque local automatiquement (2026-07-24)** | Cohérent avec la décision déjà en place ("Anciennes décisions toujours valables" : upload SFTP manuel volontaire) — le bot affiche juste les infos nécessaires (dossier source, nom de fichier, destination) pour que l'admin fasse le sync manuel via FileZilla derrière |
 | **`/move` simplifié en une seule commande plutôt que `/move_track <recherche>` en deux étapes (2026-07-24)** | Le morceau à déplacer est quasi toujours celui en cours de lecture (auditeur/admin qui l'entend en direct) — partir du now-playing plutôt que de demander une recherche texte élimine une étape sans perte de cas d'usage réel |
+| **Endpoint AzuraCast lu dans la spec OpenAPI de l'instance, pas deviné (2026-07-24)** | Le 405 de `/move` venait d'une route inventée. La recherche web était non concluante ; `https://kalbassfm.duckdns.org/static/openapi.yml` (servie par l'instance elle-même, donc exactement sa version) a donné la réponse en une lecture : `playlists` est un champ **writeOnly** de `Api_StationMedia`, il n'existe pas d'endpoint « media → playlist ». **Réflexe à garder pour tout futur appel AzuraCast** |
+| **« My tracks » 100 % `localStorage`, aucun stockage serveur (2026-07-24)** | Le `clientId` qui identifie un auditeur **est lui-même dans `localStorage`** : une liste côté Redis indexée par `clientId` ne survivrait donc pas mieux à un vidage du cache, tout en coûtant des commandes Upstash à chaque like et à chaque lecture — exactement le patron qui a épuisé le quota et fait supprimer le Top 5. Contrepartie assumée : pas de sync multi-appareils, donc **l'export (Copy / .txt) est la vraie fonction de récupération**, pas un bonus |
+| **Commandes chat interceptées côté client avant tout `fetch` (2026-07-24)** | `!save`/`!saved`/`!help` sont traitées entièrement dans le navigateur et ne sont jamais postées : zéro écriture Redis, zéro notification Telegram à l'admin, aucune pollution du fil public, et pas de rate-limit 3s subi par l'auditeur. Une commande coûte donc **moins** qu'un message normal (~8 commandes Redis + 1 notif) |
+| **Popup « What's new » auto-ouverte une fois par version, pas à chaque visite (2026-07-24)** | Les features côté auditeur se sont accumulées (chat, jeu BPM, streak, Flappy, Request, sleep timer) sans jamais être présentées — un nouvel arrivant n'en découvrait presque aucune. Verrou `localStorage` (`kfm_whatsnew` vs `WHATS_NEW_V`) + délai de 1,8 s : informatif sans faire mur d'entrée, et re-annonçable en bumpant une constante |
 
 ## En cours / TODOs
 
@@ -133,6 +145,9 @@
 - [ ] **Surveiller la facture Upstash Pay As You Go** les premières semaines pour valider que le volume de commandes reste raisonnable après suppression du Top 5 (2026-07-21)
 - [ ] **Vérifier qu'aucun don Buy Me a Coffee n'a été perdu** pendant la fenêtre `REDIS_PAUSED` (2026-07-21) — le webhook répondait 200 à BMC (pour ne pas se faire désactiver) mais n'enregistrait rien côté Redis
 - [ ] **Relancer `tools/export_bpm_table.py` + commit/push `api/bpm-table.json`** après chaque session de triage — sinon les nouveaux morceaux ne sont jamais couverts par le jeu BPM (749/825 actuellement, 74 sans tags ID3 exploitables + 2 fichiers introuvables)
+- [ ] **Reconfirmer `/move` en prod** après le fix du 405 (2026-07-24) — le correctif est poussé et déployé mais n'a jamais été rejoué de bout en bout depuis Telegram
+- [ ] **Vérifier « My tracks » en prod** (2026-07-24) — testé en local uniquement ; en particulier le bouton ⧉ Copy, dont l'API Clipboard était refusée dans l'environnement de test (c'est le repli `execCommand` qui a été validé, pas le chemin nominal)
+- [ ] **Bumper `WHATS_NEW_V`** (`index.html`) à la prochaine feature auditeur pour re-annoncer la popup What's new à tout le monde
 - [ ] **Vérifier `/api/chat` reste stable en prod** après le fix du crash 500 (2026-07-21) — surveiller les prochains jours, pas de régression connue mais c'était un vrai incident (chat totalement invisible le temps du fix)
 
 ## Problèmes connus
@@ -163,9 +178,9 @@
 | `tools/export_bpm_table.py` | **Nouveau** — lit les tags ID3 réels (mutagen) + BPM Essentia, exporte api/bpm-table.json | ✅ Créé le 2026-07-21 |
 | `api/supporters.js` | Webhook Buy Me a Coffee (HMAC), remerciement chat + panneau Supporters + notif Telegram, pseudo "Admin" | ✅ Déployé, testé de bout en bout |
 | `api/reactions.js` | Vote 🔥 + Top 5 | ❌ Supprimé le 2026-07-21 (gros consommateur Redis, feature peu utilisée) |
-| `index.html` | Player complet EN, Top 5 retiré, Flappy Kalbass (fix mobile 2026-07-21), Vibe Streak, bandeau épinglé, Request, reconnexion durcie | ✅ Live |
-| `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v14` | ✅ Live |
-| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances | ✅ À jour 2026-07-21 |
+| `index.html` | Player complet EN, Top 5 retiré, Flappy Kalbass (fix mobile 2026-07-21), Vibe Streak, bandeau épinglé, Request, reconnexion durcie, **My tracks** (chip Save + panneau + export, 100% localStorage) et **popup What's new** (2026-07-24) | ✅ Live |
+| `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v18` (2026-07-24) | ✅ Live |
+| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances (65 nœuds / 123 relations) | ✅ À jour 2026-07-24 |
 
 ## Infrastructure
 
@@ -178,10 +193,10 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-24 (construction manuelle via /graphify, pas de CLI) — 63 nœuds, 114 relations
+> Mis à jour le 2026-07-24 (2e passe, construction manuelle via /graphify, pas de CLI) — 65 nœuds, 123 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 16), `api/chat.js` et `api/telegram.js` (ex-æquo, degré 12 — `/move` fait passer `api/telegram.js` au même niveau que `api/chat.js`), `ChatFeature` (11), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (8), `classify_bins.py` (source de vérité classification).
-Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram+Flappy+BPM+`/move`, Intégrations externes [dons+IA], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
+God nodes (concepts centraux) : `index.html` (hub front, degré 18 — se détache encore avec `MyTracksFeature` et `WhatsNewModal`, deux features 100 % clientes), `ChatFeature` (13, désormais aussi cible des commandes locales `!save`/`!saved`/`!help`), `api/chat.js` et `api/telegram.js` (ex-æquo, degré 12), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (9), `classify_bins.py` (source de vérité classification).
+Communautés détectées : 8 (Player/Frontend [+ My tracks, What's new], Infra/Streaming, Serverless+bot Telegram+Flappy+BPM+`/move`, Intégrations externes [dons+IA], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

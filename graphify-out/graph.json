@@ -4,7 +4,7 @@
       "id": "index.html",
       "label": "index.html",
       "type": "file",
-      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout)."
+      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version)."
     },
     {
       "id": "sw.js",
@@ -377,6 +377,18 @@
       "label": "Commande /move (migration de morceau entre bacs)",
       "type": "feature",
       "summary": "Commande Telegram /move (api/telegram.js, fusionnee dans main le 2026-07-24 depuis la branche claude/telegram-move-music-playlists-11xd5s) : recupere le morceau en cours de lecture (now-playing) et affiche les 8 bacs de ProgrammeGrid sous forme de boutons inline. Un clic migre le morceau (dossier source -> destination) et affiche le chemin source/filename/destination pour le sync manuel FileZilla derriere (upload SFTP manuel volontaire, pas d'automatisation). Simplifiee le meme jour depuis une premiere version en deux etapes (/move_track <recherche>) vers un flux en une seule commande partant directement du morceau courant."
+    },
+    {
+      "id": "MyTracksFeature",
+      "label": "My tracks (sauvegarde locale de titres likes)",
+      "type": "feature",
+      "summary": "Reponse a la demande recurrente des auditeurs (\"comment je garde une trace des morceaux que j'aime ?\"), livree le 2026-07-24. Chip 'Save' dans la barre d'actions (toggle, etat 'Saved' en accent) + commandes chat !save / !saved / !help interceptees cote client AVANT tout fetch : elles ne sont jamais postees, donc zero commande Redis, zero notification Telegram admin et aucune pollution du fil public. Panneau repliable 'My tracks' dans la sidebar : groupe par jour (Today/Yesterday/date en-GB), lien YouTube + retrait par ligne, export Copy (repli execCommand si la Clipboard API est refusee) / Download .txt / Clear. Stockage 100% localStorage (kfm_saved, 200 max, dedoublonne sur artiste+titre normalise comme normalizeKey d'api/chat.js). Aucun fichier api/ touche."
+    },
+    {
+      "id": "WhatsNewModal",
+      "label": "Popup What's new (catalogue des features auditeur)",
+      "type": "feature",
+      "summary": "Modale ajoutee le 2026-07-24, meme patron que ContactPopup (.modal-backdrop/.modal-box). Catalogue les 10 features cote auditeur, dont beaucoup etaient invisibles pour un nouvel arrivant (commandes chat, jeu BPM, Vibe Streak, Flappy, sleep timer). S'ouvre d'elle-meme UNE seule fois par version (localStorage kfm_whatsnew compare a la constante WHATS_NEW_V), 1.8s apres le chargement pour ne pas faire mur d'entree, puis a la demande via le bouton du pied de page (pastille accent tant que non lue) ou la commande !help du chat. Bumper WHATS_NEW_V re-annonce le catalogue a tous les auditeurs."
     }
   ],
   "edges": [
@@ -1062,6 +1074,60 @@
       "source": "MoveTrackFeature",
       "target": "RekordboxPipeline",
       "relation": "cree un ecart local/serveur reconcilie manuellement via FileZilla, meme principe que",
+      "weight": 1
+    },
+    {
+      "source": "index.html",
+      "target": "MyTracksFeature",
+      "relation": "implemente",
+      "weight": 3
+    },
+    {
+      "source": "MyTracksFeature",
+      "target": "ChatFeature",
+      "relation": "detourne les commandes !save/!saved avant envoi",
+      "weight": 2
+    },
+    {
+      "source": "MyTracksFeature",
+      "target": "NowPlayingAPI",
+      "relation": "sauvegarde le morceau courant",
+      "weight": 2
+    },
+    {
+      "source": "MyTracksFeature",
+      "target": "RedisQuotaIncident",
+      "relation": "concue 100% locale a cause de",
+      "weight": 2
+    },
+    {
+      "source": "MyTracksFeature",
+      "target": "VibeStreakFeature",
+      "relation": "meme patron localStorage sans serveur",
+      "weight": 1
+    },
+    {
+      "source": "index.html",
+      "target": "WhatsNewModal",
+      "relation": "implemente",
+      "weight": 2
+    },
+    {
+      "source": "WhatsNewModal",
+      "target": "MyTracksFeature",
+      "relation": "annonce",
+      "weight": 2
+    },
+    {
+      "source": "WhatsNewModal",
+      "target": "ChatFeature",
+      "relation": "ouverte par la commande !help",
+      "weight": 1
+    },
+    {
+      "source": "WhatsNewModal",
+      "target": "ContactPopup",
+      "relation": "meme patron de modale",
       "weight": 1
     }
   ]
