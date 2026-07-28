@@ -185,6 +185,12 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, await statsText());
   }
 
+  // Plus lourd que /stats (fenetre de 30 jours d'historique) : commande
+  // separee pour que /stats reste une reponse instantanee.
+  if (text === '/audience') {
+    return sendMessage(token, chatId, await audienceText());
+  }
+
   if (text.startsWith('/pin')) {
     const body = text.slice(4).trim();
     if (!body) return sendMessage(token, chatId, 'Usage : /pin <texte> (annonce épinglée en haut du chat)');
@@ -367,7 +373,8 @@ async function handleMessage(token, message) {
     '🤖 Assistant\n' +
     '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
     '📊 Stats\n' +
-    '/stats — auditeurs et messages du jour\n\n' +
+    '/stats — auditeurs et messages du jour\n' +
+    '/audience — moyennes 24 h / 30 j, pics, meilleur jour et localisation des auditeurs\n\n' +
     'Astuce : clique le bouton "↩️ Repondre" sous une notification de message pour y repondre, sous Admin.');
 }
 
@@ -660,6 +667,202 @@ async function statsText() {
   return `📊 Stats du ${day} (UTC-4)\n` +
     `🎧 Auditeurs maintenant : ${lc} (uniques ${uniq})\n` +
     `💬 Messages du chat aujourd'hui : ${msgs}`;
+}
+
+/* ---- Audience : moyennes jour/mois + localisation (/audience) ----
+
+   Tout vient d'AzuraCast, rien n'est accumule cote Redis : l'instance garde
+   deja l'historique complet depuis le premier jour, et un echantillonnage
+   maison n'aurait aucune anteriorite tout en ajoutant des ecritures Upstash
+   (cf. l'incident de quota du 2026-07-21).
+
+   Deux endpoints, tous deux au schema documente dans /static/openapi.yml de
+   l'instance (verifie avant ecriture — meme lecon que le 405 de /move) :
+   - GET /station/{id}/history?start=&end=  -> Api_DetailedSongHistory[],
+     un enregistrement par morceau joue avec listeners_start/listeners_end,
+     played_at (timestamp UNIX) et duration (secondes).
+   - GET /station/{id}/listeners            -> Api_Listener[], avec location
+     (country / city / description) pour les auditeurs CONNECTES MAINTENANT.
+     AzuraCast n'expose pas d'historique de localisation : les lieux sont donc
+     forcement un instantane, pas une moyenne.
+
+   La moyenne est PONDEREE PAR LA DUREE : chaque morceau represente une tranche
+   de temps pendant laquelle l'audience valait ~(start+end)/2. Une moyenne
+   simple par morceau surponderait les titres courts. */
+const AUDIENCE_CACHE_KEY = 'stats:audience';
+const AUDIENCE_CACHE_TTL = 900; // 15 min : la fenetre 30 j bouge lentement
+
+async function fetchHistory(startTs, endTs) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return null;
+  const qs = `start=${new Date(startTs).toISOString()}&end=${new Date(endTs).toISOString()}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/history?${qs}`, {
+      headers: { 'X-API-Key': apiKey, 'User-Agent': BROWSER_UA },
+      signal: controller.signal,
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return Array.isArray(d) ? d : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchListeners() {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/listeners`, {
+      headers: { 'X-API-Key': apiKey, 'User-Agent': BROWSER_UA },
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return Array.isArray(d) ? d : null;
+  } catch { return null; }
+}
+
+// Moyenne ponderee par la duree sur un sous-ensemble d'entrees d'historique.
+// Retourne null si la fenetre ne contient aucune seconde de diffusion (evite
+// d'afficher "0.0" pour une absence de donnees, qui n'a pas le meme sens).
+function weightedAverage(entries) {
+  let seconds = 0;
+  let sum = 0;
+  for (const e of entries) {
+    const dur = Number(e.duration) || 0;
+    if (dur <= 0) continue;
+    const mid = ((Number(e.listeners_start) || 0) + (Number(e.listeners_end) || 0)) / 2;
+    sum += mid * dur;
+    seconds += dur;
+  }
+  return seconds ? { avg: sum / seconds, hours: seconds / 3600 } : null;
+}
+
+function peakOf(entries) {
+  let peak = 0;
+  for (const e of entries) {
+    peak = Math.max(peak, Number(e.listeners_start) || 0, Number(e.listeners_end) || 0);
+  }
+  return peak;
+}
+
+// Jour "radio" en heure Martinique (UTC-4 fixe, pas de DST) — meme convention
+// que les annonces automatiques et le compteur stats:msg de api/chat.js.
+function mqDay(tsMs) {
+  return new Date(tsMs - 4 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+async function audienceStats() {
+  const now = Date.now();
+  const month = await fetchHistory(now - 30 * 86400 * 1000, now);
+  if (!month) return null;
+
+  const day = month.filter((e) => (Number(e.played_at) || 0) * 1000 >= now - 86400 * 1000);
+
+  // Meilleure journee du mois : moyenne ponderee jour par jour, pas somme
+  // d'auditeurs — sinon une journee avec plus d'heures de diffusion gagnerait
+  // mecaniquement.
+  const byDay = new Map();
+  for (const e of month) {
+    const d = mqDay((Number(e.played_at) || 0) * 1000);
+    if (!byDay.has(d)) byDay.set(d, []);
+    byDay.get(d).push(e);
+  }
+  let best = null;
+  for (const [d, entries] of byDay) {
+    const w = weightedAverage(entries);
+    if (w && w.hours >= 6 && (!best || w.avg > best.avg)) best = { day: d, avg: w.avg };
+  }
+
+  return {
+    daily: weightedAverage(day),
+    monthly: weightedAverage(month),
+    dailyPeak: peakOf(day),
+    monthlyPeak: peakOf(month),
+    tracksDay: day.length,
+    daysCovered: byDay.size,
+    best,
+  };
+}
+
+// Regroupe les auditeurs connectes par pays, avec les villes distinctes.
+function groupLocations(listeners) {
+  const byCountry = new Map();
+  for (const l of listeners) {
+    const loc = l.location || {};
+    const country = loc.country || 'Inconnu';
+    if (!byCountry.has(country)) byCountry.set(country, { n: 0, cities: new Set() });
+    const row = byCountry.get(country);
+    row.n += 1;
+    if (loc.city) row.cities.add(loc.city);
+  }
+  return [...byCountry.entries()].sort((a, b) => b[1].n - a[1].n);
+}
+
+function fmtAvg(w) {
+  return w ? w.avg.toFixed(1) : '—';
+}
+
+async function audienceText() {
+  const kv = kvClient();
+  // Cache court : la fenetre 30 jours represente des milliers d'entrees, inutile
+  // de la recalculer a chaque appel. Les auditeurs connectes, eux, sont toujours
+  // relus en direct (c'est un instantane, il perdrait tout son sens en cache).
+  let stats = null;
+  if (kv) {
+    try {
+      const c = await kv('get', AUDIENCE_CACHE_KEY);
+      if (c && c.result) stats = JSON.parse(c.result);
+    } catch {}
+  }
+  if (!stats) {
+    stats = await audienceStats();
+    if (stats && kv) {
+      try {
+        await kv('set', AUDIENCE_CACHE_KEY, JSON.stringify(stats), 'EX', String(AUDIENCE_CACHE_TTL));
+      } catch {}
+    }
+  }
+
+  const [np, listeners] = await Promise.all([nowPlaying(), fetchListeners()]);
+  const lc = (np && np.listeners && (np.listeners.current ?? np.listeners.total)) ?? '?';
+  const uniq = (np && np.listeners && np.listeners.unique) ?? '?';
+
+  // Texte brut, sans parse_mode : c'est la convention de tout le bot (aucun
+  // autre message n'utilise HTML/Markdown), donc rien a echapper.
+  let out = `📊 Audience\n\n🎧 Maintenant : ${lc} (${uniq} uniques)\n`;
+
+  if (!stats) {
+    out += '\n⚠️ Historique indisponible (cle API AzuraCast absente ou API injoignable).';
+  } else {
+    out += `\n📅 Moyenne 24 h : ${fmtAvg(stats.daily)} auditeurs\n` +
+           `   pic ${stats.dailyPeak} · ${stats.tracksDay} morceaux joues\n` +
+           `\n📆 Moyenne 30 j : ${fmtAvg(stats.monthly)} auditeurs\n` +
+           `   pic ${stats.monthlyPeak} · ${stats.daysCovered} jours de donnees\n`;
+    if (stats.best) {
+      out += `   meilleur jour : ${stats.best.day} (${stats.best.avg.toFixed(1)})\n`;
+    }
+  }
+
+  out += '\n🌍 Localisation (auditeurs connectes maintenant)\n';
+  if (!listeners) {
+    out += '   ⚠️ Indisponible (cle API AzuraCast absente ou API injoignable).';
+  } else if (!listeners.length) {
+    out += '   Personne connecte a l\'instant.';
+  } else {
+    for (const [country, row] of groupLocations(listeners).slice(0, 10)) {
+      const cities = [...row.cities].slice(0, 3).join(', ');
+      out += `   ${country} : ${row.n}${cities ? ` — ${cities}` : ''}\n`;
+    }
+    const totalTime = listeners.reduce((s, l) => s + (Number(l.connected_time) || 0), 0);
+    out += `   ecoute moyenne en cours : ${Math.round(totalTime / listeners.length / 60)} min`;
+  }
+
+  return out;
 }
 
 /* ---- Claude (brainstorm admin : /ask) ---- */

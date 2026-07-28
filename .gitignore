@@ -6,6 +6,7 @@ tools/triage_report.html
 tools/migration_report.csv
 tools/migration_sftp.txt
 tools/migration_todo.txt
+tools/filezilla_worksheet.txt
 tools/orphans_report.txt
 tools/sftp_config.py
 tools/pending_uploads.json
