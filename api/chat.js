@@ -89,57 +89,29 @@ async function getCurrentTrackBpm() {
 // (gros consommateur), donc quota nettement moins a risque.
 const REDIS_PAUSED = false;
 
-// Messages automatiques d'animation du chat, postes "paresseusement" au fil
-// des GET (le chat est polle toutes les 3s par les auditeurs — pas besoin de
-// cron). Un verrou Redis SET NX par annonce et par jour garantit un envoi
-// unique meme avec des dizaines de clients simultanes ; si personne n'ecoute
-// pendant la fenetre de tir (15 premieres minutes de l'heure), l'annonce est
-// simplement sautee — personne n'aurait ete la pour la lire.
-const ANNOUNCEMENTS = [
-  { h: 6,  key: 'sunrise',   text: '🌅 6AM UTC-4 — Sunrise: ambient, downtempo & mellow grooves to open the day' },
-  { h: 9,  key: 'groove',    text: '☀️ 9AM UTC-4 — Solar Groove: disco, funk & nu-disco until 1PM' },
-  { h: 13, key: 'breeze',    text: '🌴 1PM UTC-4 — Trade Winds: eclectic house all afternoon' },
-  { h: 17, key: 'sunset',    text: '🌇 5PM UTC-4 — Sunset: deep & melodic house for the golden hour' },
-  { h: 20, key: 'warmup',    text: '🔥 8PM UTC-4 — Warm-up: tech house, slowly heating up...' },
-  { h: 23, key: 'peak',      text: '⚡ 11PM UTC-4 — Peak time: techno until 2AM, turn it up' },
-  { h: 2,  key: 'deepnight', text: '🌙 2AM UTC-4 — Deep Night: deep, minimal, dub... for the night owls' },
-];
-const ANNOUNCE_WINDOW_MIN = 15;
+/* Messages automatiques d'animation du chat — RETIRES le 2026-07-28.
 
-async function maybeAnnounce(kv) {
-  try {
-    const mq = new Date(Date.now() - 4 * 3600 * 1000); // heure Martinique (UTC-4 fixe, pas de DST)
-    const a = ANNOUNCEMENTS.find((x) => x.h === mq.getUTCHours() && mq.getUTCMinutes() < ANNOUNCE_WINDOW_MIN);
-    if (!a) return;
-    const day = mq.toISOString().slice(0, 10);
-    const lock = await kv('set', `chat:auto:${a.key}:${day}`, '1', 'EX', '90000', 'NX');
-    if (lock.result !== 'OK') return;
-    const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: 'Admin', text: a.text, ts: Date.now(), admin: true, auto: true };
-    await kv('lpush', 'chat:messages', JSON.stringify(msg));
-    await kv('ltrim', 'chat:messages', '0', '99');
-  } catch {}
-}
+   Il y avait deux mecanismes, tous deux supprimes :
 
-// Annonce ponctuelle (pas quotidienne comme ANNOUNCEMENTS ci-dessus) pour un
-// lancement de feature : verrou SET NX sans expiration -> part une seule fois,
-// au premier GET qui arrive apres le deploiement, quel que soit le nombre
-// d'auditeurs connectes en meme temps.
-async function maybeAnnounceOnce(kv) {
-  try {
-    const lock = await kv('set', 'chat:announced:flappy', '1', 'NX');
-    if (lock.result !== 'OK') return;
-    const msg = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-      nick: 'Admin',
-      text: '🐦 New: Flappy Kalbass is live — tap the bird icon up top and go smash the leaderboard!',
-      ts: Date.now(),
-      admin: true,
-      auto: true,
-    };
-    await kv('lpush', 'chat:messages', JSON.stringify(msg));
-    await kv('ltrim', 'chat:messages', '0', '99');
-  } catch {}
-}
+   1. ANNOUNCEMENTS : 7 annonces quotidiennes de transition de programme
+      ("1PM UTC-4 — Trade Winds: eclectic house all afternoon"), postees
+      paresseusement au fil des GET avec un verrou Redis par annonce et par
+      jour. Retirees a la demande : elles polluaient le fil, qui recoit peu de
+      messages d'auditeurs — deux annonces automatiques suffisaient a noyer une
+      vraie conversation. L'information reste disponible en permanence dans le
+      player, via l'indicateur "Vibe now/next" sous le titre en cours, qui
+      calcule le creneau courant cote client sans aucun appel serveur.
+
+   2. maybeAnnounceOnce : annonce unique de lancement d'une feature (Flappy),
+      protegee par un verrou SET NX permanent. Le verrou etant pose depuis
+      longtemps, la fonction ne pouvait plus rien poster — mais elle executait
+      quand meme UNE COMMANDE REDIS A CHAQUE GET du chat, soit une ecriture
+      inutile toutes les 6 secondes et par auditeur. Retiree aussi : c'est
+      exactement le type de gaspillage qui a epuise le quota Upstash le
+      2026-07-21.
+
+   Consequence : un GET du chat ne fait plus que ses 3 lectures utiles
+   (lrange + hgetall + get), sans ecriture. */
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -157,8 +129,6 @@ export default async function handler(req, res) {
   // ---- GET : les 50 derniers messages (plus recent en premier) ----
   if (req.method === 'GET') {
     try {
-      await maybeAnnounce(kv);
-      await maybeAnnounceOnce(kv);
       const [lj, dj, pj] = await Promise.all([
         kv('lrange', 'chat:messages', '0', '49'),
         kv('hgetall', 'chat:deleted'),
