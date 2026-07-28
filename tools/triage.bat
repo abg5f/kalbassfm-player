@@ -10,5 +10,9 @@ echo.
 wsl -e bash -c "source ~/essentia-env/bin/activate && python3 '/mnt/c/Users/ph.dufourcq/Documents/0_Claude Code/3_Radiofm/tools/triage_new_tracks.py'"
 
 echo.
+echo === Mise a jour de la table BPM (jeu chat live) ===
+python "%~dp0export_bpm_table.py"
+
+echo.
 echo === Termine ===
 pause

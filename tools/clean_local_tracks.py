@@ -26,10 +26,14 @@ from mutagen import File as MFile
 from mutagen.id3 import ID3, APIC
 
 DEFAULT_ROOTS = [
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\1_morning",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\2_afternoon",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\3_evening",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_night",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\1_chill",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\2_groove",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\3_house",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_deep",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\5_clubhouse",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\6_techno",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\7_nightdub",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\8_jungle",
 ]
 arg_roots = [a for a in sys.argv[1:] if not a.startswith('--')]
 ROOTS = arg_roots if arg_roots else DEFAULT_ROOTS
