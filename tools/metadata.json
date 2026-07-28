@@ -24694,5 +24694,873 @@
     0.14510175585746765
    ]
   ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\01-solah break-forever-mkd.mp3",
+  "bpm": 85.92754364013672,
+  "rms": 0.3766140043735504,
+  "dynamic_complexity": 4.358262062072754,
+  "danceability": 0.941737174987793,
+  "mood": {
+   "happy": 0.21997036039829254,
+   "sad": 0.7963070273399353,
+   "aggressive": 0.06278738379478455,
+   "relaxed": 0.4345036447048187,
+   "party": 0.20511557161808014
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.5694270730018616
+   ],
+   [
+    "Electronic---Halftime",
+    0.42410948872566223
+   ],
+   [
+    "Electronic---Dubstep",
+    0.11618506908416748
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Aftertones - Domina.mp3",
+  "bpm": 86.93370819091797,
+  "rms": 0.309732586145401,
+  "dynamic_complexity": 5.265506267547607,
+  "danceability": 0.9795637130737305,
+  "mood": {
+   "happy": 0.02099774032831192,
+   "sad": 0.9270029664039612,
+   "aggressive": 0.06894249469041824,
+   "relaxed": 0.1363607496023178,
+   "party": 0.2771601378917694
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7225063443183899
+   ],
+   [
+    "Electronic---Halftime",
+    0.7150939702987671
+   ],
+   [
+    "Electronic---Ambient",
+    0.059351883828639984
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\6_techno\\Aktive - Favella.mp3",
+  "bpm": 172.26524353027344,
+  "rms": 0.35694751143455505,
+  "dynamic_complexity": 4.018239498138428,
+  "danceability": 0.9922969341278076,
+  "mood": {
+   "happy": 0.23860275745391846,
+   "sad": 0.9650294184684753,
+   "aggressive": 0.48586106300354004,
+   "relaxed": 0.73739093542099,
+   "party": 0.02204904891550541
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.5807303190231323
+   ],
+   [
+    "Electronic---Dubstep",
+    0.43173518776893616
+   ],
+   [
+    "Electronic---Bassline",
+    0.12696540355682373
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\8_jungle\\Cyantific - Ghetto Blaster.mp3",
+  "bpm": 86.91817474365234,
+  "rms": 0.31573283672332764,
+  "dynamic_complexity": 6.833323001861572,
+  "danceability": 0.933961033821106,
+  "mood": {
+   "happy": 0.05478407442569733,
+   "sad": 0.8607080578804016,
+   "aggressive": 0.18446898460388184,
+   "relaxed": 0.42324143648147583,
+   "party": 0.30875957012176514
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.5637773275375366
+   ],
+   [
+    "Electronic---Jungle",
+    0.42427971959114075
+   ],
+   [
+    "Electronic---Juke",
+    0.13267219066619873
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Cyber Posix - Gluttony.mp3",
+  "bpm": 86.9526596069336,
+  "rms": 0.27614837884902954,
+  "dynamic_complexity": 5.022262096405029,
+  "danceability": 0.9911956191062927,
+  "mood": {
+   "happy": 0.023070406168699265,
+   "sad": 0.9171000123023987,
+   "aggressive": 0.019966747611761093,
+   "relaxed": 0.07678741216659546,
+   "party": 0.29876360297203064
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.8962383270263672
+   ],
+   [
+    "Electronic---Halftime",
+    0.7389217615127563
+   ],
+   [
+    "Electronic---Dubstep",
+    0.14422012865543365
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Gabriella Bongo & lina lexa - Chemistry.mp3",
+  "bpm": 87.01741790771484,
+  "rms": 0.3899012804031372,
+  "dynamic_complexity": 3.585120677947998,
+  "danceability": 0.924979567527771,
+  "mood": {
+   "happy": 0.1001177504658699,
+   "sad": 0.8153923153877258,
+   "aggressive": 0.029044408351182938,
+   "relaxed": 0.1607700139284134,
+   "party": 0.30643969774246216
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7301638722419739
+   ],
+   [
+    "Electronic---Halftime",
+    0.5885869860649109
+   ],
+   [
+    "Electronic---Dubstep",
+    0.10135921835899353
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Insepta - Elixir.mp3",
+  "bpm": 172.26544189453125,
+  "rms": 0.2751913368701935,
+  "dynamic_complexity": 5.060277462005615,
+  "danceability": 0.9936223030090332,
+  "mood": {
+   "happy": 0.209242045879364,
+   "sad": 0.910905659198761,
+   "aggressive": 0.06525847315788269,
+   "relaxed": 0.16952447593212128,
+   "party": 0.187201589345932
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.6828784942626953
+   ],
+   [
+    "Electronic---Halftime",
+    0.5011056661605835
+   ],
+   [
+    "Electronic---Dubstep",
+    0.09774503111839294
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Insepta - Ethose.mp3",
+  "bpm": 87.454833984375,
+  "rms": 0.2900758981704712,
+  "dynamic_complexity": 4.310879707336426,
+  "danceability": 0.9788511991500854,
+  "mood": {
+   "happy": 0.018468040972948074,
+   "sad": 0.9012500047683716,
+   "aggressive": 0.06834147125482559,
+   "relaxed": 0.08040682226419449,
+   "party": 0.2656865417957306
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7467727661132812
+   ],
+   [
+    "Electronic---Halftime",
+    0.6946550607681274
+   ],
+   [
+    "Electronic---Dubstep",
+    0.1174568459391594
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\8_jungle\\Jade Sierra & Yash Bansal - Burn.mp3",
+  "bpm": 86.0599136352539,
+  "rms": 0.37045517563819885,
+  "dynamic_complexity": 2.8009235858917236,
+  "danceability": 0.9448707699775696,
+  "mood": {
+   "happy": 0.1829472929239273,
+   "sad": 0.8247030973434448,
+   "aggressive": 0.16765262186527252,
+   "relaxed": 0.4190579354763031,
+   "party": 0.1871059685945511
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.3501220941543579
+   ],
+   [
+    "Electronic---Halftime",
+    0.3323911428451538
+   ],
+   [
+    "Hip Hop---Trap",
+    0.13241010904312134
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\8_jungle\\Javeon & Makoto - Magic.mp3",
+  "bpm": 87.50552368164062,
+  "rms": 0.33866190910339355,
+  "dynamic_complexity": 5.246230125427246,
+  "danceability": 0.9513096213340759,
+  "mood": {
+   "happy": 0.5299388766288757,
+   "sad": 0.888483464717865,
+   "aggressive": 0.1568508893251419,
+   "relaxed": 0.6024360656738281,
+   "party": 0.12809816002845764
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.5597442388534546
+   ],
+   [
+    "Electronic---Jungle",
+    0.3104250431060791
+   ],
+   [
+    "Electronic---House",
+    0.08181760460138321
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Keeno - Evolve.mp3",
+  "bpm": 172.2650909423828,
+  "rms": 0.22637301683425903,
+  "dynamic_complexity": 9.580354690551758,
+  "danceability": 0.8204219937324524,
+  "mood": {
+   "happy": 0.1522190123796463,
+   "sad": 0.7399532198905945,
+   "aggressive": 0.05202849581837654,
+   "relaxed": 0.1650017946958542,
+   "party": 0.4159963130950928
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.6009206175804138
+   ],
+   [
+    "Electronic---Halftime",
+    0.19017936289310455
+   ],
+   [
+    "Electronic---Ambient",
+    0.07501357048749924
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\6_techno\\Lexurus - Mesa.mp3",
+  "bpm": 172.26608276367188,
+  "rms": 0.36308518052101135,
+  "dynamic_complexity": 3.082139730453491,
+  "danceability": 0.9933904409408569,
+  "mood": {
+   "happy": 0.3368114233016968,
+   "sad": 0.9669036865234375,
+   "aggressive": 0.7461374998092651,
+   "relaxed": 0.8028733134269714,
+   "party": 0.01938837207853794
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.28815656900405884
+   ],
+   [
+    "Electronic---Dubstep",
+    0.250996470451355
+   ],
+   [
+    "Electronic---Hardcore",
+    0.16206780076026917
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\8_jungle\\Logistics - Hyperspace.mp3",
+  "bpm": 86.92064666748047,
+  "rms": 0.31668737530708313,
+  "dynamic_complexity": 6.387271404266357,
+  "danceability": 0.9797524809837341,
+  "mood": {
+   "happy": 0.4151402711868286,
+   "sad": 0.9317447543144226,
+   "aggressive": 0.31397950649261475,
+   "relaxed": 0.6642286777496338,
+   "party": 0.0777633860707283
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.5728961825370789
+   ],
+   [
+    "Electronic---Jungle",
+    0.3703955113887787
+   ],
+   [
+    "Electronic---Happy Hardcore",
+    0.14667105674743652
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\8_jungle\\METHOD & Diandra Faye - Dopamine.mp3",
+  "bpm": 86.96058654785156,
+  "rms": 0.30509936809539795,
+  "dynamic_complexity": 5.002256393432617,
+  "danceability": 0.9877023100852966,
+  "mood": {
+   "happy": 0.19865202903747559,
+   "sad": 0.9298878908157349,
+   "aggressive": 0.4669424593448639,
+   "relaxed": 0.6029680967330933,
+   "party": 0.07331176102161407
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.26383113861083984
+   ],
+   [
+    "Electronic---Hardcore",
+    0.22382745146751404
+   ],
+   [
+    "Electronic---Happy Hardcore",
+    0.18243266642093658
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Melinki & LowR - Aside Funk.mp3",
+  "bpm": 86.97477722167969,
+  "rms": 0.38700932264328003,
+  "dynamic_complexity": 4.878035068511963,
+  "danceability": 0.9959960579872131,
+  "mood": {
+   "happy": 0.1193222850561142,
+   "sad": 0.9376598000526428,
+   "aggressive": 0.0785764679312706,
+   "relaxed": 0.29230397939682007,
+   "party": 0.09765572100877762
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.8272390961647034
+   ],
+   [
+    "Electronic---Halftime",
+    0.5732991099357605
+   ],
+   [
+    "Electronic---Jungle",
+    0.1562218964099884
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Melinki - Harrowdub.mp3",
+  "bpm": 86.99533081054688,
+  "rms": 0.3507615625858307,
+  "dynamic_complexity": 4.290035724639893,
+  "danceability": 0.997326672077179,
+  "mood": {
+   "happy": 0.18386733531951904,
+   "sad": 0.9460288286209106,
+   "aggressive": 0.10844814777374268,
+   "relaxed": 0.295600563287735,
+   "party": 0.09128189831972122
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7472947239875793
+   ],
+   [
+    "Electronic---Halftime",
+    0.565283477306366
+   ],
+   [
+    "Electronic---Jungle",
+    0.2584313154220581
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Mesos & Shotik - Memories.mp3",
+  "bpm": 86.97714233398438,
+  "rms": 0.30438318848609924,
+  "dynamic_complexity": 3.9958691596984863,
+  "danceability": 0.9495094418525696,
+  "mood": {
+   "happy": 0.021186774596571922,
+   "sad": 0.9131773114204407,
+   "aggressive": 0.04393808916211128,
+   "relaxed": 0.20437298715114594,
+   "party": 0.30729880928993225
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7231525778770447
+   ],
+   [
+    "Electronic---Halftime",
+    0.6895363926887512
+   ],
+   [
+    "Electronic---Dubstep",
+    0.13729725778102875
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Nasz - When I Look In Your Eyes.mp3",
+  "bpm": 86.78512573242188,
+  "rms": 0.2827742397785187,
+  "dynamic_complexity": 4.437136173248291,
+  "danceability": 0.9585897922515869,
+  "mood": {
+   "happy": 0.0904574915766716,
+   "sad": 0.8741915822029114,
+   "aggressive": 0.04508361220359802,
+   "relaxed": 0.19870589673519135,
+   "party": 0.2820039689540863
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.6347265839576721
+   ],
+   [
+    "Electronic---Halftime",
+    0.4740115702152252
+   ],
+   [
+    "Electronic---Jungle",
+    0.2388262301683426
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\3_house\\Netsky - Come Alive.mp3",
+  "bpm": 86.4972152709961,
+  "rms": 0.3272663950920105,
+  "dynamic_complexity": 4.837419509887695,
+  "danceability": 0.9965601563453674,
+  "mood": {
+   "happy": 0.09735628217458725,
+   "sad": 0.95233154296875,
+   "aggressive": 0.6036356687545776,
+   "relaxed": 0.6470261812210083,
+   "party": 0.023708321154117584
+  },
+  "genres": [
+   [
+    "Electronic---Dubstep",
+    0.3125794231891632
+   ],
+   [
+    "Electronic---Drum n Bass",
+    0.2894817292690277
+   ],
+   [
+    "Electronic---Halftime",
+    0.26543429493904114
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Nixxy Rain & Lauren Walton - About Us.mp3",
+  "bpm": 85.83061218261719,
+  "rms": 0.31595152616500854,
+  "dynamic_complexity": 4.643598556518555,
+  "danceability": 0.9663496017456055,
+  "mood": {
+   "happy": 0.204498752951622,
+   "sad": 0.859480082988739,
+   "aggressive": 0.02159377932548523,
+   "relaxed": 0.27219343185424805,
+   "party": 0.20380616188049316
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7174005508422852
+   ],
+   [
+    "Electronic---Halftime",
+    0.548465371131897
+   ],
+   [
+    "Electronic---Dubstep",
+    0.4745899736881256
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Noppo, XIVA - Moments.mp3",
+  "bpm": 86.81539154052734,
+  "rms": 0.2795378565788269,
+  "dynamic_complexity": 4.168392658233643,
+  "danceability": 0.9475972652435303,
+  "mood": {
+   "happy": 0.1286138892173767,
+   "sad": 0.81589275598526,
+   "aggressive": 0.06792376190423965,
+   "relaxed": 0.22465787827968597,
+   "party": 0.2939222753047943
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.6396920680999756
+   ],
+   [
+    "Electronic---Jungle",
+    0.2576833665370941
+   ],
+   [
+    "Electronic---Halftime",
+    0.15587110817432404
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Pyxis, Alpha Rhythm & T.R.A.C. - No Time.mp3",
+  "bpm": 85.42760467529297,
+  "rms": 0.33492016792297363,
+  "dynamic_complexity": 3.9844086170196533,
+  "danceability": 0.9953157901763916,
+  "mood": {
+   "happy": 0.5034025311470032,
+   "sad": 0.9322773218154907,
+   "aggressive": 0.11381354928016663,
+   "relaxed": 0.5731292963027954,
+   "party": 0.10707031935453415
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.6434997320175171
+   ],
+   [
+    "Electronic---Jungle",
+    0.25897443294525146
+   ],
+   [
+    "Hip Hop---Grime",
+    0.153945654630661
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\5_clubhouse\\Rennie Foster,Type-303 - Please Set - Type-303 Remix.mp3",
+  "bpm": 124.99976348876953,
+  "rms": 0.35511988401412964,
+  "dynamic_complexity": 4.890635013580322,
+  "danceability": 0.9834663271903992,
+  "mood": {
+   "happy": 0.22961167991161346,
+   "sad": 0.9522274136543274,
+   "aggressive": 0.29771187901496887,
+   "relaxed": 0.8803799748420715,
+   "party": 0.07878647744655609
+  },
+  "genres": [
+   [
+    "Electronic---House",
+    0.5241289734840393
+   ],
+   [
+    "Electronic---Techno",
+    0.4090569317340851
+   ],
+   [
+    "Electronic---Ghetto House",
+    0.20240628719329834
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\S.P.Y x The Melody Men - Sweet Sound.mp3",
+  "bpm": 87.3134765625,
+  "rms": 0.3929615616798401,
+  "dynamic_complexity": 4.330836772918701,
+  "danceability": 0.9193817973136902,
+  "mood": {
+   "happy": 0.22423122823238373,
+   "sad": 0.8206831812858582,
+   "aggressive": 0.13631251454353333,
+   "relaxed": 0.45910850167274475,
+   "party": 0.18031327426433563
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.4961891770362854
+   ],
+   [
+    "Electronic---Halftime",
+    0.43007534742355347
+   ],
+   [
+    "Electronic---Dubstep",
+    0.054664496332407
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\SOLAH & Hoax - Wings.mp3",
+  "bpm": 86.88285064697266,
+  "rms": 0.34090423583984375,
+  "dynamic_complexity": 3.4758660793304443,
+  "danceability": 0.983991265296936,
+  "mood": {
+   "happy": 0.1912432163953781,
+   "sad": 0.8866976499557495,
+   "aggressive": 0.10252781212329865,
+   "relaxed": 0.31360095739364624,
+   "party": 0.16832716763019562
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.49080657958984375
+   ],
+   [
+    "Electronic---Halftime",
+    0.3196970820426941
+   ],
+   [
+    "Electronic---Happy Hardcore",
+    0.06984665244817734
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Seba, Sapele & T.R.A.C. - Change.mp3",
+  "bpm": 87.00691986083984,
+  "rms": 0.3635411560535431,
+  "dynamic_complexity": 2.9940571784973145,
+  "danceability": 0.9985211491584778,
+  "mood": {
+   "happy": 0.0923939049243927,
+   "sad": 0.9714728593826294,
+   "aggressive": 0.005216726567596197,
+   "relaxed": 0.1881924420595169,
+   "party": 0.1071547120809555
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.9838541150093079
+   ],
+   [
+    "Electronic---Halftime",
+    0.87461918592453
+   ],
+   [
+    "Electronic---Dubstep",
+    0.3238699436187744
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\3_house\\Son - Need U.mp3",
+  "bpm": 136.2468719482422,
+  "rms": 0.023104233667254448,
+  "dynamic_complexity": 9.282944679260254,
+  "danceability": 0.46243762969970703,
+  "mood": {
+   "happy": 0.029723696410655975,
+   "sad": 0.5882844924926758,
+   "aggressive": 0.1876421868801117,
+   "relaxed": 0.09140798449516296,
+   "party": 0.9199059009552002
+  },
+  "genres": [
+   [
+    "Electronic---Experimental",
+    0.22614404559135437
+   ],
+   [
+    "Electronic---Ambient",
+    0.21745802462100983
+   ],
+   [
+    "Electronic---Musique Concrète",
+    0.07255769520998001
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\Surreal - Inbetween.mp3",
+  "bpm": 87.57516479492188,
+  "rms": 0.3379203677177429,
+  "dynamic_complexity": 4.25205659866333,
+  "danceability": 0.9996803998947144,
+  "mood": {
+   "happy": 0.045135125517845154,
+   "sad": 0.9746222496032715,
+   "aggressive": 0.07693871110677719,
+   "relaxed": 0.281868040561676,
+   "party": 0.07955974340438843
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.8384723663330078
+   ],
+   [
+    "Electronic---Halftime",
+    0.8103295564651489
+   ],
+   [
+    "Electronic---Juke",
+    0.16693547368049622
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\8_jungle\\Tantrum Desire - Step.mp3",
+  "bpm": 116.47557830810547,
+  "rms": 0.3177995979785919,
+  "dynamic_complexity": 4.90948486328125,
+  "danceability": 0.9551979899406433,
+  "mood": {
+   "happy": 0.04808875545859337,
+   "sad": 0.9217541813850403,
+   "aggressive": 0.6948790550231934,
+   "relaxed": 0.7056310176849365,
+   "party": 0.18190860748291016
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.4074411690235138
+   ],
+   [
+    "Electronic---Dubstep",
+    0.2657441794872284
+   ],
+   [
+    "Electronic---Halftime",
+    0.16930541396141052
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\pyxis & Redemptive - Arctic Void.mp3",
+  "bpm": 86.84535217285156,
+  "rms": 0.2798161804676056,
+  "dynamic_complexity": 4.647659778594971,
+  "danceability": 0.9716219305992126,
+  "mood": {
+   "happy": 0.06350314617156982,
+   "sad": 0.8679109215736389,
+   "aggressive": 0.01492893137037754,
+   "relaxed": 0.11279266327619553,
+   "party": 0.3521282374858856
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7132619023323059
+   ],
+   [
+    "Electronic---Halftime",
+    0.4572291970252991
+   ],
+   [
+    "Electronic---Dubstep",
+    0.21467450261116028
+   ]
+  ]
+ },
+ {
+  "path": "C:\\Users\\ph.dufourcq\\Music\\00_AZURACAST\\New_prog\\1_chill\\pyxis & Redemptive - Electric Dreams.mp3",
+  "bpm": 86.84535217285156,
+  "rms": 0.2798161804676056,
+  "dynamic_complexity": 4.647659778594971,
+  "danceability": 0.9716219305992126,
+  "mood": {
+   "happy": 0.06350314617156982,
+   "sad": 0.8679109215736389,
+   "aggressive": 0.01492893137037754,
+   "relaxed": 0.11279266327619553,
+   "party": 0.3521282374858856
+  },
+  "genres": [
+   [
+    "Electronic---Drum n Bass",
+    0.7132619023323059
+   ],
+   [
+    "Electronic---Halftime",
+    0.4572291970252991
+   ],
+   [
+    "Electronic---Dubstep",
+    0.21467450261116028
+   ]
+  ]
  }
 ]
