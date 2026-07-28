@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Migration one-shot : grille 4 creneaux -> 8 bacs "horloge a bacs ponderes".
+"""Migration vers la grille 8 bacs "horloge a bacs ponderes".
+
+RE-EXECUTABLE (depuis le 2026-07-28) : a l'origine one-shot 4 creneaux -> 8
+bacs, le script sert desormais aussi a REJOUER la classification apres une
+evolution des regles de classify_bins.py. Un morceau deja dans le bon bac est
+saute — sans ce garde-fou, unique_target() voyait le fichier lui-meme comme un
+doublon de nom et renommait en "Titre_2.mp3" les centaines de morceaux qui ne
+bougent pas.
+
+ATTENTION COTE SERVEUR : les bacs sont des dossiers = des playlists AzuraCast.
+Re-uploader les fichiers deplaces ne suffit PAS — il faut aussi SUPPRIMER leur
+ancienne copie du dossier d'origine, sinon le morceau reste dans les deux
+playlists et continue de sortir sur l'ancien creneau. Le rapport
+migration_todo.txt liste les deux operations, dossier par dossier.
 
 Modele radio pro (FIP/Radio Meuh) : des BACS curates (genre d'abord, energie
 ensuite), une HORLOGE cote AzuraCast (playlists planifiees + poids), la variete
@@ -39,6 +52,7 @@ TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 METADATA = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_CSV = os.path.join(TOOLS_DIR, "migration_report.csv")
 SFTP_SCRIPT = os.path.join(TOOLS_DIR, "migration_sftp.txt")
+TODO_TXT = os.path.join(TOOLS_DIR, "migration_todo.txt")
 
 OLD_SLOTS = ["1_morning", "2_afternoon", "3_evening", "4_night"]
 
@@ -94,10 +108,18 @@ def main():
     apply_mode = "--apply" in sys.argv
 
     pending = incoming_pending()
-    if pending:
+    if pending and "--ignore-incoming" not in sys.argv:
         print(f"REFUS : {pending} fichier(s) audio encore a traiter dans _incoming.")
         print("Attendre la fin du triage (triage.bat) avant de migrer.")
+        print("  --ignore-incoming : passe outre. Legitime UNIQUEMENT pour rejouer la")
+        print("  classification d'une bibliotheque deja analysee (les fichiers en")
+        print("  attente ne sont pas dans metadata.json, ils ne peuvent donc pas etre")
+        print("  mal ranges par cette execution ; ils seront classes par triage.bat")
+        print("  avec les memes regles). NE PAS utiliser pour la migration initiale.")
         sys.exit(1)
+    if pending:
+        print(f"NOTE : {pending} fichier(s) en attente dans _incoming, ignores "
+              f"(--ignore-incoming) — ils seront classes par triage.bat.")
 
     with open(METADATA, encoding="utf-8") as f:
         tracks = json.load(f)
@@ -116,8 +138,13 @@ def main():
         if not os.path.isfile(path):
             missing.append(path)
             continue
-        b = classify_bin(top_genre(t.get("genres")), energy, t.get("mood"), cut)
+        b = classify_bin(top_genre(t.get("genres")), energy, t.get("mood"), cut, t.get("bpm"))
         moves.append((t, energy, path, b))
+
+    # Un morceau deja dans le bon bac n'est PAS touche (cf. en-tete : sans cela,
+    # une re-execution renomme en "_2" tout ce qui ne bouge pas).
+    changed = [(t, e, p, b) for t, e, p, b in moves
+               if os.path.basename(os.path.dirname(p)) != b]
 
     if missing:
         print(f"ATTENTION : {len(missing)} chemin(s) de metadata.json introuvable(s) sur disque :")
@@ -156,13 +183,41 @@ def main():
         print(f"{b:<13} {bin_counts[b]:>8} {bin_hours[b]:>7.1f}h{flag}")
     print(f"{'TOTAL':<13} {len(moves):>8} {total_h:>7.1f}h")
 
-    # CSV detaille de tous les deplacements prevus
+    # CSV detaille : uniquement ce qui bouge (ancien bac -> nouveau bac), pour
+    # pouvoir revenir en arriere fichier par fichier si besoin.
     with open(REPORT_CSV, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["ancien_chemin", "bac", "energie", "sous_genre"])
-        for t, energy, path, b in moves:
-            w.writerow([path, b, f"{energy:.3f}", top_genre(t.get("genres"))])
-    print(f"\nDetail complet : {REPORT_CSV}")
+        w.writerow(["ancien_chemin", "ancien_bac", "nouveau_bac", "energie", "sous_genre", "bpm"])
+        for t, energy, path, b in changed:
+            w.writerow([path, os.path.basename(os.path.dirname(path)), b,
+                        f"{energy:.3f}", top_genre(t.get("genres")), f"{t.get('bpm', 0):.0f}"])
+    print(f"\n{len(changed)} morceau(x) a deplacer sur {len(moves)} — detail : {REPORT_CSV}")
+
+    # Feuille de route serveur : ce qu'il faut uploader ET ce qu'il faut
+    # supprimer cote AzuraCast (une copie laissee dans l'ancien dossier reste
+    # dans l'ancienne playlist et continue de sortir sur le mauvais creneau).
+    up, rm = {}, {}
+    for t, energy, path, b in changed:
+        up.setdefault(b, []).append(os.path.basename(path))
+        rm.setdefault(os.path.basename(os.path.dirname(path)), []).append(os.path.basename(path))
+    with open(TODO_TXT, "w", encoding="utf-8") as f:
+        f.write("FEUILLE DE ROUTE SERVEUR (FileZilla) — dossier media AzuraCast Progv2/\n")
+        f.write("=" * 72 + "\n\n")
+        f.write("1) UPLOADER les fichiers ci-dessous dans leur nouveau dossier :\n\n")
+        for b in sorted(up):
+            f.write(f"  --> {b}/  ({len(up[b])} fichiers)\n")
+            for n in sorted(up[b]):
+                f.write(f"        {n}\n")
+            f.write("\n")
+        f.write("\n2) SUPPRIMER ces memes fichiers de leur ANCIEN dossier serveur\n")
+        f.write("   (sinon ils restent dans l'ancienne playlist et continuent de passer) :\n\n")
+        for b in sorted(rm):
+            f.write(f"  XXX {b}/  ({len(rm[b])} fichiers a supprimer)\n")
+            for n in sorted(rm[b]):
+                f.write(f"        {n}\n")
+            f.write("\n")
+        f.write("3) Dans AzuraCast : Media -> 'Analyser les fichiers' pour resynchroniser.\n")
+    print(f"Feuille de route serveur : {TODO_TXT}")
 
     if not apply_mode:
         print("\nDRY-RUN termine — rien n'a ete deplace. Relancer avec --apply pour migrer.")
@@ -182,7 +237,7 @@ def main():
     for b in NEW_BINS:
         sftp_lines.append(f'mkdir "{REMOTE_PREFIX}{b}"')
     moved = 0
-    for t, energy, path, b in moves:
+    for t, energy, path, b in changed:
         old_name = os.path.basename(path)
         name = PREFIX_RE.sub("", old_name)  # retire le prefixe NNN_ : plus d'ordre encode
         target = unique_target(os.path.join(NEW_PROG, b), name)

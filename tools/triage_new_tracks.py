@@ -408,7 +408,7 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report):
     norm_bpm = norm_clip(result["bpm"], bpm_lo, bpm_hi)
     energy = 0.5 * norm_rms + 0.3 * norm_bpm + 0.2 * result["mood"]["party"]
 
-    slot = classify_bin(top_genre(result["genres"]), energy, result["mood"], cutoffs)
+    slot = classify_bin(top_genre(result["genres"]), energy, result["mood"], cutoffs, result["bpm"])
     dest_dir = SLOT_FOLDERS[slot]
     os.makedirs(dest_dir, exist_ok=True)
     # Nom propre, sans prefixe d'ordre : l'ordonnancement est delegue a AzuraCast.

@@ -5,6 +5,7 @@ tools/__pycache__/
 tools/triage_report.html
 tools/migration_report.csv
 tools/migration_sftp.txt
+tools/migration_todo.txt
 tools/orphans_report.txt
 tools/sftp_config.py
 tools/pending_uploads.json
