@@ -241,9 +241,24 @@ export default async function handler(req, res) {
     if (guess !== null) {
       const track = await getCurrentTrackBpm();
       if (track) {
-        const correct = Math.abs(guess - Math.round(track.bpm)) <= 1;
-        const reply = correct
-          ? `🎉 NICE ONE ${finalNick}! ${track.artist} — ${track.title} is indeed ${Math.round(track.bpm)} BPM!`
+        // Essentia detecte tres souvent le drum & bass / la jungle en
+        // DEMI-TEMPO (87 pour un morceau reellement a 174 : Logistics, Netsky,
+        // Hybrid Minds...). Avec une comparaison stricte, un auditeur qui
+        // annonce le vrai tempo se voyait repondre qu'il a faux — pire que le
+        // silence, et la bibliotheque compte desormais plus de 100 titres DnB.
+        // On accepte donc aussi le double et la moitie de la valeur stockee.
+        // L'alternative n'est ouverte que la ou l'ambiguite existe vraiment :
+        // sous 100 BPM en electronique, la valeur est presque toujours un
+        // demi-tempo ; au-dessus de 150, le double serait absurde. Une house a
+        // 125 reste donc strictement a 125 (sinon "62" serait accepte et le
+        // bot repondrait "is indeed 63 BPM", ce qui n'a aucun sens).
+        const base = Math.round(track.bpm);
+        const candidates = [base];
+        if (base < 100) candidates.push(base * 2);
+        if (base > 150) candidates.push(Math.round(base / 2));
+        const hit = candidates.find((v) => Math.abs(guess - v) <= 1);
+        const reply = hit
+          ? `🎉 NICE ONE ${finalNick}! ${track.artist} — ${track.title} is indeed ${hit} BPM!`
           : `😅 NOT QUITE ${finalNick} — try again!`;
         const botMsg = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
