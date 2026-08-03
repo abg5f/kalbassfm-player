@@ -2,7 +2,7 @@
    Network-first pour la navigation (les mises à jour passent toujours),
    cache seulement la coquille + icônes pour l'installation PWA / mode hors-ligne.
    Ne met JAMAIS en cache le flux audio ni l'API now-playing. */
-const V = 'kfm-v18'; // feat : "My tracks" (sauvegarde locale de titres + commandes chat !save/!saved) + popup What's new
+const V = 'kfm-v19'; // fix mobile : play accessible sans scroller (controles avant le chat + bouton sur la pochette)
 const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

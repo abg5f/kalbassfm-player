@@ -90,15 +90,23 @@
       display: flex;
       flex-direction: column;
     }
+    /* Ordre mobile. ATTENTION : tout enfant de .card / .main-col / .sidebar-col
+       DOIT avoir un `order` explicite — sans lui il vaut 0 et passe donc AVANT
+       l'en-tete, tout en haut de la page (bug reel du panneau #savedPanel).
+       Les commandes de lecture sont placees juste sous le titre en cours, AVANT
+       le chat : le chat est ouvert par defaut avec une liste de 260px, il
+       repoussait le bouton play hors de l'ecran et il fallait scroller pour
+       lancer la radio — le geste le plus important de la page. */
     .card > .header      { order: 1; }
     .main-col, .sidebar-col { display: contents; }
     .main-col > .artwork     { order: 2; }
     .main-col > .track-block { order: 3; }
-    #chatPanel                { order: 4; }
-    .main-col > .controls    { order: 5; }
-    .main-col > .volume-row  { order: 6; }
+    .main-col > .controls    { order: 4; }
+    .main-col > .volume-row  { order: 5; }
+    #chatPanel                { order: 6; }
     .main-col > #histPanel   { order: 7; }
-    #supportersPanel          { order: 9; }
+    #supportersPanel          { order: 8; }
+    #savedPanel               { order: 9; }
     .card > .footer       { order: 10; }
 
     /* ── Desktop : colonne principale (lecteur, historique, Top 5) +
@@ -275,6 +283,39 @@
       background-size: cover;
       background-position: center;
     }
+    /* Bouton de lecture superpose a la pochette : garantit que le geste le plus
+       important de la page est atteignable sans jamais scroller, quelle que
+       soit la hauteur d'ecran. Complete le bouton principal des controles (les
+       deux restent synchronises par setUI), il ne le remplace pas. Masque sur
+       desktop, ou tout tient largement a l'ecran. */
+    .artwork-play {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      width: 66px; height: 66px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, .55);
+      color: var(--accent);
+      border: 3px solid var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      transition: transform .12s, opacity .2s;
+    }
+    .artwork-play:active { transform: translate(-50%, -50%) scale(.92); }
+    /* Une fois la lecture lancee, il s'efface pour ne pas masquer la pochette —
+       mais reste cliquable pour mettre en pause, et redevient pleinement
+       visible au survol/focus. */
+    .artwork-play.playing { opacity: .25; }
+    .artwork-play.playing:hover,
+    .artwork-play.playing:focus-visible { opacity: 1; }
+    @media (min-width: 1024px) { .artwork-play { display: none; } }
+
     .visualizer {
       position: absolute;
       inset: 0;
@@ -1126,6 +1167,14 @@
     <div class="main-col">
     <div class="artwork" id="artwork" role="img" aria-label="Current track artwork">
       <div class="visualizer stopped" id="visualizer" aria-hidden="true"></div>
+      <button class="artwork-play" id="artPlay" type="button" aria-label="Play">
+        <svg id="artIcPlay" width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <svg id="artIcPause" width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none">
+          <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
     </div>
 
     <div class="track-block">
@@ -1413,6 +1462,9 @@
   const btnPlay   = document.getElementById('btnPlay');
   const icPlay    = document.getElementById('icPlay');
   const icPause   = document.getElementById('icPause');
+  const artPlay    = document.getElementById('artPlay');
+  const artIcPlay  = document.getElementById('artIcPlay');
+  const artIcPause = document.getElementById('artIcPause');
   const volSlider = document.getElementById('volSlider');
   const volVal    = document.getElementById('volVal');
   const titleEl   = document.getElementById('trackTitle');
@@ -1525,6 +1577,12 @@
     btnPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     icPlay.style.display  = playing ? 'none'  : 'block';
     icPause.style.display = playing ? 'block' : 'none';
+    // Le bouton superpose a la pochette reflete exactement le meme etat : une
+    // seule source de verite, aucun risque de desynchronisation.
+    artPlay.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    artPlay.classList.toggle('playing', playing);
+    artIcPlay.style.display  = playing ? 'none'  : 'block';
+    artIcPause.style.display = playing ? 'block' : 'none';
     viz.classList.toggle('stopped', !playing);
     const map = {
       playing: { text: 'ON AIR' },
@@ -1574,6 +1632,7 @@
     else { setUI('loading'); startStream(); }
   }
   btnPlay.addEventListener('click', togglePlay);
+  artPlay.addEventListener('click', togglePlay);
   // Erreur dure (mount tombe, reseau coupe) : on relance vraiment le flux avec
   // backoff au lieu de rester bloque sur "error". Ignore si l'utilisateur a coupe.
   audio.addEventListener('error',   () => { if (!userStopped) scheduleReconnect(); });
