@@ -645,13 +645,28 @@ async function nowPlaying() {
   } catch { return null; }
 }
 
+// Formulation unique des auditeurs pour /np, /stats et /audience.
+// On annonce des PERSONNES (listeners.unique), pas des connexions
+// (listeners.total) : l'ecart entre les deux vient surtout des reconnexions
+// mobiles — quand un telephone bascule du Wi-Fi a la 4G, l'ancienne connexion
+// reste ouverte une a deux minutes cote serveur et est comptee en double.
+// L'ancien "4 (3 uniques)" laissait croire a 4 auditeurs ; le chiffre honnete
+// est 3. Le nombre de connexions n'est rappele que s'il differe.
+function listenersText(listeners) {
+  const nl = listeners || {};
+  const uniq = nl.unique ?? null;
+  const total = nl.total ?? nl.current ?? null;
+  if (uniq === null) return '?';
+  return `${uniq} auditeur${uniq > 1 ? 's' : ''}`
+    + (total !== null && total !== uniq ? ` (${total} connexions ouvertes)` : '');
+}
+
 async function nowPlayingText() {
   const d = await nowPlaying();
   if (!d) return '❌ Impossible de joindre AzuraCast.';
   const song = (d.now_playing && d.now_playing.song) || {};
   const label = song.title ? `${song.artist || ''} — ${song.title}`.trim() : '(inconnu)';
-  const lc = (d.listeners && (d.listeners.current ?? d.listeners.total)) ?? 0;
-  return `▶️ En cours : ${label}\n🎧 Auditeurs : ${lc}`;
+  return `▶️ En cours : ${label}\n🎧 ${listenersText(d.listeners)}`;
 }
 
 async function statsText() {
@@ -661,11 +676,9 @@ async function statsText() {
     nowPlaying(),
     kv ? kv('get', `stats:msg:${day}`) : Promise.resolve({ result: null }),
   ]);
-  const lc = (d && d.listeners && (d.listeners.current ?? d.listeners.total)) ?? '?';
-  const uniq = (d && d.listeners && d.listeners.unique) ?? '?';
   const msgs = (msgJ && msgJ.result) || 0;
   return `📊 Stats du ${day} (UTC-4)\n` +
-    `🎧 Auditeurs maintenant : ${lc} (uniques ${uniq})\n` +
+    `🎧 Maintenant : ${listenersText(d && d.listeners)}\n` +
     `💬 Messages du chat aujourd'hui : ${msgs}`;
 }
 
@@ -829,12 +842,11 @@ async function audienceText() {
   }
 
   const [np, listeners] = await Promise.all([nowPlaying(), fetchListeners()]);
-  const lc = (np && np.listeners && (np.listeners.current ?? np.listeners.total)) ?? '?';
-  const uniq = (np && np.listeners && np.listeners.unique) ?? '?';
+  const nowText = listenersText(np && np.listeners);
 
   // Texte brut, sans parse_mode : c'est la convention de tout le bot (aucun
   // autre message n'utilise HTML/Markdown), donc rien a echapper.
-  let out = `📊 Audience\n\n🎧 Maintenant : ${lc} (${uniq} uniques)\n`;
+  let out = `📊 Audience\n\n🎧 Maintenant : ${nowText}\n`;
 
   if (!stats) {
     out += '\n⚠️ Historique indisponible (cle API AzuraCast absente ou API injoignable).';
