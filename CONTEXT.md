@@ -2,15 +2,15 @@
 
 > Dernière mise à jour : 2026-08-04
 
-## État actuel (2026-08-04, simplification pipeline triage + UI mobile)
+## État actuel (2026-08-04, simplification pipeline triage finalisée + push)
 
-**Session 2026-08-04** :
+**Session 2026-08-04 (finalisée)** :
 - ✅ **Pipeline triage drastiquement simplifié** : supprimé 5 scripts inutilisés/superseded (`build_rotation.py`, `export_rotation.py`, `dedup_metadata.py`, `import-rekordbox.ps1`, `azuracast_config.py` orphelin). Chaîné `export_bpm_table.py` directement dans `triage.bat` (Phase 2 automatique, régénération api/bpm-table.json après chaque triage).
-- ✅ **Nettoyage clapcrate.com automatisé** : créé `clean_clapcrate_full.py` (recherche en FTP + local, suppression fichiers + metadata), intégré en Phase 0 de `triage.bat` (avant le triage).
+- ✅ **Nettoyage clapcrate.com automatisé** : créé `clean_clapcrate_full.py` + `clean_claprate.py` (recherche FTP + local, suppression fichiers + metadata), intégré en Phase 0 de `triage.bat` (avant le triage) avec `--apply`.
 - ✅ **Chemins obsolètes corrigés** : `clean_local_tracks.py` pointait toujours sur 4 anciens dossiers créneaux disparus (1_morning/2_afternoon/3_evening/4_night), mis à jour vers les 8 bacs actuels (1_chill…8_jungle).
-- ✅ **81 tracks en cours d'upload** depuis session yt2slskd (triage lancé 2026-07-28 14:36, reporté en live), classement + envoi SFTP automatique finalisé.
-- 🔄 **commit `675fd6d`** push sur 3_Radiofm (tooling simplification).
-- ✅ **Bouton play superposé retiré (mobile)** — commit `bc1d515` l'avait ajouté pour rendre la lecture accessible sans scroller. Révision : les contrôles principaux (`btnPlay`) sont déjà accessibles en bas du player, le bouton superposé redondant distrait de la pochette. Supprimé HTML, CSS (`.artwork-play` + media query), et toutes les références JS (`artPlay`, `artIcPlay`, `artIcPause`, listeners) — no errors, DOM valide.
+- ✅ **81 tracks en cours d'upload** depuis session yt2slskd (triage lancé 2026-07-28 14:36, classement + envoi SFTP finalisé).
+- ✅ **Commits pushés** : `675fd6d` (tooling simplification), `6a6d50f` (checkpoint context), `d32c758` (git push réussi sur main).
+- ✅ **Bouton play superposé retiré (mobile)** — commit `bc1d515` l'avait ajouté, révision : contrôles principaux déjà accessibles, bouton redondant retiré (HTML, CSS, JS).
 
 ## État antérieur (2026-07-28, grosse session — programmation, bibliothèque, bot, mobile)
 
