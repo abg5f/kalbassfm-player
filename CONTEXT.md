@@ -1,8 +1,23 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-24
+> Dernière mise à jour : 2026-07-28
 
-## État actuel (2026-07-24, suite — correctif `/move` + feature « My tracks »)
+## État actuel (2026-07-28, grosse session — programmation, bibliothèque, bot, mobile)
+
+**Déclencheur** : « c'est trop bourrin pour le matin », signalé à l'écoute à 06:59.
+
+- 🔥 **Cause racine trouvée et corrigée** (`tools/classify_bins.py`, commit `309b5c8`) — l'axe d'énergie est `0.5*rms + 0.3*bpm + 0.2*party`, **or le RMS mesure le niveau de mastering autant que l'énergie musicale**. Une règle en percentile d'énergie remplit donc son bac avec les titres *mixés bas* : **62 des 118 titres de `1_chill` étaient à ≥120 BPM** (garage house à 126 BPM diffusé à 7h). Deux garde-fous indépendants du RMS : veto de tempo (`MORNING_BPM_MAX=120`, bande 120-145 pour les fausses étiquettes « ambient ») pour house/genres inconnus, et **sélection du bac matin par percentile de `mood.aggressive`** pour jungle/DnB — le BPM y est inutilisable (demi-tempo : 86 pour 172), et l'ancienne règle retenait la jungle old-school mixée bas en laissant le vrai liquid DnB en ponctuation nocturne
+- ✅ **120 fichiers reclassés**, en local et sur le serveur (SFTP scripté, 0 échec sur ~200 transferts). `1_chill` : 118 titres à moitié club → **107 titres, agressivité moyenne 0,07, zéro tempo club**
+- ✅ **82 titres retrouvés** (`LibraryRecovery`) — ils dormaient sur le serveur dans `2_afternoon`/`3_evening`/`4_night` depuis juillet, jamais migrés, référencés par aucune playlist, donc **jamais diffusés**. Rapatriés puis arbitrés par le détecteur de doublons du pipeline, qui n'en a écarté aucun. Bibliothèque **913 → 995 entrées**. 17 vrais doublons supprimés du serveur après vérification de leur jumeau
+- ✅ **31 nouveaux liquid DnB** analysés et classés (20 au matin), file `_incoming` vidée
+- ✅ **Trois créneaux rééquilibrés** via l'API AzuraCast : 6-9h (`chill` 68→53 %, disco 18→27 %, deep 14→20 %), 17-20h (`deep` 65→53 %, tech house retiré, disco 0→24 %), 20-23h (tech house 68→42 %, disco 0→21 %)
+- ✅ **Commande `/audience`** (`0fb6f13`) — moyennes 24h/30j **pondérées par la durée**, pics, meilleur jour, localisation des connectés. Puis (`4aaaf84`) formulation unifiée : on annonce des **personnes** (`listeners.unique`), plus des connexions
+- ✅ **Jeu BPM réparé** (`c78541d`) — il n'était pas désactivé mais **muet** : table à 749 entrées pour 995 morceaux. Régénérée (899), et demi-tempo du DnB désormais accepté
+- ✅ **Messages auto du chat retirés** (`d57ea5f`) — et `maybeAnnounceOnce` avec, qui consommait une commande Redis à chaque GET pour une annonce déjà partie
+- ✅ **Play accessible sur mobile** (`bc1d515`) — les contrôles passent avant le chat + bouton superposé à la pochette
+- 📉 **Audience réelle mesurée** : **0,26 auditeur de moyenne sur 24h, 0,46 sur 30 jours, pic 6**. Ce n'est pas un défaut de mesure. Auditeurs observés en Finlande, France, Porto Rico
+
+## État antérieur (2026-07-24, suite — correctif `/move` + feature « My tracks »)
 
 - 🔥 **Correctif prod du `/move` fraîchement récupéré : erreur 405** (`❌ Impossible de déplacer « … » (405)`, signalée depuis Telegram). `moveTrackToPlaylist()` appelait `POST /api/station/{station}/playlist/{id}/media/{id}` — **route inexistante** dans l'API AzuraCast. Diagnostic fait en consultant la spec OpenAPI de l'instance elle-même (`/static/openapi.yml`) plutôt qu'en devinant : **l'appartenance aux playlists est un champ écrivable de la ressource file** (`Api_StationMedia.playlists`, tableau d'IDs), il n'existe aucun endpoint « media → playlist » dédié. Corrigé en `PUT /api/station/{station}/file/{id}` avec `{ playlists: [id] }`, même endpoint que `getTrack`/`deleteTrack`. Commit `c5a67ec`, poussé — **non reconfirmé en prod**, à retester au prochain `/move`
 - ✅ **Nouvelle feature « My tracks »** (`index.html`, commit `3674ea9`) — répond à la question récurrente des auditeurs « comment garder une trace des titres que j'aime ? ». Chip **`♡ Save`** dans la barre d'actions (toggle → `❤ Saved`), commandes chat **`!save` / `!saved` / `!help`**, panneau repliable **« My tracks »** groupé par jour avec lien YouTube + retrait par ligne, et export **Copy / Download .txt / Clear**. **100 % `localStorage`** (`kfm_saved`, 200 max, dédoublonné sur artiste+titre normalisé) : **aucun fichier `api/` touché, zéro commande Redis, zéro invocation de fonction Vercel**
@@ -120,6 +135,11 @@
 | **Endpoint AzuraCast lu dans la spec OpenAPI de l'instance, pas deviné (2026-07-24)** | Le 405 de `/move` venait d'une route inventée. La recherche web était non concluante ; `https://kalbassfm.duckdns.org/static/openapi.yml` (servie par l'instance elle-même, donc exactement sa version) a donné la réponse en une lecture : `playlists` est un champ **writeOnly** de `Api_StationMedia`, il n'existe pas d'endpoint « media → playlist ». **Réflexe à garder pour tout futur appel AzuraCast** |
 | **« My tracks » 100 % `localStorage`, aucun stockage serveur (2026-07-24)** | Le `clientId` qui identifie un auditeur **est lui-même dans `localStorage`** : une liste côté Redis indexée par `clientId` ne survivrait donc pas mieux à un vidage du cache, tout en coûtant des commandes Upstash à chaque like et à chaque lecture — exactement le patron qui a épuisé le quota et fait supprimer le Top 5. Contrepartie assumée : pas de sync multi-appareils, donc **l'export (Copy / .txt) est la vraie fonction de récupération**, pas un bonus |
 | **Commandes chat interceptées côté client avant tout `fetch` (2026-07-24)** | `!save`/`!saved`/`!help` sont traitées entièrement dans le navigateur et ne sont jamais postées : zéro écriture Redis, zéro notification Telegram à l'admin, aucune pollution du fil public, et pas de rate-limit 3s subi par l'auditeur. Une commande coûte donc **moins** qu'un message normal (~8 commandes Redis + 1 notif) |
+| **Le RMS ne mesure pas l'énergie musicale : garde-fous indépendants dans la classification (2026-07-28)** | `energy = 0.5*rms + …` — une règle en percentile d'énergie sélectionne donc les titres **mixés bas**, pas les titres calmes. Constaté à l'antenne : 62/118 titres du bac du matin étaient à ≥120 BPM. Le tempo (house) et `mood.aggressive` (jungle) ne dépendent pas du mastering et sont les seuls discriminants fiables disponibles. **Toute future règle de classification doit éviter de s'appuyer sur le RMS seul** |
+| **Le poids AzuraCast appartient à la playlist, pas au créneau (2026-07-28)** | Pour adoucir un créneau, baisser la **dominante** (programmée sur ce seul créneau) plutôt que monter les invitées, dont le poids est partagé avec leurs autres créneaux. Pour retirer un style d'un créneau précis, supprimer son **entrée de planning**, pas son poids |
+| **`/audience` ne stocke rien côté Redis (2026-07-28)** | AzuraCast garde l'historique complet depuis le premier jour ; un échantillonnage maison n'aurait aucune antériorité tout en ajoutant des écritures Upstash. Moyennes **pondérées par la durée** (chaque morceau = une tranche de temps) : une moyenne simple par morceau surpondérerait les titres courts |
+| **Annoncer des personnes, pas des connexions (2026-07-28)** | `listeners.total` compte les connexions ouvertes, `listeners.unique` les personnes. L'écart vient des reconnexions mobiles (Wi-Fi → 4G laisse une connexion fantôme 1-2 min). « 4 (3 uniques) » laissait croire à 4 auditeurs |
+| **`migrate_grid.py` doit sauter les fichiers déjà au bon endroit (2026-07-28)** | Sans ce garde-fou, une ré-exécution renomme en `Titre_2.mp3` les ~700 fichiers qui ne changent pas de bac : `unique_target()` voit le fichier lui-même comme un doublon de nom. Le script est passé de one-shot à ré-exécutable |
 | **Popup « What's new » auto-ouverte une fois par version, pas à chaque visite (2026-07-24)** | Les features côté auditeur se sont accumulées (chat, jeu BPM, streak, Flappy, Request, sleep timer) sans jamais être présentées — un nouvel arrivant n'en découvrait presque aucune. Verrou `localStorage` (`kfm_whatsnew` vs `WHATS_NEW_V`) + délai de 1,8 s : informatif sans faire mur d'entrée, et re-annonçable en bumpant une constante |
 
 ## En cours / TODOs
@@ -145,6 +165,12 @@
 - [ ] **Surveiller la facture Upstash Pay As You Go** les premières semaines pour valider que le volume de commandes reste raisonnable après suppression du Top 5 (2026-07-21)
 - [ ] **Vérifier qu'aucun don Buy Me a Coffee n'a été perdu** pendant la fenêtre `REDIS_PAUSED` (2026-07-21) — le webhook répondait 200 à BMC (pour ne pas se faire désactiver) mais n'enregistrait rien côté Redis
 - [ ] **Relancer `tools/export_bpm_table.py` + commit/push `api/bpm-table.json`** après chaque session de triage — sinon les nouveaux morceaux ne sont jamais couverts par le jeu BPM (749/825 actuellement, 74 sans tags ID3 exploitables + 2 fichiers introuvables)
+- [ ] **Écouter le matin et le soir** après le rééquilibrage du 2026-07-28 et dire ce qui sonne faux — les dosages (53 % chill le matin, 42 % tech house en warm-up) sont des choix à l'oreille, pas des vérités. `/move` sur Telegram pour les titres isolés mal placés
+- [ ] **Supprimer les 82 copies serveur** restantes dans `2_afternoon` (20), `3_evening` (1), `4_night` (61) — devenues redondantes depuis le rapatriement du 2026-07-28. Après ça les trois dossiers disparaissent
+- [ ] **Décider du mode `analytics`** : l'instance est en `no_ip`, ce qui rend **impossible** toute géographie mensuelle (les rapports `by-country`/`charts` sont bloqués ou vides). Passer en mode complet ferait stocker les IP des auditeurs et ne servirait que pour l'avenir, sans effet rétroactif
+- [ ] **Afficher les pays en clair** dans `/audience` (`location.country` renvoie un code ISO : `FI`, `PR`) — correctif d'une ligne, proposé et non tranché
+- [ ] **Régénérer `api/bpm-table.json` après chaque triage** — 899/995 morceaux couverts ; 94 fichiers n'ont pas de tags artiste/titre exploitables et pourraient être réparés via `clean_local_tracks.py`
+- [ ] **Analyser la campagne Instagram et relancer l'audience** — c'est désormais le vrai sujet : 0,46 auditeur de moyenne sur 30 jours. La technique est saine, la diffusion ne l'est pas
 - [ ] **Reconfirmer `/move` en prod** après le fix du 405 (2026-07-24) — le correctif est poussé et déployé mais n'a jamais été rejoué de bout en bout depuis Telegram
 - [ ] **Vérifier « My tracks » en prod** (2026-07-24) — testé en local uniquement ; en particulier le bouton ⧉ Copy, dont l'API Clipboard était refusée dans l'environnement de test (c'est le repli `execCommand` qui a été validé, pas le chemin nominal)
 - [ ] **Bumper `WHATS_NEW_V`** (`index.html`) à la prochaine feature auditeur pour re-annoncer la popup What's new à tout le monde
@@ -165,7 +191,8 @@
 
 | Fichier | Rôle | Statut |
 |---------|------|--------|
-| `tools/classify_bins.py` | **Source de vérité de la grille 8 bacs** : familles, SHARES, seuils auto-calibrés, classify_bin() | ✅ Nouveau, importé par migrate+triage |
+| `tools/classify_bins.py` | **Source de vérité de la grille 8 bacs** : familles, SHARES, seuils auto-calibrés, classify_bin(). Depuis le 2026-07-28 : veto de tempo + sélection jungle par `mood.aggressive`, tous deux indépendants du RMS | ✅ Importé par migrate+triage |
+| `tools/azuracast_config.py` | **Clé API AzuraCast en local** (gitignored, même patron que `sftp_config.py`) — permet de piloter playlists, poids, plannings et rapports depuis Claude Code | ⚠️ Sa valeur est apparue en clair dans la session du 2026-07-28 : la révoquer et en générer une neuve est le réflexe propre |
 | `tools/migrate_grid.py` | Migration one-shot 4→8 bacs (dry-run/--apply, garde-fou _incoming, rapport, WinSCP) | ✅ Exécutée le 2026-07-16 |
 | `tools/resync_metadata.py` | Réparation metadata↔disque par nom sans préfixe (948→825 entrées) | ✅ Exécutée le 2026-07-16 |
 | `tools/triage_new_tracks.py` | Pipeline ingestion → 8 bacs, nom propre, plus d'étape d'ordre | ✅ Mis à jour, à retester sur les 97 orphelins |
@@ -193,10 +220,11 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-24 (2e passe, construction manuelle via /graphify, pas de CLI) — 65 nœuds, 123 relations
+> Mis à jour le 2026-07-28 (construction manuelle via /graphify, pas de CLI) — 68 nœuds, 134 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 18 — se détache encore avec `MyTracksFeature` et `WhatsNewModal`, deux features 100 % clientes), `ChatFeature` (13, désormais aussi cible des commandes locales `!save`/`!saved`/`!help`), `api/chat.js` et `api/telegram.js` (ex-æquo, degré 12), `AzuraCast` (infra + exécution de l'horloge, 10), `ProgrammeGrid`/horloge à bacs pondérés (9), `classify_bins.py` (source de vérité classification).
-Communautés détectées : 8 (Player/Frontend [+ My tracks, What's new], Infra/Streaming, Serverless+bot Telegram+Flappy+BPM+`/move`, Intégrations externes [dons+IA], Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
+God nodes (concepts centraux) : `index.html` (hub front, degré 18), `ChatFeature` (13), `api/telegram.js` (13, `/audience` l'ayant fait passer devant `api/chat.js`), `api/chat.js` (12), `AzuraCast` (11), `ProgrammeGrid`/horloge à bacs pondérés (10), `classify_bins.py` (source de vérité classification).
+Nouveaux nœuds 2026-07-28 : `EnergyRmsLimitation` (le RMS ≠ énergie musicale, cause racine du bac du matin), `AudienceStatsFeature` (`/audience`), `LibraryRecovery` (82 titres retrouvés).
+Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

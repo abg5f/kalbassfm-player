@@ -4,7 +4,7 @@
       "id": "index.html",
       "label": "index.html",
       "type": "file",
-      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version)."
+      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version). Fix mobile 2026-07-28 : les controles de lecture passent AVANT le chat (order 4-5 au lieu de 5 apres 4) et un bouton play est superpose a la pochette — il fallait scroller pour lancer la radio. Tout enfant de .card doit avoir un `order` explicite (sans lui il vaut 0 et passe avant l'en-tete)."
     },
     {
       "id": "sw.js",
@@ -226,7 +226,7 @@
       "id": "ChatFeature",
       "label": "Chat live",
       "type": "feature",
-      "summary": "Panneau #chatPanel dans index.html, ouvert par defaut. Pseudo anonyme auto-genere, poll 3s, cooldown 3s, anti-lien client+serveur. Moderation admin par bot Telegram (suppression, ban, pause). Depuis 2026-07-19/20 : bandeau d'annonce epinglee (PinnedBannerFeature), messages admin repondant nativement a un message d'auditeur avec citation (ReplyFeature), badge visuel pour les supporters (pseudo + couleur --accent-2 distincts, lien clientId<->nom pose manuellement par l'admin via /mark_supporter)."
+      "summary": "Panneau #chatPanel dans index.html, ouvert par defaut. Pseudo anonyme auto-genere, poll 3s, cooldown 3s, anti-lien client+serveur. Moderation admin par bot Telegram (suppression, ban, pause). Depuis 2026-07-19/20 : bandeau d'annonce epinglee (PinnedBannerFeature), messages admin repondant nativement a un message d'auditeur avec citation (ReplyFeature), badge visuel pour les supporters (pseudo + couleur --accent-2 distincts, lien clientId<->nom pose manuellement par l'admin via /mark_supporter). Messages automatiques d'animation RETIRES le 2026-07-28 (annonces horaires + maybeAnnounceOnce, cette derniere consommant une commande Redis a chaque GET pour rien) : un GET du chat ne fait plus que ses 3 lectures utiles, sans ecriture."
     },
     {
       "id": "ContactPopup",
@@ -262,7 +262,7 @@
       "id": "api/telegram.js",
       "label": "api/telegram.js",
       "type": "file",
-      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (bandeau d'avertissement auto-epingle, restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (ChatRenameFeature, stripAngles() + garde-fou LINDEX), /move (MoveTrackFeature, migration du morceau en cours vers un des 8 bacs). handleCallback repond toujours au tap (try/catch, message d'echec explicite). kvClient() retourne null pendant REDIS_PAUSED. Pseudo admin renomme 'Admin' (etait '📻 KALBASSFM'). /reset_top5 retire avec le Top 5."
+      "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (bandeau d'avertissement auto-epingle, restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (ChatRenameFeature, stripAngles() + garde-fou LINDEX), /move (MoveTrackFeature, migration du morceau en cours vers un des 8 bacs). handleCallback repond toujours au tap (try/catch, message d'echec explicite). kvClient() retourne null pendant REDIS_PAUSED. Pseudo admin renomme 'Admin' (etait '📻 KALBASSFM'). /reset_top5 retire avec le Top 5. Ajout 2026-07-28 : /audience (moyennes ponderees 24h/30j + localisation), et formulation unifiee des auditeurs via listenersText() — on annonce des PERSONNES (listeners.unique) et non des connexions (listeners.total), l'ecart venant des reconnexions mobiles."
     },
     {
       "id": "TelegramBotFeature",
@@ -389,6 +389,24 @@
       "label": "Popup What's new (catalogue des features auditeur)",
       "type": "feature",
       "summary": "Modale ajoutee le 2026-07-24, meme patron que ContactPopup (.modal-backdrop/.modal-box). Catalogue les 10 features cote auditeur, dont beaucoup etaient invisibles pour un nouvel arrivant (commandes chat, jeu BPM, Vibe Streak, Flappy, sleep timer). S'ouvre d'elle-meme UNE seule fois par version (localStorage kfm_whatsnew compare a la constante WHATS_NEW_V), 1.8s apres le chargement pour ne pas faire mur d'entree, puis a la demande via le bouton du pied de page (pastille accent tant que non lue) ou la commande !help du chat. Bumper WHATS_NEW_V re-annonce le catalogue a tous les auditeurs."
+    },
+    {
+      "id": "EnergyRmsLimitation",
+      "label": "Limite de l'axe d'energie (RMS = mastering)",
+      "type": "concept",
+      "summary": "Decouverte structurante du 2026-07-28, a l'ecoute : energy = 0.5*rms + 0.3*bpm + 0.2*party, or le RMS mesure le NIVEAU DE MASTERING autant que l'energie musicale. Une regle en percentile d'energie remplit donc son bac avec les titres MIXES BAS, pas les titres calmes — 62 des 118 titres de 1_chill etaient a >=120 BPM (garage house a 126 BPM diffuse a 7h). Deux garde-fous ajoutes dans classify_bins.py, independants du RMS : veto de tempo (MORNING_BPM_MAX=120, avec bande d'artefact 120-145 pour les faux 'ambient') pour house/genres inconnus, et selection du bac matin par percentile de mood.aggressive pour jungle/DnB — le BPM y est inutilisable (demi-tempo : 86 pour 172) et l'ancienne regle retenait la jungle old-school mixee bas en laissant le vrai liquid DnB en ponctuation nocturne."
+    },
+    {
+      "id": "AudienceStatsFeature",
+      "label": "Commande /audience (audience et localisation)",
+      "type": "feature",
+      "summary": "Commande Telegram ajoutee le 2026-07-28 (api/telegram.js), distincte de /stats pour que celui-ci reste instantane. Moyennes 24h/30j PONDEREES PAR LA DUREE a partir de /station/{id}/history (listeners_start/end + duration), pics, meilleur jour (journees de <6h de donnees ignorees), et localisation des auditeurs connectes via /station/{id}/listeners. Rien n'est accumule cote Redis : AzuraCast garde l'historique depuis le premier jour. LIMITE : analytics='no_ip' sur l'instance, donc aucun historique de localisation et les rapports by-country/charts sont bloques ou vides — la geo est forcement un instantane. Chiffres reels mesures : 0.26 auditeur de moyenne sur 24h, 0.46 sur 30j, pic 6."
+    },
+    {
+      "id": "LibraryRecovery",
+      "label": "Recuperation de 82 titres oublies (2026-07-28)",
+      "type": "event",
+      "summary": "82 morceaux dormaient dans les anciens dossiers serveur 2_afternoon/3_evening/4_night depuis la migration de juillet : jamais migres (leurs fichiers locaux manquaient au moment du migrate_grid), references par aucune playlist, donc jamais diffuses. Rapatries en SFTP puis passes au triage, qui n'en a ecarte AUCUN comme doublon — c'etaient bien des titres uniques. Bibliotheque 913 -> 995 entrees. 17 vrais doublons supprimes du serveur apres verification que leur jumeau existait dans un bac actif. migrate_grid.py rendu RE-EXECUTABLE au passage : il renommait en 'Titre_2.mp3' les ~700 fichiers ne changeant pas de bac."
     }
   ],
   "edges": [
@@ -1128,6 +1146,72 @@
       "source": "WhatsNewModal",
       "target": "ContactPopup",
       "relation": "meme patron de modale",
+      "weight": 1
+    },
+    {
+      "source": "EnergyRmsLimitation",
+      "target": "tools/classify_bins.py",
+      "relation": "corrige",
+      "weight": 3
+    },
+    {
+      "source": "EnergyRmsLimitation",
+      "target": "ProgrammeGrid",
+      "relation": "reequilibre le bac du matin de",
+      "weight": 2
+    },
+    {
+      "source": "EnergyRmsLimitation",
+      "target": "tools/migrate_grid.py",
+      "relation": "rejouee par",
+      "weight": 2
+    },
+    {
+      "source": "EnergyRmsLimitation",
+      "target": "BpmGuesserFeature",
+      "relation": "meme cause : demi-tempo du DnB",
+      "weight": 1
+    },
+    {
+      "source": "AudienceStatsFeature",
+      "target": "api/telegram.js",
+      "relation": "implementee dans",
+      "weight": 3
+    },
+    {
+      "source": "AudienceStatsFeature",
+      "target": "AzuraCastAdminAPI",
+      "relation": "lit history + listeners de",
+      "weight": 2
+    },
+    {
+      "source": "AudienceStatsFeature",
+      "target": "TelegramBotFeature",
+      "relation": "commande de",
+      "weight": 1
+    },
+    {
+      "source": "AudienceStatsFeature",
+      "target": "RedisQuotaIncident",
+      "relation": "conçue sans accumulation Redis a cause de",
+      "weight": 1
+    },
+    {
+      "source": "LibraryRecovery",
+      "target": "tools/triage_new_tracks.py",
+      "relation": "arbitree par",
+      "weight": 2
+    },
+    {
+      "source": "LibraryRecovery",
+      "target": "tools/migrate_grid.py",
+      "relation": "revele un bug de",
+      "weight": 2
+    },
+    {
+      "source": "LibraryRecovery",
+      "target": "AzuraCast",
+      "relation": "reintegre dans",
       "weight": 1
     }
   ]

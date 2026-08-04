@@ -1,10 +1,10 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois) puis le 2026-07-24 (2 fois) via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois) puis le 2026-07-28 via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
 
 ## Vue d'ensemble
 
-- **65 nœuds**, **123 relations**, **8 communautés** détectées.
+- **68 nœuds**, **134 relations**, **8 communautés** détectées.
 - Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), la **commande Telegram `/move`** pour migrer le morceau en cours entre les 8 bacs (`MoveTrackFeature`, 2026-07-24), la sauvegarde locale de titres likés (`MyTracksFeature`, 2026-07-24) et la popup de découverte des features (`WhatsNewModal`, 2026-07-24), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, et le plan (non codé) du système de vote de playlist par genre.
 
 ## Communautés
@@ -49,6 +49,38 @@ Fusionnée dans `main` depuis la branche `claude/telegram-move-music-playlists-1
 ## Note — 2026-07-24 (suite) : « My tracks » et popup What's new
 
 Demande récurrente des auditeurs : garder une trace des morceaux aimés. La contrainte décisive a été le **coût Upstash** (cf. l'incident du 2026-07-21 ci-dessus) : un stockage serveur indexé par `clientId` ne survivrait pas mieux à un vidage du cache — puisque le `clientId` **est** dans `localStorage` — tout en coûtant des commandes Redis à chaque like et à chaque lecture. D'où un choix **100 % local**, même patron que `VibeStreakFeature` : chip `♡ Save`, panneau `My tracks` groupé par jour, et surtout un **export texte (Copy / .txt)** qui devient la vraie fonction de récupération puisqu'il n'y a pas de sync multi-appareils. Les commandes chat `!save`/`!saved`/`!help` sont interceptées **avant** le `fetch` : elles ne sont jamais postées, donc zéro écriture Redis et zéro notification Telegram — vérifié en local (aucun POST au journal réseau, alors qu'un message normal en produit toujours un). Voir `MyTracksFeature` et `WhatsNewModal`.
+
+## Note — 2026-07-28 : le bac du matin se remplissait au niveau de mastering
+
+Découverte à l'écoute, et la plus structurante de la session. L'axe d'énergie est
+`0.5*rms + 0.3*bpm + 0.2*party`, **or le RMS mesure le niveau de mastering autant que
+l'énergie musicale**. Une règle en percentile d'énergie remplit donc son bac avec les titres
+*mixés bas*, pas avec les titres calmes : **62 des 118 titres de `1_chill` étaient à ≥120 BPM**
+(un garage house à 126 BPM diffusé à 7h du matin). Deux garde-fous indépendants du RMS ont été
+ajoutés dans `classify_bins.py` — veto de tempo pour house/genres inconnus (avec une bande
+120-145 pour les fausses étiquettes « ambient »), et sélection du bac matin par percentile de
+`mood.aggressive` pour jungle/DnB, où le BPM est inutilisable (demi-tempo : 86 pour 172).
+L'ancienne règle retenait la jungle old-school mixée bas et laissait le vrai liquid DnB en
+ponctuation nocturne, alors que c'est la matière « matin/travail » recherchée. 120 fichiers
+reclassés. Voir `EnergyRmsLimitation`.
+
+Corollaire trouvé le même jour sur le jeu BPM : la même erreur de demi-tempo faisait répondre
+« faux » à un auditeur annonçant le vrai tempo d'un morceau de DnB. Voir `BpmGuesserFeature`.
+
+## Note — 2026-07-28 (suite) : 82 titres retrouvés et audience réelle
+
+`LibraryRecovery` — 82 morceaux dormaient sur le serveur dans les anciens dossiers depuis
+juillet, jamais migrés et référencés par aucune playlist, donc **jamais diffusés**. Rapatriés
+puis arbitrés par le détecteur de doublons du pipeline, qui n'en a écarté aucun. Bibliothèque
+913 → 995 entrées. `migrate_grid.py` a été rendu ré-exécutable au passage : il renommait en
+`Titre_2.mp3` les ~700 fichiers ne changeant pas de bac.
+
+`AudienceStatsFeature` — la commande `/audience` mesure enfin l'audience réelle : **0,26
+auditeur de moyenne sur 24h, 0,46 sur 30 jours, pic à 6**. Ce n'est pas un défaut de mesure,
+c'est l'état de la station. La géographie mensuelle demandée est impossible : l'instance est en
+`analytics = 'no_ip'`, donc aucun enregistrement par auditeur n'est conservé et les rapports
+`by-country` / `charts` sont bloqués ou vides. Seuls les auditeurs connectés à l'instant sont
+localisables.
 
 ## Comment explorer
 
