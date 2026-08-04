@@ -1,8 +1,17 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-07-28
+> Dernière mise à jour : 2026-08-04
 
-## État actuel (2026-07-28, grosse session — programmation, bibliothèque, bot, mobile)
+## État actuel (2026-08-04, simplification pipeline triage)
+
+**Session 2026-08-04** :
+- ✅ **Pipeline triage drastiquement simplifié** : supprimé 5 scripts inutilisés/superseded (`build_rotation.py`, `export_rotation.py`, `dedup_metadata.py`, `import-rekordbox.ps1`, `azuracast_config.py` orphelin). Chaîné `export_bpm_table.py` directement dans `triage.bat` (Phase 2 automatique, régénération api/bpm-table.json après chaque triage).
+- ✅ **Nettoyage clapcrate.com automatisé** : créé `clean_clapcrate_full.py` (recherche en FTP + local, suppression fichiers + metadata), intégré en Phase 0 de `triage.bat` (avant le triage).
+- ✅ **Chemins obsolètes corrigés** : `clean_local_tracks.py` pointait toujours sur 4 anciens dossiers créneaux disparus (1_morning/2_afternoon/3_evening/4_night), mis à jour vers les 8 bacs actuels (1_chill…8_jungle).
+- ✅ **81 tracks en cours d'upload** depuis session yt2slskd (triage lancé 2026-07-28 14:36, reporté en live), classement + envoi SFTP automatique finalisé.
+- 🔄 **commit `675fd6d`** push sur 3_Radiofm (tooling simplification).
+
+## État antérieur (2026-07-28, grosse session — programmation, bibliothèque, bot, mobile)
 
 **Déclencheur** : « c'est trop bourrin pour le matin », signalé à l'écoute à 06:59.
 
@@ -153,7 +162,7 @@
 - [ ] **Double virgule dans la description station** ("Électronique, , Disco") — cosmétique, 10s dans Profil
 - [ ] **Vérifier le chat live à deux navigateurs en prod** (jamais fait formellement ; la modération Telegram le teste indirectement)
 - [ ] **Analyser les résultats campagne Instagram** (terminée ~2026-07-17)
-- [ ] **Mettre à jour `clean_local_tracks.py`** (pointe encore sur les anciens dossiers racine)
+- [x] **Mettre à jour `clean_local_tracks.py`** (pointait sur les 4 anciens dossiers créneaux — fixé 2026-08-04)
 - [ ] **SACEM** — toujours pas fait
 - [ ] **TuneIn** — Partner ID toujours en attente (station s358721)
 - [ ] **Système de vote de playlist par genre** (`wild-cooking-book.md`) — plan complet, non codé ; à re-concevoir sur la nouvelle grille (bacs ≠ genres purs)
