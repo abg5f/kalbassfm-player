@@ -1,8 +1,22 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-08-04
+> Dernière mise à jour : 2026-08-08
 
-## État actuel (2026-08-04, simplification pipeline triage finalisée + push)
+## État actuel (2026-08-08, émission mensuelle « Mixtapes » — antenne + podcast)
+
+**Session 2026-08-08** — premier **rendez-vous éditorial** du projet, réponse directe au constat du 2026-07-28 (0,46 auditeur/30j : la technique est saine, la diffusion ne l'est pas). Une mixtape mixée passe à date fixe à l'antenne, puis reste réécoutable et suivable en RSS — contrairement à un flux live, un épisode se partage.
+
+- ✅ **Stock mesuré** : ~**106 h de musique unique** (chill 11h19, groove 17h45, house 22h30, deep 12h47, techno 15h35, nightdub 13h47, clubhouse 8h49, jungle 4h27) → **~4,4 jours** sans répétition en écoute continue. Les playlists `*_guest` sont des miroirs, pas du stock supplémentaire.
+- ✅ **Podcast `KALBASSFM Mixtapes`** créé en `source: manual` (id `1f1932f4-cda1-6cf2-8314-43fce6e6bfea`), flux RSS valide (namespaces iTunes + Podcast Index). Dossier **`Mixtapes/`** créé à la racine du média — au passage : les 8 bacs sont **à la racine**, pas sous `Progv2/` comme l'indiquait ce fichier.
+- ✅ **Playlist `mixtape_onair`** (id 26) créée **désactivée** — activée sans planning, elle passerait en rotation générale et enverrait les mixtapes n'importe quand.
+- ✅ **`tools/publish_mixtape.py`** — le geste mensuel : liste la banque, vide/regarnit la playlist, pose le planning, crée l'épisode, téléverse le média. Dry-run par défaut, `--apply`.
+- ✅ **Panneau Mixtapes dans le player** + `<audio id="podcastAudio">` **séparé** de `#audio`, cache SW `kfm-v20`, `WHATS_NEW_V` → `2026-08-mixtapes`. Commit `adf3170`.
+- 🔥 **Deux impasses API tranchées par le test, pas par la doc** : `playlist_media_id` est en **lecture seule** (`must be one of "never"`) → un épisode ne peut pas référencer un média station ; et la voie `source: playlist` + auto-publication ne génère **aucun** épisode sur cette instance (playlist désactivée comme activée), tout en supprimant le podcast si on supprime la playlist source. D'où le mode `manual` et la duplication assumée du fichier.
+- ✅ **Risque du player levé empiriquement** : direct en lecture → clic mixtape → direct coupé, **toujours coupé 6 s plus tard** (fenêtre du watchdog écoulée). Rendu 375×812 sans débordement, console vide, panneau qui se masque tant qu'aucun épisode n'existe.
+- ⏳ **`--apply` jamais joué de bout en bout** : le lancement a été refusé par le classificateur de permissions. Chaque opération a été validée individuellement contre l'API sauf `DELETE /playlist/{id}/empty`.
+- ⏳ **Banque vide** : aucune mixtape uploadée. Artefacts de test supprimés (0 épisode, 0 podcast public).
+
+## État antérieur (2026-08-04, simplification pipeline triage finalisée + push)
 
 **Session 2026-08-04 (finalisée)** :
 - ✅ **Pipeline triage drastiquement simplifié** : supprimé 5 scripts inutilisés/superseded (`build_rotation.py`, `export_rotation.py`, `dedup_metadata.py`, `import-rekordbox.ps1`, `azuracast_config.py` orphelin). Chaîné `export_bpm_table.py` directement dans `triage.bat` (Phase 2 automatique, régénération api/bpm-table.json après chaque triage).
@@ -150,10 +164,21 @@
 | **`/audience` ne stocke rien côté Redis (2026-07-28)** | AzuraCast garde l'historique complet depuis le premier jour ; un échantillonnage maison n'aurait aucune antériorité tout en ajoutant des écritures Upstash. Moyennes **pondérées par la durée** (chaque morceau = une tranche de temps) : une moyenne simple par morceau surpondérerait les titres courts |
 | **Annoncer des personnes, pas des connexions (2026-07-28)** | `listeners.total` compte les connexions ouvertes, `listeners.unique` les personnes. L'écart vient des reconnexions mobiles (Wi-Fi → 4G laisse une connexion fantôme 1-2 min). « 4 (3 uniques) » laissait croire à 4 auditeurs |
 | **`migrate_grid.py` doit sauter les fichiers déjà au bon endroit (2026-07-28)** | Sans ce garde-fou, une ré-exécution renomme en `Titre_2.mp3` les ~700 fichiers qui ne changent pas de bac : `unique_target()` voit le fichier lui-même comme un doublon de nom. Le script est passé de one-shot à ré-exécutable |
+| **Podcast en `source: manual`, duplication du fichier assumée (2026-08-08)** | `playlist_media_id` est en lecture seule côté API (`must be one of "never"`) : un épisode ne peut pas référencer un média station. La voie sans duplication (`source: playlist` + `playlist_auto_publish` sur une playlist d'archive qui ne fait que grandir) a été **testée** : elle ne génère aucun épisode sur cette instance, et supprimer la playlist source **supprime le podcast avec elle**. `source`/`playlist_id` sont immuables après création. Un mécanisme opaque est pire qu'un fichier en double pour un rituel mensuel — coût réel : ~100 Mo/mixtape, ~1,2 Go/an |
+| **Élément `<audio>` séparé pour les mixtapes (2026-08-08)** | `#audio` est auto-réparant (listeners `pause`/`error`/`visibilitychange` + watchdog `setInterval`). Le réutiliser ferait écraser la mixtape par le direct en pleine lecture. `#podcastAudio` est distinct ; lancer une mixtape appelle `stopStream()`, qui pose `userStopped = true` et neutralise le watchdog. **Toute future lecture audio hors direct doit passer par un élément dédié** |
+| **`mixtape_onair` créée désactivée, activée seulement à la programmation (2026-08-08)** | Une playlist AzuraCast **activée sans planning passe en rotation générale** : les mixtapes partiraient n'importe quand. Le script pose l'activation et la date dans le même geste. Poids 40 (la grille plafonne à 15) pour gagner le premier tirage — mais l'AutoDJ finit toujours le morceau en cours : le départ est « à un titre près », pas à la seconde |
+| **Panneau Mixtapes sur les endpoints publics, aucun fichier `api/` (2026-08-08)** | `/public/podcasts` et `/public/podcast/{id}/episodes` ne demandent aucune clé : zéro commande Redis, zéro invocation de fonction Vercel. Même arbitrage que « My tracks » — exactement le patron qui avait épuisé le quota Upstash quand on le violait |
 | **Popup « What's new » auto-ouverte une fois par version, pas à chaque visite (2026-07-24)** | Les features côté auditeur se sont accumulées (chat, jeu BPM, streak, Flappy, Request, sleep timer) sans jamais être présentées — un nouvel arrivant n'en découvrait presque aucune. Verrou `localStorage` (`kfm_whatsnew` vs `WHATS_NEW_V`) + délai de 1,8 s : informatif sans faire mur d'entrée, et re-annonçable en bumpant une constante |
 
 ## En cours / TODOs
 
+- [ ] **Déposer les premières mixtapes dans `Mixtapes/`** (SFTP port 2022), puis `python tools/publish_mixtape.py` pour lister la banque
+- [ ] **Jouer `publish_mixtape.py --apply` une première fois sous surveillance** — le chemin complet n'a jamais tourné d'un bout à l'autre (lancement refusé par le classificateur de permissions). Seul `DELETE /playlist/{id}/empty` n'a été validé ni isolément ni en contexte
+- [ ] **Pousser le commit `adf3170`** (feature Mixtapes) — non poussé à date, donc pas encore déployé sur Vercel
+- [ ] **Décider du créneau récurrent de la mixtape** (ex. 1er samedi 20h) — AzuraCast n'a **pas** de récurrence « 1er samedi du mois », la date se pose explicitement à chaque édition
+- [ ] **Pochette du podcast** — aucune image posée (`has_custom_art: false`), donc pas d'artwork sur les annuaires. `POST /podcast/{id}/art`
+- [ ] **Soumettre le flux RSS aux annuaires** (Apple Podcasts, Spotify) une fois le premier épisode en ligne
+- [ ] **Surveiller l'espace disque du VPS** — chaque mixtape compte double (~1,2 Go/an)
 - [ ] **Configurer le webhook Buy Me a Coffee** si pas déjà fait après cette session : BMC Studio → Integrations → Webhooks → URL `https://kalbassfm-player.vercel.app/api/supporters`, événement "Support created" uniquement, copier le secret dans `BMC_WEBHOOK_SECRET` sur Vercel
 - [ ] **Ajouter `ANTHROPIC_API_KEY` sur Vercel** pour que `/ask` fonctionne (clé à créer sur console.anthropic.com)
 - [ ] **Vérifier que `/jingle` fonctionne réellement en prod** après les deux fix (marqueur "kalbass fm" + User-Agent) — dernier test montrait encore l'erreur anti-robots, non reconfirmé après le fix
@@ -195,6 +220,9 @@
 | `Alex Cortex - Discola.mp3` corrompu | LOW | "can't sync to MPEG frame", à re-télécharger |
 | Rate limit iTunes Search | LOW | ~20 req/min, throttle 3.2s/req dans le nettoyage |
 | Mode intelligent (crossfade) = +CPU sur le VPS | LOW | À surveiller ; repli Mode normal si besoin |
+| Heure de départ de la mixtape « à un titre près » | LOW | L'AutoDJ termine le morceau en cours avant de tirer le suivant. Poids 40 pour gagner le premier tirage, mais AzuraCast ne garantit pas la seconde sans script Liquidsoap |
+| Chaque mixtape occupe deux fois l'espace disque | INFO | Contrainte API (cf. décisions). ~100 Mo par mixtape, ~1,2 Go/an — à surveiller sur le VPS |
+| Le panneau Mixtapes se masque si AzuraCast est injoignable | INFO | Volontaire et documenté dans le code : même comportement que les autres panneaux dépendant du réseau, plutôt qu'un panneau vide |
 | `/rename_nick` matche par pseudo affiché, pas garanti unique | LOW | `Listener-XXXX` dérivé du clientId modulo 9000 — collision possible entre deux auditeurs différents ; usage manuel ponctuel assumé, pas le mécanisme par défaut (`/rename` par clientId l'est) |
 
 ## Fichiers clés
@@ -217,7 +245,8 @@
 | `api/reactions.js` | Vote 🔥 + Top 5 | ❌ Supprimé le 2026-07-21 (gros consommateur Redis, feature peu utilisée) |
 | `index.html` | Player complet EN, Top 5 retiré, Flappy Kalbass (fix mobile 2026-07-21), Vibe Streak, bandeau épinglé, Request, reconnexion durcie, **My tracks** (chip Save + panneau + export, 100% localStorage) et **popup What's new** (2026-07-24) | ✅ Live |
 | `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v18` (2026-07-24) | ✅ Live |
-| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances (65 nœuds / 123 relations) | ✅ À jour 2026-07-24 |
+| `tools/publish_mixtape.py` | **Nouveau (2026-08-08)** — geste mensuel de la mixtape : banque → playlist planifiée + épisode podcast + upload. Dry-run par défaut, `--apply` | ✅ Créé, `--apply` non rejoué de bout en bout |
+| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances (74 nœuds / 148 relations) | ✅ À jour 2026-08-08 |
 
 ## Infrastructure
 
@@ -230,10 +259,11 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-07-28 (construction manuelle via /graphify, pas de CLI) — 68 nœuds, 134 relations
+> Mis à jour le 2026-08-08 (construction manuelle via /graphify, pas de CLI) — 74 nœuds, 148 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 18), `ChatFeature` (13), `api/telegram.js` (13, `/audience` l'ayant fait passer devant `api/chat.js`), `api/chat.js` (12), `AzuraCast` (11), `ProgrammeGrid`/horloge à bacs pondérés (10), `classify_bins.py` (source de vérité classification).
-Nouveaux nœuds 2026-07-28 : `EnergyRmsLimitation` (le RMS ≠ énergie musicale, cause racine du bac du matin), `AudienceStatsFeature` (`/audience`), `LibraryRecovery` (82 titres retrouvés).
+God nodes (concepts centraux) : `index.html` (hub front, degré 20), `ChatFeature` (13), `api/telegram.js` (13), `AzuraCast` (12), `api/chat.js` (12), `ProgrammeGrid`/horloge à bacs pondérés (11).
+Nouveaux nœuds 2026-08-08 : `MixtapesFeature` (émission mensuelle), `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication` (contrainte API imposant le double stockage), `PodcastAudioElement` (pourquoi un second `<audio>`).
+Nœuds 2026-07-28 : `EnergyRmsLimitation` (le RMS ≠ énergie musicale, cause racine du bac du matin), `AudienceStatsFeature` (`/audience`), `LibraryRecovery` (82 titres retrouvés).
 Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 

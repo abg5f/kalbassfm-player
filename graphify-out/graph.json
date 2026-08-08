@@ -4,7 +4,7 @@
       "id": "index.html",
       "label": "index.html",
       "type": "file",
-      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version). Fix mobile 2026-07-28 : les controles de lecture passent AVANT le chat (order 4-5 au lieu de 5 apres 4) et un bouton play est superpose a la pochette — il fallait scroller pour lancer la radio. Tout enfant de .card doit avoir un `order` explicite (sans lui il vaut 0 et passe avant l'en-tete)."
+      "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version). Fix mobile 2026-07-28 : les controles de lecture passent AVANT le chat (order 4-5 au lieu de 5 apres 4) et un bouton play est superpose a la pochette — il fallait scroller pour lancer la radio. Tout enfant de .card doit avoir un `order` explicite (sans lui il vaut 0 et passe avant l'en-tete). Ajout 2026-08-08 : panneau Mixtapes (podcast mensuel, endpoints publics AzuraCast) et second element <audio id=podcastAudio> separe de #audio - ce dernier est auto-reparant et ecraserait la mixtape. Le curseur de volume pilote les deux."
     },
     {
       "id": "sw.js",
@@ -407,6 +407,42 @@
       "label": "Recuperation de 82 titres oublies (2026-07-28)",
       "type": "event",
       "summary": "82 morceaux dormaient dans les anciens dossiers serveur 2_afternoon/3_evening/4_night depuis la migration de juillet : jamais migres (leurs fichiers locaux manquaient au moment du migrate_grid), references par aucune playlist, donc jamais diffuses. Rapatries en SFTP puis passes au triage, qui n'en a ecarte AUCUN comme doublon — c'etaient bien des titres uniques. Bibliotheque 913 -> 995 entrees. 17 vrais doublons supprimes du serveur apres verification que leur jumeau existait dans un bac actif. migrate_grid.py rendu RE-EXECUTABLE au passage : il renommait en 'Titre_2.mp3' les ~700 fichiers ne changeant pas de bac."
+    },
+    {
+      "id": "MixtapesFeature",
+      "label": "Mixtapes (emission mensuelle)",
+      "type": "feature",
+      "summary": "Rendez-vous editorial mensuel introduit le 2026-08-08 : une mixtape mixee est diffusee a date fixe a l'antenne, puis reste ecoutable a la demande dans le player et suivable via un flux RSS. Repond au vrai probleme du projet (0,46 auditeur/30j) : la technique est saine, c'est la diffusion et l'accroche qui manquent. Cote auditeur : panneau Mixtapes alimente par les endpoints PUBLICS d'AzuraCast (aucune cle, donc zero fichier api/, zero commande Redis, zero fonction Vercel) - meme principe que MyTracksFeature."
+    },
+    {
+      "id": "tools/publish_mixtape.py",
+      "label": "tools/publish_mixtape.py",
+      "type": "file",
+      "summary": "Le geste mensuel en une commande : liste la banque Mixtapes/, vide puis regarnit la playlist mixtape_onair, pose le planning a la date voulue (schedule_item start_date/end_date), cree l'episode podcast et televerse le media. Dry-run par defaut, --apply pour agir (meme patron que migrate_grid.py / clean_clapcrate_full.py). Reutilise azuracast_config.py. season_number/episode_number sont obligatoires a la creation d'episode : sans eux l'entite AzuraCast leve 'must not be accessed before initialization' (HTTP 500)."
+    },
+    {
+      "id": "MixtapeOnairPlaylist",
+      "label": "playlist mixtape_onair",
+      "type": "config",
+      "summary": "Playlist AzuraCast (id 26) qui ne contient que la mixtape du mois. Creee DESACTIVEE a dessein : une playlist activee sans planning passe en rotation generale et enverrait les mixtapes n'importe quand. publish_mixtape.py l'active en meme temps qu'il pose la date. Poids 40 (la grille plafonne a 15) pour gagner le premier tirage de sa fenetre - mais l'AutoDJ termine toujours le morceau en cours : le demarrage est 'a un titre pres', pas a la seconde."
+    },
+    {
+      "id": "PodcastMediaDuplication",
+      "label": "Duplication du media podcast (contrainte AzuraCast)",
+      "type": "limitation",
+      "summary": "Chaque mixtape existe en DEUX exemplaires : media station (dossier Mixtapes/, ce que l'AutoDJ diffuse) et stockage podcast (ce que le RSS sert). Impose par l'API : playlist_media_id est en lecture seule ('must be one of never'), un episode ne peut donc pas referencer un media station. La voie alternative source=playlist + playlist_auto_publish a ete testee et ne genere AUCUN episode sur cette instance (playlist desactivee comme activee) ; pire, supprimer la playlist source supprime le podcast avec elle. source et playlist_id sont immuables apres creation. Cout : ~100 Mo par mixtape, ~1,2 Go/an."
+    },
+    {
+      "id": "PodcastAzuraCast",
+      "label": "Podcast KALBASSFM Mixtapes (AzuraCast)",
+      "type": "config",
+      "summary": "Podcast natif AzuraCast en source=manual. Expose des endpoints PUBLICS sans authentification (/api/station/kalbassfm/public/podcasts, /public/podcast/{id}/episodes, .../episode/{id}/download.mp3) et un flux RSS valide (namespaces iTunes + Podcast Index) sur /public/kalbassfm/podcast/{id}/feed. Reste invisible publiquement tant qu'aucun episode n'est publie (is_published=false)."
+    },
+    {
+      "id": "PodcastAudioElement",
+      "label": "<audio id=podcastAudio> (element separe)",
+      "type": "concept",
+      "summary": "Second element audio, distinct de #audio. Indispensable : #audio est auto-reparant (listeners pause/error/visibilitychange + watchdog setInterval qui relancent le flux live). Le reutiliser pour une mixtape ferait ecraser celle-ci par le direct en pleine lecture. Lancer une mixtape appelle stopStream(), qui pose userStopped=true et neutralise le watchdog. Verifie empiriquement : direct coupe au lancement et toujours coupe 6 s plus tard."
     }
   ],
   "edges": [
@@ -1213,6 +1249,90 @@
       "target": "AzuraCast",
       "relation": "reintegre dans",
       "weight": 1
+    },
+    {
+      "source": "index.html",
+      "target": "MixtapesFeature",
+      "relation": "expose le panneau Mixtapes",
+      "weight": 3
+    },
+    {
+      "source": "MixtapesFeature",
+      "target": "PodcastAudioElement",
+      "relation": "lit via un element audio dedie",
+      "weight": 3
+    },
+    {
+      "source": "PodcastAudioElement",
+      "target": "index.html",
+      "relation": "coexiste avec #audio (auto-reparant)",
+      "weight": 3
+    },
+    {
+      "source": "MixtapesFeature",
+      "target": "PodcastAzuraCast",
+      "relation": "lit les endpoints publics",
+      "weight": 3
+    },
+    {
+      "source": "MixtapesFeature",
+      "target": "MixtapeOnairPlaylist",
+      "relation": "volet antenne du rendez-vous",
+      "weight": 2
+    },
+    {
+      "source": "tools/publish_mixtape.py",
+      "target": "MixtapeOnairPlaylist",
+      "relation": "vide, regarnit et planifie",
+      "weight": 3
+    },
+    {
+      "source": "tools/publish_mixtape.py",
+      "target": "PodcastAzuraCast",
+      "relation": "cree l'episode et televerse le media",
+      "weight": 3
+    },
+    {
+      "source": "tools/publish_mixtape.py",
+      "target": "AzuraCastAdminAPI",
+      "relation": "pilote via la cle API locale",
+      "weight": 2
+    },
+    {
+      "source": "PodcastAzuraCast",
+      "target": "PodcastMediaDuplication",
+      "relation": "contraint par",
+      "weight": 3
+    },
+    {
+      "source": "PodcastMediaDuplication",
+      "target": "MixtapeOnairPlaylist",
+      "relation": "impose deux stockages distincts",
+      "weight": 2
+    },
+    {
+      "source": "PodcastAzuraCast",
+      "target": "AzuraCast",
+      "relation": "module natif de l'instance",
+      "weight": 2
+    },
+    {
+      "source": "MixtapeOnairPlaylist",
+      "target": "ProgrammeGrid",
+      "relation": "s'insere dans l'horloge a bacs",
+      "weight": 2
+    },
+    {
+      "source": "MixtapesFeature",
+      "target": "sw.js",
+      "relation": "cache bumpe kfm-v20",
+      "weight": 1
+    },
+    {
+      "source": "MixtapesFeature",
+      "target": "WhatsNewModal",
+      "relation": "annoncee via WHATS_NEW_V",
+      "weight": 2
     }
   ]
 }

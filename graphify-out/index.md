@@ -1,33 +1,33 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois) puis le 2026-07-28 via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois) le 2026-07-28 puis le 2026-08-08 via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
 
 ## Vue d'ensemble
 
-- **68 nœuds**, **134 relations**, **8 communautés** détectées.
-- Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), la **commande Telegram `/move`** pour migrer le morceau en cours entre les 8 bacs (`MoveTrackFeature`, 2026-07-24), la sauvegarde locale de titres likés (`MyTracksFeature`, 2026-07-24) et la popup de découverte des features (`WhatsNewModal`, 2026-07-24), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, et le plan (non codé) du système de vote de playlist par genre.
+- **74 nœuds**, **148 relations**, **8 communautés** détectées.
+- Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), la **commande Telegram `/move`** pour migrer le morceau en cours entre les 8 bacs (`MoveTrackFeature`, 2026-07-24), la sauvegarde locale de titres likés (`MyTracksFeature`, 2026-07-24) et la popup de découverte des features (`WhatsNewModal`, 2026-07-24), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, le plan (non codé) du système de vote de playlist par genre, et l'**émission mensuelle Mixtapes** (`MixtapesFeature`, `tools/publish_mixtape.py`, podcast AzuraCast natif + playlist `mixtape_onair`, 2026-08-08).
 
 ## Communautés
 
 | Communauté | Membres clés |
 |---|---|
-| Player / Frontend | index.html, layout desktop, sw.js, manifest, PWA, égaliseur, chat live, popup contact, now-playing, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, My tracks, popup What's new |
-| Infra / Streaming | AzuraCast, Icecast, Liquidsoap, VPS, DuckDNS, GitHub, Vercel, Admin API, playlist Jingles |
+| Player / Frontend | index.html, layout desktop, sw.js, manifest, PWA, égaliseur, chat live, popup contact, now-playing, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, My tracks, popup What's new, **panneau Mixtapes + élément audio dédié** |
+| Infra / Streaming | AzuraCast, Icecast, Liquidsoap, VPS, DuckDNS, GitHub, Vercel, Admin API, playlist Jingles, **podcast KALBASSFM Mixtapes, playlist mixtape_onair, duplication du média podcast** |
 | Serverless / API (chat + bot Telegram admin + Flappy + BPM) | api/chat.js, api/telegram.js, api/supporters.js, api/flappy.js, Upstash Redis, chat live, bot admin, réponse admin, badge supporter, renommage modérateur, pseudo choisi par l'auditeur, jeu BPM, commande /move (migration entre bacs), incident quota Upstash, vote playlist (planifié) |
 | Intégrations externes (dons, IA) | Buy Me a Coffee, API Claude, api/supporters.js |
-| Outillage / Pipeline musique | pipeline Rekordbox, import-rekordbox.ps1, clean_local_tracks.py, RaiDrive, iTunes Search API, triage (file de retry SFTP), export_bpm_table.py, migrations |
+| Outillage / Pipeline musique | pipeline Rekordbox, import-rekordbox.ps1, clean_local_tracks.py, RaiDrive, iTunes Search API, triage (file de retry SFTP), export_bpm_table.py, migrations, **publish_mixtape.py** |
 | Pipeline Essentia / Grille 8 bacs | analyze_essentia.py, classify_bins.py, migrate_grid.py, resync_metadata.py, build_rotation.py (superseded) |
 | Planning / Business | PROJECT.md, ROADMAP.md, PLAN.md, REQUIREMENTS.md, EXECUTION_CHECKLIST.md, STATE.md, SACEM |
 | Contexte de session | CONTEXT.md, README.md |
 
 ## God nodes (les plus connectés)
 
-1. **index.html** (degré 18) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, **My tracks**, **popup What's new**, PWA). Se détache encore avec les deux features du 2026-07-24, toutes deux 100 % clientes.
+1. **index.html** (degré 20) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, **My tracks**, **popup What's new**, PWA). Se détache encore avec le panneau Mixtapes (2026-08-08), également 100 % client.
 2. **ChatFeature** (degré 13) — panneau chat live, cible de la plupart des features de modération, du jeu BPM, du choix de pseudo et désormais des commandes locales `!save`/`!saved`/`!help`.
 3. **api/chat.js** (degré 12) — chat live + modération + renommage (admin et auditeur) + jeu BPM (BpmGuesserFeature) + annonce Flappy + détection d'erreur Upstash.
-4. **api/telegram.js** (degré 12) — bot admin, toutes les commandes (reply, supporters, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque, **/move** de migration entre bacs), résilience handleCallback, kill-switch Redis.
-5. **AzuraCast** (degré 10) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
-6. **ProgrammeGrid / Horloge à bacs pondérés** (degré 9) — grille 8 bacs, remplace les 4 créneaux à ordre figé.
+4. **api/telegram.js** (degré 13) — bot admin, toutes les commandes (reply, supporters, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque, **/move** de migration entre bacs), résilience handleCallback, kill-switch Redis.
+5. **AzuraCast** (degré 12) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
+6. **ProgrammeGrid / Horloge à bacs pondérés** (degré 11) — grille 8 bacs, remplace les 4 créneaux à ordre figé.
 7. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles).
 
 ## Note — 2026-07-21 : incident de quota Upstash et suppression du Top 5
@@ -101,3 +101,13 @@ localisables.
 - La playlist `JinglesFeature` reste gérée nativement côté AzuraCast, hors pipeline Python.
 - **Session 2026-07-20** : ajout de `api/supporters.js` (webhook Buy Me a Coffee signé HMAC → remerciement auto dans le chat + panneau Supporters + notif Telegram), extension massive de `api/telegram.js` (reply admin avec citation, gestion supporters manuelle, reset Top 5 par epoch, bandeau épinglé, /np /stats, suppression bibliothèque AzuraCast, `/ask` vers l'API Claude, badge visuel supporter dans le chat), plafond de vote 10/auditeur/morceau sur `api/reactions.js`, Vibe Streak (fidélité locale), reconnexion audio durcie, et deux itérations de réorganisation du layout desktop (sidebar qui scrolle en bloc, puis Top 5 sous Historique / Supporters mis en avant).
 - **Ajout tardif (même session)** : `SupporterBadgeFeature` — un supporter marqué manuellement par l'admin (`/mark_supporter <clientId> <nom>`, même patron que `/ban`) voit son pseudo et sa couleur (`--accent-2`, nouvelle variable) distingués dans le chat live. Aucun lien automatique don↔clientId n'existe (pas de comptes) : rapprochement 100% manuel, cohérent avec le reste du modèle de modération du projet.
+
+## Note — 2026-08-08 : émission mensuelle « Mixtapes »
+
+Premier rendez-vous éditorial du projet : une mixtape mixée diffusée à date fixe à l'antenne, puis réécoutable à la demande et suivable en RSS. C'est une réponse au constat du 2026-07-28 (0,46 auditeur sur 30 jours) — la technique est saine, c'est la diffusion et l'accroche qui manquent, et un flux live n'est pas partageable alors qu'un épisode l'est.
+
+**Deux stockages, imposés par l'API.** `playlist_media_id` est en **lecture seule** côté AzuraCast (`must be one of "never"`) : un épisode ne peut pas *référencer* un média déjà dans la bibliothèque station. La voie qui aurait évité toute duplication (`source: playlist` + `playlist_auto_publish`, alimentée par une playlist d'archive qui ne fait que grandir) a été testée et ne génère **aucun** épisode sur cette instance, playlist désactivée comme activée — et supprimer la playlist source **supprime le podcast avec elle**. `source` et `playlist_id` sont par ailleurs immuables après création. Chaque mixtape existe donc en deux exemplaires (~100 Mo, ~1,2 Go/an). Voir `PodcastMediaDuplication`.
+
+**Deux éléments `<audio>`, imposés par le player.** `#audio` est auto-réparant (listeners `pause`/`error`/`visibilitychange` + watchdog `setInterval` qui relancent le flux). Le réutiliser ferait écraser la mixtape par le direct en pleine lecture. `#podcastAudio` est donc un élément séparé, et lancer une mixtape appelle `stopStream()` — qui pose `userStopped = true` et neutralise le watchdog. Vérifié en conditions réelles : direct coupé au lancement, toujours coupé 6 s plus tard. Voir `PodcastAudioElement`.
+
+**Côté auditeur, zéro coût serveur.** Le panneau lit les endpoints *publics* d'AzuraCast (`/public/podcasts`, `/public/podcast/{id}/episodes`) : aucun fichier `api/`, zéro commande Redis, zéro invocation de fonction Vercel — le même arbitrage que `MyTracksFeature`. Le panneau se masque de lui-même tant qu'aucun épisode n'est publié.
