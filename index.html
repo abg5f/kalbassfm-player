@@ -604,6 +604,54 @@
     }
     .saved-mini:hover { color: var(--accent); border-color: var(--accent); }
 
+    /* ── Mixtapes (podcast AzuraCast, endpoints publics) ── */
+    .mix-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-top: 1px solid #222;
+    }
+    .mix-item:first-child { border-top: none; }
+    .mix-play {
+      font-family: 'Space Mono', monospace;
+      font-size: .7rem;
+      line-height: 1;
+      color: var(--accent);
+      background: transparent;
+      border: 1px solid #333;
+      width: 30px; height: 30px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .mix-play:hover { border-color: var(--accent); }
+    .mix-item.is-playing .mix-play { border-color: var(--accent); color: var(--bg); background: var(--accent); }
+    .mix-meta { flex: 1; min-width: 0; }
+    .mix-title {
+      font-family: 'Space Mono', monospace;
+      font-size: .64rem;
+      color: var(--fg);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mix-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: .54rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      margin-top: 2px;
+    }
+    .mix-feed {
+      display: inline-block;
+      margin-top: 10px;
+      font-family: 'Space Mono', monospace;
+      font-size: .54rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+    }
+    .mix-feed:hover { color: var(--accent); border-color: var(--accent); }
+
     /* ── Supporters (Buy Me a Coffee) ── */
     .supporter-item {
       padding: 6px 0;
@@ -1253,6 +1301,17 @@
         <div id="savedList"></div>
       </div>
     </details>
+
+    <details class="panel" id="mixPanel">
+      <summary>
+        <span class="panel-summary-label">Mixtapes 🎧 <span class="hist-preview" id="mixPreview"></span></span>
+        <span class="chev">›</span>
+      </summary>
+      <div class="panel-body">
+        <div id="mixList"></div>
+        <a class="mix-feed" id="mixFeed" target="_blank" rel="noopener noreferrer" style="display:none">⧉ RSS feed — add it to your podcast app</a>
+      </div>
+    </details>
     </div>
 
     <div class="footer">
@@ -1279,9 +1338,17 @@
       <p class="wn-intro">Everything you can do here — no account, nothing to install.</p>
 
       <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">🎧</span>
+        <div class="wn-body">
+          <div class="wn-name">Mixtapes<span class="wn-tag">NEW</span></div>
+          <p class="wn-desc">Once a month, a full <b>DJ mixtape</b> goes on air — then stays here to replay any time. Open the <b>Mixtapes</b> panel to listen, or grab the <b>RSS feed</b> to follow it in your podcast app.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
         <span class="wn-ico" aria-hidden="true">❤</span>
         <div class="wn-body">
-          <div class="wn-name">My tracks<span class="wn-tag">NEW</span></div>
+          <div class="wn-name">My tracks</div>
           <p class="wn-desc">Heard something you liked? Hit <b>♡ Save</b> under the track. Everything you save lands in the <b>My tracks</b> panel, grouped by day — with a YouTube link for each one. Copy the whole list or download it as a <b>.txt</b> to take it anywhere.</p>
         </div>
       </div>
@@ -1408,6 +1475,10 @@
   </div>
 
   <audio id="audio" preload="none"></audio>
+  <!-- Element SEPARE pour les mixtapes : #audio est auto-reparant (listeners
+       pause/error/visibilitychange + watchdog setInterval qui relancent le flux).
+       Le reutiliser ferait ecraser la mixtape par le direct en pleine lecture. -->
+  <audio id="podcastAudio" preload="none"></audio>
 
   <script>
   const CONFIG = {
@@ -1608,6 +1679,9 @@
 
   volSlider.addEventListener('input', () => {
     audio.volume = parseFloat(volSlider.value);
+    // Le curseur pilote aussi la mixtape en cours (element audio separe).
+    const pa = document.getElementById('podcastAudio');
+    if (pa) pa.volume = audio.volume;
     volVal.textContent = Math.round(volSlider.value * 100);
   });
 
@@ -2375,13 +2449,132 @@
   document.getElementById('installToastClose').addEventListener('click', dismissInstallToast);
   document.getElementById('installToastLater').addEventListener('click', dismissInstallToast);
 
+  /* ── Mixtapes — le podcast mensuel, lu depuis les endpoints PUBLICS d'AzuraCast
+     (/public/podcasts, /public/podcast/{id}/episodes). Aucune cle, donc aucun
+     fichier api/, zero commande Redis, zero invocation de fonction Vercel :
+     meme principe que "My tracks".
+     La lecture passe par #podcastAudio, JAMAIS par #audio — ce dernier est
+     auto-reparant (pause/error/visibilitychange + watchdog) et reprendrait le
+     direct par-dessus la mixtape. ── */
+  const MIX_API = 'https://kalbassfm.duckdns.org/api/station/kalbassfm';
+  const mixPanel   = document.getElementById('mixPanel');
+  const mixList    = document.getElementById('mixList');
+  const mixPreview = document.getElementById('mixPreview');
+  const mixFeedLink = document.getElementById('mixFeed');
+  const podcastAudio = document.getElementById('podcastAudio');
+  let mixCurrentId = null;
+
+  function mixDate(ts) {
+    if (!ts) return '';
+    try {
+      return new Date(ts * 1000).toLocaleDateString('en-GB',
+        { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch { return ''; }
+  }
+
+  function mixStop() {
+    podcastAudio.pause();
+    podcastAudio.removeAttribute('src');
+    podcastAudio.load();
+    mixCurrentId = null;
+    mixMarkPlaying();
+  }
+
+  function mixMarkPlaying() {
+    mixList.querySelectorAll('.mix-item').forEach((row) => {
+      const on = row.dataset.id === mixCurrentId;
+      row.classList.toggle('is-playing', on);
+      const b = row.querySelector('.mix-play');
+      if (b) {
+        b.textContent = on ? '❚❚' : '▶';
+        b.setAttribute('aria-label', (on ? 'Pause ' : 'Play ') + (row.dataset.title || 'mixtape'));
+      }
+    });
+  }
+
+  function mixPlay(ep, url) {
+    if (mixCurrentId === ep.id) { mixStop(); return; }
+    // Couper le direct AVANT de lancer la mixtape : stopStream() pose
+    // userStopped = true, ce qui neutralise le watchdog de reconnexion.
+    stopStream();
+    podcastAudio.src = url;
+    podcastAudio.volume = audio.volume;
+    mixCurrentId = ep.id;
+    mixMarkPlaying();
+    podcastAudio.play().catch(() => { mixStop(); });
+  }
+
+  podcastAudio.addEventListener('ended', mixStop);
+  podcastAudio.addEventListener('error', () => { if (mixCurrentId) mixStop(); });
+  // Lancer le direct doit toujours gagner sur une mixtape en cours.
+  btnPlay.addEventListener('click', () => { if (mixCurrentId) mixStop(); });
+
+  function mixRender(episodes, podcastId) {
+    mixList.innerHTML = '';
+    const published = episodes.filter((e) => e.is_published && e.has_media);
+    if (!published.length) {
+      mixList.innerHTML = '<p class="prog-note">No mixtape published yet — the first one is coming.</p>';
+      mixPreview.textContent = '';
+      return;
+    }
+    mixPreview.textContent = published.length;
+    published.forEach((ep) => {
+      const url = (ep.links && ep.links.download)
+        || `${MIX_API}/public/podcast/${podcastId}/episode/${ep.id}/download.mp3`;
+      const row = document.createElement('div');
+      row.className = 'mix-item';
+      row.dataset.id = ep.id;
+      row.dataset.title = ep.title || 'mixtape';
+
+      const btn = document.createElement('button');
+      btn.className = 'mix-play'; btn.type = 'button'; btn.textContent = '▶';
+      btn.setAttribute('aria-label', 'Play ' + (ep.title || 'mixtape'));
+      btn.addEventListener('click', () => mixPlay(ep, url));
+
+      const meta = document.createElement('div');
+      meta.className = 'mix-meta';
+      const t = document.createElement('div');
+      t.className = 'mix-title'; t.textContent = ep.title || '—';
+      const sub = document.createElement('div');
+      sub.className = 'mix-sub';
+      sub.textContent = [mixDate(ep.publish_at), ep.media && ep.media.length_text]
+        .filter(Boolean).join(' · ');
+      meta.appendChild(t); meta.appendChild(sub);
+
+      row.appendChild(btn); row.appendChild(meta);
+      mixList.appendChild(row);
+    });
+    mixMarkPlaying();
+  }
+
+  async function mixLoad() {
+    try {
+      const r = await fetch(`${MIX_API}/public/podcasts`, { cache: 'no-store' });
+      const pods = await r.json();
+      if (!Array.isArray(pods) || !pods.length) { mixPanel.style.display = 'none'; return; }
+      const pod = pods.find((p) => /mixtape/i.test(p.title || '')) || pods[0];
+      const re = await fetch(`${MIX_API}/public/podcast/${pod.id}/episodes`, { cache: 'no-store' });
+      const eps = await re.json();
+      mixRender(Array.isArray(eps) ? eps : [], pod.id);
+      const feed = (pod.links && pod.links.public_feed)
+        || `https://kalbassfm.duckdns.org/public/kalbassfm/podcast/${pod.id}/feed`;
+      mixFeedLink.href = feed;
+      mixFeedLink.style.display = '';
+    } catch {
+      // Silencieux : le panneau reste simplement vide, comme les autres panneaux
+      // qui dependent du reseau.
+      mixPanel.style.display = 'none';
+    }
+  }
+  mixLoad();
+
   /* ── Popup de contact ("Owned by Lupari") ── */
   /* ── Popup "What's new" : catalogue des features cote auditeur (elles sont
      nombreuses et peu decouvrables — chat commands, jeu BPM, streak...).
      S'ouvre d'elle-meme UNE seule fois par version (localStorage kfm_whatsnew,
      compare a WHATS_NEW_V) puis a la demande via le pied de page ou !help.
      Bumper WHATS_NEW_V a la prochaine feature pour la re-annoncer a tous. ── */
-  const WHATS_NEW_V = '2026-07-mytracks';
+  const WHATS_NEW_V = '2026-08-mixtapes';
   const whatsNewModal = document.getElementById('whatsNewModal');
   const whatsNewDot = document.getElementById('whatsNewDot');
   function openWhatsNew() {
