@@ -98,6 +98,10 @@
        repoussait le bouton play hors de l'ecran et il fallait scroller pour
        lancer la radio — le geste le plus important de la page. */
     .card > .header      { order: 1; }
+    /* Meme `order` que le header : a egalite, flexbox retombe sur l'ordre du
+       DOM, ou le bandeau suit immediatement le header. Evite de renumeroter
+       les 10 lignes ci-dessous pour lui faire une place. */
+    .card > .support-banner { order: 1; }
     .main-col, .sidebar-col { display: contents; }
     .main-col > .artwork     { order: 2; }
     .main-col > .track-block { order: 3; }
@@ -107,6 +111,11 @@
     .main-col > #histPanel   { order: 7; }
     #supportersPanel          { order: 8; }
     #savedPanel               { order: 9; }
+    /* Sans `order` explicite, #mixPanel valait 0 et remontait tout en haut de
+       la page sur mobile, au-dessus du header — exactement le bug decrit dans
+       le commentaire ci-dessus. A egalite avec #savedPanel, il se place apres
+       lui (ordre du DOM). */
+    #mixPanel                 { order: 9; }
     .card > .footer       { order: 10; }
 
     /* ── Desktop : colonne principale (lecteur, historique, Top 5) +
@@ -118,10 +127,12 @@
         grid-template-columns: minmax(340px, 1fr) minmax(320px, 420px);
         grid-template-areas:
           "header header"
+          "banner banner"
           "main   side"
           "footer footer";
       }
       .card > .header  { grid-area: header; }
+      .card > .support-banner { grid-area: banner; }
       .card > .footer  { grid-area: footer; }
       .main-col {
         grid-area: main;
@@ -838,6 +849,106 @@
       margin-top: 8px;
     }
 
+    /* ── Bandeau de financement (sous le header) ──
+       Meme code couleur que le panneau Supporters : --accent-2 = argent reel,
+       --accent (jaune) restant la couleur de l'antenne. Masque par defaut,
+       revele par le JS uniquement si l'auditeur ne l'a pas ferme recemment. */
+    .support-banner {
+      display: none;
+      border-bottom: 3px solid var(--border);
+      background: rgba(224, 138, 46, 0.12);
+      padding: 12px 16px;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .support-banner.show { display: flex; }
+    .support-banner-body { flex: 1; min-width: 190px; }
+    .support-banner-title {
+      font-weight: 700;
+      font-size: .74rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 4px;
+    }
+    .support-banner-text {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+    .support-banner-text b { color: var(--fg); }
+    .support-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .support-banner .donate-link {
+      background: var(--accent-2);
+      color: var(--bg);
+    }
+    /* Padding genereux plutot que decoratif : le bandeau est le seul element
+       fermable du player, et la croix est collee au bouton de don — une cible
+       trop petite fait rater la fermeture et toucher "Chip in" a la place. */
+    .support-banner-close {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: .9rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 10px 12px;
+    }
+    .support-banner-close:hover { color: var(--fg); }
+
+    /* ── Formulaire "Submit a mix" (popup) ── */
+    .submit-box { max-width: 380px; max-height: 86vh; overflow-y: auto; }
+    .submit-intro {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      line-height: 1.6;
+      color: var(--muted);
+      margin: -6px 0 14px;
+    }
+    .submit-form { display: flex; flex-direction: column; gap: 10px; }
+    .submit-field { display: flex; flex-direction: column; gap: 4px; }
+    .submit-label {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .submit-hint {
+      font-family: 'Space Mono', monospace;
+      font-size: .55rem;
+      line-height: 1.5;
+      color: #5A5A5A;
+    }
+    .submit-note {
+      font-family: 'Space Mono', monospace;
+      font-size: .6rem;
+      line-height: 1.6;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+    .submit-note.error { color: #E0322F; }
+    /* Ecran de confirmation : remplace le formulaire une fois la candidature
+       partie, pour que le DJ ne renvoie pas la meme trois fois de suite. */
+    .submit-done { display: none; text-align: center; padding: 6px 0 2px; }
+    .submit-done.show { display: block; }
+    .submit-done-ico { font-size: 1.8rem; line-height: 1; margin-bottom: 10px; }
+    .submit-done-text {
+      font-family: 'Space Mono', monospace;
+      font-size: .62rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .submit-done-text b { color: var(--fg); }
+
     /* ── Footer ── */
     .footer {
       padding: 10px 18px;
@@ -1179,6 +1290,21 @@
       </div>
     </div>
 
+    <div class="support-banner" id="supportBanner" role="region" aria-label="Support KALBASS FM">
+      <div class="support-banner-body">
+        <div class="support-banner-title">Keep KALBASS FM free</div>
+        <p class="support-banner-text">
+          No ads, no paywall, no account — and I'd like to keep it that way.
+          Running the station costs <b>€30 a month</b>, out of my own pocket.
+          If it's part of your day, chip in and it stays on air.
+        </p>
+      </div>
+      <div class="support-banner-actions">
+        <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Chip in</a>
+        <button type="button" class="support-banner-close" id="supportBannerClose" aria-label="Hide this message">✕</button>
+      </div>
+    </div>
+
     <div class="main-col">
     <div class="artwork" id="artwork" role="img" aria-label="Current track artwork">
       <div class="visualizer stopped" id="visualizer" aria-hidden="true"></div>
@@ -1323,6 +1449,7 @@
       <div class="footer-donate">
         <button type="button" class="donate-link" id="whatsNewBtn">✨ What's new<span class="wn-dot" id="whatsNewDot"></span></button>
         <a href="https://buymeacoffee.com/kalbassfm" target="_blank" rel="noopener noreferrer" class="donate-link">☕ Support</a>
+        <button type="button" class="donate-link" id="submitMixBtn">💿 Submit a mix</button>
         <button type="button" class="donate-link" id="ownedByBtn">Owned by Lupari</button>
       </div>
     </div>
@@ -1340,8 +1467,16 @@
       <div class="wn-item">
         <span class="wn-ico" aria-hidden="true">🎧</span>
         <div class="wn-body">
-          <div class="wn-name">Mixtapes<span class="wn-tag">NEW</span></div>
+          <div class="wn-name">Mixtapes</div>
           <p class="wn-desc">Once a month, a full <b>DJ mixtape</b> goes on air — then stays here to replay any time. Open the <b>Mixtapes</b> panel to listen, or grab the <b>RSS feed</b> to follow it in your podcast app.</p>
+        </div>
+      </div>
+
+      <div class="wn-item">
+        <span class="wn-ico" aria-hidden="true">💿</span>
+        <div class="wn-body">
+          <div class="wn-name">Submit a mix<span class="wn-tag">NEW</span></div>
+          <p class="wn-desc">You DJ? Send your set in from the <b>💿 Submit a mix</b> button at the bottom. Name, email, a link with the <b>HQ download enabled</b>, and the style. I listen to every one myself and email you back if it fits the station.</p>
         </div>
       </div>
 
@@ -1356,7 +1491,7 @@
       <div class="wn-item">
         <span class="wn-ico" aria-hidden="true">⌨</span>
         <div class="wn-body">
-          <div class="wn-name">Chat commands<span class="wn-tag">NEW</span></div>
+          <div class="wn-name">Chat commands</div>
           <p class="wn-desc">Type <b>!save</b> in the chat to save the track that's playing, <b>!saved</b> to open your list, <b>!help</b> to reopen this window. These never get posted to the chat.</p>
         </div>
       </div>
@@ -1405,7 +1540,7 @@
         <span class="wn-ico" aria-hidden="true">☕</span>
         <div class="wn-body">
           <div class="wn-name">Supporters</div>
-          <p class="wn-desc">Buy the station a coffee and your name shows up in the Supporters panel — and in the chat.</p>
+          <p class="wn-desc">KALBASS FM runs on <b>€30 a month</b>, paid out of pocket, and stays free and ad-free because of it. Buy the station a coffee and your name shows up in the Supporters panel — and in the chat.</p>
         </div>
       </div>
 
@@ -1423,6 +1558,63 @@
           <div class="wn-name">Sleep timer</div>
           <p class="wn-desc">Next to the volume — set it and the stream stops on its own once you're asleep.</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="submitModal" role="dialog" aria-modal="true" aria-label="Submit your mix to KALBASS FM">
+    <div class="modal-box submit-box">
+      <button class="modal-close" id="submitModalClose" aria-label="Close">✕</button>
+      <div class="modal-title">💿 Submit a mix</div>
+      <p class="submit-intro">Want your set on the air? Send it over. I listen to everything myself — no algorithm, no label needed.</p>
+
+      <form class="submit-form" id="submitForm" novalidate>
+        <div class="submit-field">
+          <label class="submit-label" for="submitDj">DJ name</label>
+          <input class="chat-input" id="submitDj" type="text" maxlength="60" autocomplete="off" placeholder="The name to announce on air" required>
+        </div>
+
+        <div class="submit-field">
+          <label class="submit-label" for="submitEmail">Email</label>
+          <input class="chat-input" id="submitEmail" type="email" maxlength="120" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+        </div>
+
+        <div class="submit-field">
+          <label class="submit-label" for="submitUrl">Link to the set</label>
+          <input class="chat-input" id="submitUrl" type="url" maxlength="300" autocomplete="off" inputmode="url" placeholder="https://..." required>
+          <p class="submit-hint">SoundCloud, Dropbox, Google Drive, WeTransfer… <b>Make sure the HQ download is enabled</b> — I need the full-quality file to put it on air.</p>
+        </div>
+
+        <div class="submit-field">
+          <label class="submit-label" for="submitStyle">Style</label>
+          <input class="chat-input" id="submitStyle" type="text" maxlength="60" autocomplete="off" list="submitStyleList" placeholder="House, techno, disco…" required>
+          <datalist id="submitStyleList">
+            <option value="Downtempo / Chill"></option>
+            <option value="Disco / Nu-disco"></option>
+            <option value="Funk / Soul"></option>
+            <option value="House"></option>
+            <option value="Deep / Melodic house"></option>
+            <option value="Afro house"></option>
+            <option value="UK garage"></option>
+            <option value="Tech house"></option>
+            <option value="Techno"></option>
+            <option value="Dub / Minimal techno"></option>
+            <option value="Jungle / Drum &amp; bass"></option>
+          </datalist>
+        </div>
+
+        <button class="donate-link" id="submitSend" type="submit" style="text-align:center">Send my mix</button>
+        <p class="submit-note" id="submitNote"></p>
+      </form>
+
+      <div class="submit-done" id="submitDone">
+        <div class="submit-done-ico" aria-hidden="true">✅</div>
+        <p class="submit-done-text">
+          <b>Your mix is on its way.</b><br>
+          I listen to every submission myself, so give me a little time.
+          If it fits the station, I'll email you back to schedule it in the programming.<br><br>
+          Thanks for sending it in. 🎧
+        </p>
       </div>
     </div>
   </div>
@@ -2574,7 +2766,7 @@
      S'ouvre d'elle-meme UNE seule fois par version (localStorage kfm_whatsnew,
      compare a WHATS_NEW_V) puis a la demande via le pied de page ou !help.
      Bumper WHATS_NEW_V a la prochaine feature pour la re-annoncer a tous. ── */
-  const WHATS_NEW_V = '2026-08-mixtapes';
+  const WHATS_NEW_V = '2026-08-submit-mix';
   const whatsNewModal = document.getElementById('whatsNewModal');
   const whatsNewDot = document.getElementById('whatsNewDot');
   function openWhatsNew() {
@@ -2596,6 +2788,96 @@
     // Laisse la page s'afficher d'abord : la popup n'est pas un mur d'entree.
     setTimeout(openWhatsNew, 1800);
   }
+
+  /* ── Bandeau de financement ──
+     Affiche par defaut, masquable. On stocke la DATE de fermeture plutot qu'un
+     simple booleen : le bandeau revient au bout de 30 jours, sinon un auditeur
+     qui l'a ferme une fois ne reverrait plus jamais l'appel au financement.
+     Le localStorage peut lever (mode prive Safari) : le bandeau reste alors
+     simplement visible a chaque visite, ce qui est le comportement sur. ── */
+  const SUPPORT_BANNER_KEY = 'kfm_support_banner_hidden';
+  const SUPPORT_BANNER_SNOOZE_MS = 30 * 24 * 3600 * 1000;
+  const supportBanner = document.getElementById('supportBanner');
+  let supportHiddenAt = 0;
+  try { supportHiddenAt = parseInt(localStorage.getItem(SUPPORT_BANNER_KEY) || '0', 10) || 0; } catch {}
+  if (Date.now() - supportHiddenAt > SUPPORT_BANNER_SNOOZE_MS) supportBanner.classList.add('show');
+  document.getElementById('supportBannerClose').addEventListener('click', () => {
+    supportBanner.classList.remove('show');
+    try { localStorage.setItem(SUPPORT_BANNER_KEY, String(Date.now())); } catch {}
+  });
+
+  /* ── Popup "Submit a mix" : candidature DJ -> api/submit-mix.js -> Telegram.
+     Le champ "link to the set" est le seul endroit du site ou une URL est
+     acceptee (le chat et les demandes de titre les refusent) — la validation
+     ci-dessous est donc doublee cote serveur, jamais seulement ici. ── */
+  const submitModal = document.getElementById('submitModal');
+  const submitForm = document.getElementById('submitForm');
+  const submitDone = document.getElementById('submitDone');
+  const submitDj = document.getElementById('submitDj');
+  const submitEmail = document.getElementById('submitEmail');
+  const submitUrl = document.getElementById('submitUrl');
+  const submitStyle = document.getElementById('submitStyle');
+  const submitSend = document.getElementById('submitSend');
+  const submitNote = document.getElementById('submitNote');
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const SET_URL_RE = /^https?:\/\/[^\s.]+\.[^\s]{2,}$/i;
+
+  function showSubmitNote(msg, isError) {
+    submitNote.textContent = msg;
+    submitNote.classList.toggle('error', !!isError);
+  }
+  function openSubmitModal() {
+    // Retour au formulaire vierge : sans ca, un DJ qui rouvre la popup apres
+    // un envoi tombe sur l'ecran de confirmation et ne peut plus rien envoyer.
+    submitForm.style.display = '';
+    submitDone.classList.remove('show');
+    showSubmitNote('');
+    submitModal.classList.add('show');
+    submitDj.focus();
+  }
+  function closeSubmitModal() { submitModal.classList.remove('show'); }
+  document.getElementById('submitMixBtn').addEventListener('click', openSubmitModal);
+  document.getElementById('submitModalClose').addEventListener('click', closeSubmitModal);
+  submitModal.addEventListener('click', (e) => { if (e.target === submitModal) closeSubmitModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSubmitModal(); });
+
+  let submitBusy = false;
+  submitForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (submitBusy) return;
+    const dj = submitDj.value.trim();
+    const email = submitEmail.value.trim();
+    const url = submitUrl.value.trim();
+    const style = submitStyle.value.trim();
+    if (!dj || !email || !url || !style) { showSubmitNote('Please fill in all four fields.', true); return; }
+    if (!EMAIL_RE.test(email)) { showSubmitNote('That email address does not look right.', true); return; }
+    if (!SET_URL_RE.test(url)) { showSubmitNote('The link must be a full URL starting with http:// or https://', true); return; }
+
+    submitBusy = true;
+    submitSend.disabled = true;
+    showSubmitNote('Sending…');
+    try {
+      const r = await fetch('/api/submit-mix', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, dj, email, url, style }),
+      });
+      const j = await r.json();
+      if (j.ok) {
+        submitForm.reset();
+        submitForm.style.display = 'none';
+        submitDone.classList.add('show');
+      } else if (j.rateLimited) {
+        showSubmitNote('You just sent one — give me a few minutes before the next.', true);
+      } else if (j.invalid === 'email') showSubmitNote('That email address does not look right.', true);
+      else if (j.invalid === 'url') showSubmitNote('That link does not look like a valid URL.', true);
+      else if (j.blocked === 'link') showSubmitNote('Keep the links to the "link to the set" field.', true);
+      else if (j.enabled === false) showSubmitNote('Submissions are unavailable right now — try again later.', true);
+      else showSubmitNote('Could not send — try again.', true);
+    } catch { showSubmitNote('Could not send — try again.', true); }
+    submitBusy = false;
+    submitSend.disabled = false;
+  });
 
   const contactModal = document.getElementById('contactModal');
   function closeContactModal() { contactModal.classList.remove('show'); }

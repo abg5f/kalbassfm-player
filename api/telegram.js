@@ -249,6 +249,24 @@ async function handleMessage(token, message) {
     });
   }
 
+  // Filet de securite pour api/submit-mix.js : chaque candidature arrive deja
+  // en notification, mais une notification se perd dans le fil — l'archive
+  // Redis permet de retrouver les 10 dernieres avec leur mail et leur lien.
+  if (text === '/submissions') {
+    const list = await getRecentSubmissions(10);
+    if (!list.length) return sendMessage(token, chatId, 'Aucune candidature mix à afficher.');
+    // Texte brut, sans parse_mode : convention du bot (voir audienceText).
+    // disable_web_page_preview evite qu'un lien SoundCloud/Drive deploie une
+    // carte de previsualisation plus grande que la liste elle-meme.
+    const lines = list.map((s, i) =>
+      `${i + 1}. ${s.dj || '?'} — ${s.style || '?'}\n`
+      + `   ${s.email || '?'}\n`
+      + `   ${s.url || '?'}`);
+    return sendMessage(token, chatId, '🎛 Dernières candidatures mix :\n' + lines.join('\n'), {
+      disable_web_page_preview: true,
+    });
+  }
+
   if (text.startsWith('/delete_track')) {
     const q = text.slice('/delete_track'.length).trim();
     if (!q) return sendMessage(token, chatId, 'Usage : /delete_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast.');
@@ -370,6 +388,8 @@ async function handleMessage(token, message) {
     '/rename_nick <ancien pseudo exact> <nouveau pseudo> — rattrape l\'historique quand /rename ne trouve pas de clientId\n' +
     '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
+    '🎛 Candidatures DJ\n' +
+    '/submissions — lister les 10 dernières candidatures mix (nom, style, mail, lien du set)\n\n' +
     '🤖 Assistant\n' +
     '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
     '📊 Stats\n' +
@@ -1033,6 +1053,18 @@ async function getRecentSupporters(n) {
   return raw
     .map((s) => { try { return JSON.parse(s); } catch { return null; } })
     .filter((s) => s && !deleted.has(s.id));
+}
+
+// Candidatures DJ archivees par api/submit-mix.js. Pas de liste "deleted"
+// comme pour les messages ou les supporters : rien n'est expose publiquement
+// ici, donc rien a moderer — la liste est bornee par le LTRIM a 49.
+async function getRecentSubmissions(n) {
+  const kv = kvClient();
+  if (!kv) return [];
+  const lj = await kv('lrange', 'mix:submissions', '0', String(n - 1));
+  return (lj.result || [])
+    .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+    .filter(Boolean);
 }
 
 // Ajout manuel (ex: don recu avant la mise en place du webhook BMC, ou

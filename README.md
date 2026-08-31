@@ -18,6 +18,8 @@ Player web pour **KALBASSFM**, webradio caribéenne diffusant électro, disco, f
 - Réactions 🔥
 - Minuteur de sommeil
 - Partage du titre en cours
+- Bandeau de financement (30 €/mois) — fermable, revient au bout de 30 jours
+- Candidature DJ « Submit a mix » (nom, email, lien du set en HQ, style) → notification Telegram admin + archive Redis, relue avec `/submissions`
 - Grille de programme "horloge à bacs pondérés" (heure Martinique UTC-4) :
   - 6h–9h : Lever (chill, downtempo, jungle douce)
   - 9h–13h : Groove solaire (disco, funk, soul, nu-disco)
@@ -47,7 +49,7 @@ Installable sur mobile et desktop :
 | Audio | Web Audio API + `<audio>` natif |
 | Déploiement | Vercel (auto sur push GitHub) |
 | Streaming | AzuraCast + Icecast + Liquidsoap sur VPS Ubuntu |
-| Serverless | `api/` (chat live, supporters, bot Telegram admin, Flappy Kalbass — Vercel KV/Upstash Redis) |
+| Serverless | `api/` (chat live, supporters, candidatures DJ, bot Telegram admin, Flappy Kalbass — Vercel KV/Upstash Redis) |
 
 ## Infrastructure
 
@@ -60,7 +62,7 @@ VPS 167.233.226.128 (Ubuntu / Docker)
 
 Vercel
   └── kalbassfm-player.vercel.app
-        └── Player statique + fonctions serverless (chat, supporters, bot admin, Flappy)
+        └── Player statique + fonctions serverless (chat, supporters, candidatures DJ, bot admin, Flappy)
 
 Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
 ```
