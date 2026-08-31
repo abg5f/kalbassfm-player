@@ -258,13 +258,27 @@ async function handleMessage(token, message) {
     // Texte brut, sans parse_mode : convention du bot (voir audienceText).
     // disable_web_page_preview evite qu'un lien SoundCloud/Drive deploie une
     // carte de previsualisation plus grande que la liste elle-meme.
-    const lines = list.map((s, i) =>
-      `${i + 1}. ${s.dj || '?'} — ${s.style || '?'}\n`
-      + `   ${s.email || '?'}\n`
-      + `   ${s.url || '?'}`);
-    return sendMessage(token, chatId, '🎛 Dernières candidatures mix :\n' + lines.join('\n'), {
-      disable_web_page_preview: true,
+    const lines = list.map((s, i) => {
+      const socials = [
+        s.instagram ? 'instagram.com/' + s.instagram : '',
+        s.soundcloud ? 'soundcloud.com/' + s.soundcloud : '',
+      ].filter(Boolean).join('  ');
+      return `${i + 1}. ${s.dj || '?'} — ${s.style || '?'}\n`
+        + `   ${s.email || '?'}\n`
+        + `   ${s.url || '?'}`
+        + (socials ? `\n   ${socials}` : '');
     });
+    // Un bouton "📣 N" par candidature : une fois la mixtape planifiee, un tap
+    // publie l'annonce dans le chat live avec les liens sociaux du DJ.
+    const buttons = list.map((s, i) => ({ text: '📣 ' + (i + 1), callback_data: 'annmix:' + s.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    return sendMessage(token, chatId,
+      '🎛 Dernières candidatures mix :\n' + lines.join('\n')
+      + '\n\n📣 = annoncer dans le chat live (à faire une fois la programmation calée).', {
+        disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: rows },
+      });
   }
 
   if (text.startsWith('/delete_track')) {
@@ -389,7 +403,8 @@ async function handleMessage(token, message) {
     '/add_supporter <nom> | <message> — ajouter manuellement un supporter à la liste\n' +
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
     '🎛 Candidatures DJ\n' +
-    '/submissions — lister les 10 dernières candidatures mix (nom, style, mail, lien du set)\n\n' +
+    '/submissions — lister les 10 dernières candidatures mix (nom, style, mail, lien du set, réseaux)\n' +
+    '   bouton 📣 sous la liste — annoncer le DJ dans le chat live avec ses liens Insta/SoundCloud\n\n' +
     '🤖 Assistant\n' +
     '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
     '📊 Stats\n' +
@@ -464,6 +479,15 @@ async function handleCallback(token, cb) {
       `✅ Piste supprimée d'AzuraCast : ${label}\n` +
       (skip.ok ? '⏭ Morceau suivant lancé.' : `⚠️ Le skip a échoué (${skip.status}) — lance-le manuellement avec /skip.`));
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('annmix:')) {
+    const sub = await getSubmissionById(data.slice(7));
+    if (!sub) return answerCallback(token, cb.id, 'Candidature introuvable (trop ancienne).');
+    const id = await postAdminMessage(mixAnnouncement(sub));
+    await answerCallback(token, cb.id, id ? 'Annonce publiée ✅' : '❌ Échec (store non configuré ?)');
+    // Les boutons de la liste sont volontairement CONSERVES ici, contrairement
+    // aux suppressions : annoncer n'est pas destructif, et il arrive de vouloir
+    // re-annoncer (nouvelle diffusion du meme mix, message noye dans le fil).
+    return confirmWithDelete(token, cb.message.chat.id, '📣 Annonce publiée dans le chat live.', id);
   } else if (data.startsWith('delsup:')) {
     const id = data.slice(7);
     await markDeletedSupporter(id);
@@ -1065,6 +1089,34 @@ async function getRecentSubmissions(n) {
   return (lj.result || [])
     .map((s) => { try { return JSON.parse(s); } catch { return null; } })
     .filter(Boolean);
+}
+
+async function getSubmissionById(id) {
+  // 49 entrees au maximum (LTRIM dans api/submit-mix.js) : un scan complet
+  // coute une seule commande Redis, la ou un index par id en couterait une de
+  // plus a chaque soumission pour le meme resultat.
+  const all = await getRecentSubmissions(50);
+  return all.find((s) => s && s.id === id) || null;
+}
+
+/* Annonce publiee dans le chat live quand une mixtape est calee.
+
+   Les pseudos sociaux viennent de socialHandle() dans api/submit-mix.js : ils
+   ne peuvent contenir ni schema ni domaine, donc l'URL reconstruite ici pointe
+   forcement vers Instagram ou SoundCloud, jamais ailleurs.
+
+   postAdminMessage tronque a 200 caracteres. On calcule donc le budget en
+   partant des liens plutot que l'inverse : couper un lien en deux le rendrait
+   inutilisable, alors qu'un nom de DJ tres long s'abrege sans dommage. */
+function mixAnnouncement(s) {
+  const links = [
+    s.instagram ? 'instagram.com/' + s.instagram : '',
+    s.soundcloud ? 'soundcloud.com/' + s.soundcloud : '',
+  ].filter(Boolean);
+  const tail = links.length ? ' Follow: ' + links.join(' · ') : '';
+  const head = `🎧 Next mixtape on KALBASSFM: ${s.dj || 'a guest DJ'} — ${s.style || 'DJ set'}.`;
+  const budget = 200 - tail.length;
+  return (head.length > budget ? head.slice(0, Math.max(0, budget - 1)).trimEnd() + '…' : head) + tail;
 }
 
 // Ajout manuel (ex: don recu avant la mise en place du webhook BMC, ou

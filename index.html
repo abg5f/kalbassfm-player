@@ -10,13 +10,13 @@
   <meta property="og:title" content="KALBASS FM — The 100% electronic webradio from the Caribbean">
   <meta property="og:description" content="House · Disco · Tech House · Techno — live 24/7. Press play. 🌴🎧">
   <meta property="og:url" content="https://kalbassfm-player.vercel.app/">
-  <meta property="og:image" content="https://kalbassfm-player.vercel.app/og-image.png">
+  <meta property="og:image" content="https://kalbassfm-player.vercel.app/og-image.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="KALBASS FM — The 100% electronic webradio from the Caribbean">
   <meta name="twitter:description" content="House · Disco · Tech House · Techno — live 24/7.">
-  <meta name="twitter:image" content="https://kalbassfm-player.vercel.app/og-image.png">
+  <meta name="twitter:image" content="https://kalbassfm-player.vercel.app/og-image.png?v=2">
   <meta name="theme-color" content="#0D0D0D">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icon-192.png">
@@ -246,12 +246,6 @@
       background: var(--red);
       flex-shrink: 0;
       animation: blink 1.4s step-start infinite;
-    }
-    .badge-flag {
-      display: block;
-      width: 42px; height: 28px;
-      border: 2px solid var(--border);
-      flex-shrink: 0;
     }
     .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .btn-install-icon {
@@ -801,6 +795,13 @@
       word-break: break-word;
     }
     .chat-pinned.show { display: block; }
+    /* Liens dans les annonces admin (voir fillChatText) */
+    .chat-link {
+      color: var(--accent);
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .chat-link:hover { color: var(--accent-3); }
     /* Pseudo courant + bouton pour le changer (au-dessus du chat) */
     .nick-row {
       display: flex;
@@ -936,6 +937,11 @@
       margin-top: 4px;
     }
     .submit-note.error { color: #E0322F; }
+    .submit-opt {
+      color: #5A5A5A;
+      text-transform: none;
+      letter-spacing: 0;
+    }
     /* Ecran de confirmation : remplace le formulaire une fois la candidature
        partie, pour que le DJ ne renvoie pas la meme trois fois de suite. */
     .submit-done { display: none; text-align: center; padding: 6px 0 2px; }
@@ -1282,11 +1288,6 @@
             <path d="M12 3v12M7 10l5 5 5-5M5 20h14"/>
           </svg>
         </button>
-        <svg class="badge-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flag of Martinique">
-          <rect width="900" height="300" fill="#00A551"/>
-          <rect y="300" width="900" height="300" fill="#231F20"/>
-          <polygon points="0,0 450,300 0,600" fill="#ED1C24"/>
-        </svg>
       </div>
     </div>
 
@@ -1601,6 +1602,17 @@
             <option value="Dub / Minimal techno"></option>
             <option value="Jungle / Drum &amp; bass"></option>
           </datalist>
+        </div>
+
+        <div class="submit-field">
+          <label class="submit-label" for="submitInstagram">Instagram <span class="submit-opt">optional</span></label>
+          <input class="chat-input" id="submitInstagram" type="text" maxlength="200" autocomplete="off" placeholder="@yourhandle">
+        </div>
+
+        <div class="submit-field">
+          <label class="submit-label" for="submitSoundcloud">SoundCloud <span class="submit-opt">optional</span></label>
+          <input class="chat-input" id="submitSoundcloud" type="text" maxlength="200" autocomplete="off" placeholder="soundcloud.com/yourname">
+          <p class="submit-hint">If your set makes the programming, these get posted in the live chat so listeners can follow you.</p>
         </div>
 
         <button class="donate-link" id="submitSend" type="submit" style="text-align:center">Send my mix</button>
@@ -2230,6 +2242,37 @@
     const d = new Date(ts);
     return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   }
+  /* Rend le texte d'un message, en transformant les liens en ancres cliquables
+     UNIQUEMENT pour les messages admin (m.admin, pose exclusivement cote
+     serveur, donc infalsifiable). C'est ce qui rend utile l'annonce d'une
+     mixtape avec les liens Insta/SoundCloud du DJ invite.
+
+     Le reste du chat garde du texte brut : les auditeurs ne peuvent de toute
+     facon pas poster de lien (LINK_RE cote serveur ET client), et rendre
+     cliquable un texte tiers serait le seul endroit du player ou un contenu
+     exterieur pourrait fabriquer un lien.
+
+     Construction par noeuds DOM, jamais innerHTML. Le motif n'accepte qu'un
+     schema http/https explicite ou pas de schema du tout, donc "javascript:"
+     ne peut pas passer. */
+  const CHAT_URL_RE = /\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?/gi;
+  function fillChatText(el, raw, isAdmin) {
+    if (!isAdmin) { el.textContent = raw; return; }
+    let last = 0;
+    for (const m of raw.matchAll(CHAT_URL_RE)) {
+      if (m.index > last) el.appendChild(document.createTextNode(raw.slice(last, m.index)));
+      const a = document.createElement('a');
+      a.className = 'chat-link';
+      a.href = /^https?:\/\//i.test(m[0]) ? m[0] : 'https://' + m[0];
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = m[0];
+      el.appendChild(a);
+      last = m.index + m[0].length;
+    }
+    if (last < raw.length) el.appendChild(document.createTextNode(raw.slice(last)));
+  }
+
   function renderChat(messages) {
     if (!Array.isArray(messages) || !messages.length) {
       chatList.innerHTML = '<p class="prog-note">No messages yet.</p>';
@@ -2260,7 +2303,8 @@
         el.appendChild(reply);
       }
       const text = document.createElement('div');
-      text.className = 'chat-text'; text.textContent = m.text || '';
+      text.className = 'chat-text';
+      fillChatText(text, m.text || '', !!m.admin);
       el.appendChild(text);
       chatList.appendChild(el);
     });
@@ -2817,6 +2861,8 @@
   const submitEmail = document.getElementById('submitEmail');
   const submitUrl = document.getElementById('submitUrl');
   const submitStyle = document.getElementById('submitStyle');
+  const submitInstagram = document.getElementById('submitInstagram');
+  const submitSoundcloud = document.getElementById('submitSoundcloud');
   const submitSend = document.getElementById('submitSend');
   const submitNote = document.getElementById('submitNote');
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -2860,7 +2906,11 @@
       const r = await fetch('/api/submit-mix', {
         method: 'POST', cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId, dj, email, url, style }),
+        body: JSON.stringify({
+          clientId, dj, email, url, style,
+          instagram: submitInstagram.value.trim(),
+          soundcloud: submitSoundcloud.value.trim(),
+        }),
       });
       const j = await r.json();
       if (j.ok) {
@@ -2871,6 +2921,8 @@
         showSubmitNote('You just sent one — give me a few minutes before the next.', true);
       } else if (j.invalid === 'email') showSubmitNote('That email address does not look right.', true);
       else if (j.invalid === 'url') showSubmitNote('That link does not look like a valid URL.', true);
+      else if (j.invalid === 'instagram') showSubmitNote('Instagram: use your handle (@yourname) or your profile URL.', true);
+      else if (j.invalid === 'soundcloud') showSubmitNote('SoundCloud: use your profile name or your profile URL.', true);
       else if (j.blocked === 'link') showSubmitNote('Keep the links to the "link to the set" field.', true);
       else if (j.enabled === false) showSubmitNote('Submissions are unavailable right now — try again later.', true);
       else showSubmitNote('Could not send — try again.', true);

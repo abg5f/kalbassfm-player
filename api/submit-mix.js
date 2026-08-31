@@ -26,6 +26,38 @@ const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const URL_RE = /^https?:\/\/[^\s.]+\.[^\s]{2,}$/i;
 
+const IG_CHARS = /^[A-Za-z0-9._]{1,30}$/;
+const SC_CHARS = /^[A-Za-z0-9_-]{1,30}$/;
+
+/* Ramene un profil social a un simple pseudo — jamais une URL libre.
+
+   C'est une mesure de securite, pas de confort. Ces deux champs finissent dans
+   une annonce publiee dans le chat live (bouton "📣 Annoncer" du bot), ou les
+   liens sont rendus CLIQUABLES. Stocker l'URL telle qu'envoyee laisserait
+   n'importe quel DJ faire poster n'importe quel lien par l'admin, sous le
+   badge Admin et donc avec toute sa credibilite. On ne retient que le pseudo,
+   et l'URL est reconstruite a l'affichage a partir du domaine attendu.
+
+   Accepte "name", "@name", "instagram.com/name",
+   "https://www.instagram.com/name/?igsh=..." — et rien d'autre.
+   Retourne '' si le champ est vide (il est optionnel), null s'il est invalide. */
+function socialHandle(raw, host, charset) {
+  let s = (raw || '').toString().trim().slice(0, 200);
+  if (!s) return '';
+  s = s.replace(/^@/, '');
+  const m = /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)*([a-z0-9-]+\.[a-z]{2,})\/([^/?#]+)/i.exec(s);
+  if (m) {
+    // Un lien vers un autre domaine n'est pas un profil : on refuse plutot que
+    // de le tronquer en quelque chose qui ressemblerait a un pseudo valide.
+    if (m[1].toLowerCase() !== host) return null;
+    s = m[2];
+  } else if (/[/:]/.test(s)) {
+    return null;
+  }
+  try { s = decodeURIComponent(s); } catch { return null; }
+  return charset.test(s) ? s : null;
+}
+
 function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
@@ -53,11 +85,16 @@ export default async function handler(req, res) {
   const email = (body.email || '').toString().trim().slice(0, 120);
   const url = (body.url || '').toString().trim().slice(0, 300);
   const style = (body.style || '').toString().trim().slice(0, 60);
+  // Optionnels : un DJ peut n'avoir qu'un seul des deux, ou aucun.
+  const instagram = socialHandle(body.instagram, 'instagram.com', IG_CHARS);
+  const soundcloud = socialHandle(body.soundcloud, 'soundcloud.com', SC_CHARS);
 
   if (!clientId) return res.status(200).json({ enabled: true, ok: false });
   if (!dj || !email || !url || !style) return res.status(200).json({ enabled: true, ok: false, invalid: 'missing' });
   if (!EMAIL_RE.test(email)) return res.status(200).json({ enabled: true, ok: false, invalid: 'email' });
   if (!URL_RE.test(url)) return res.status(200).json({ enabled: true, ok: false, invalid: 'url' });
+  if (instagram === null) return res.status(200).json({ enabled: true, ok: false, invalid: 'instagram' });
+  if (soundcloud === null) return res.status(200).json({ enabled: true, ok: false, invalid: 'soundcloud' });
   // Le lien n'a droit de cite que dans le champ "url" : ailleurs, c'est du spam.
   if (LINK_RE.test(dj) || LINK_RE.test(style)) return res.status(200).json({ enabled: true, ok: false, blocked: 'link' });
 
@@ -79,7 +116,7 @@ export default async function handler(req, res) {
   // doit en revanche jamais empecher l'envoi.
   if (kv) {
     try {
-      await kv('lpush', 'mix:submissions', JSON.stringify({ id, dj, email, url, style, ts: Date.now() }));
+      await kv('lpush', 'mix:submissions', JSON.stringify({ id, dj, email, url, style, instagram, soundcloud, ts: Date.now() }));
       await kv('ltrim', 'mix:submissions', '0', '49');
     } catch {}
   }
@@ -99,6 +136,8 @@ export default async function handler(req, res) {
           + `Style : ${escapeHtml(style)}\n`
           + `Mail : ${escapeHtml(email)}\n`
           + `Set : ${escapeHtml(url)}\n`
+          + `Insta : ${instagram ? 'instagram.com/' + escapeHtml(instagram) : '—'}\n`
+          + `SC : ${soundcloud ? 'soundcloud.com/' + escapeHtml(soundcloud) : '—'}\n`
           + `<code>${escapeHtml(clientId)}</code>`,
         reply_markup: { inline_keyboard: [[
           { text: '🔨 Bannir', callback_data: 'ban:' + clientId },

@@ -19,7 +19,8 @@ Player web pour **KALBASSFM**, webradio caribéenne diffusant électro, disco, f
 - Minuteur de sommeil
 - Partage du titre en cours
 - Bandeau de financement (30 €/mois) — fermable, revient au bout de 30 jours
-- Candidature DJ « Submit a mix » (nom, email, lien du set en HQ, style) → notification Telegram admin + archive Redis, relue avec `/submissions`
+- Candidature DJ « Submit a mix » (nom, email, lien du set en HQ, style, Instagram/SoundCloud optionnels) → notification Telegram admin + archive Redis, relue avec `/submissions`
+- Annonce d'une mixtape programmée dans le chat live avec les liens sociaux du DJ (bouton 📣 sous `/submissions`) — les liens ne sont cliquables que dans les messages admin
 - Grille de programme "horloge à bacs pondérés" (heure Martinique UTC-4) :
   - 6h–9h : Lever (chill, downtempo, jungle douce)
   - 9h–13h : Groove solaire (disco, funk, soul, nu-disco)
@@ -74,6 +75,7 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
 - `analyze_essentia.py` — analyse BPM/énergie/genre/mood (WSL2, modèles TensorFlow)
 - `migrate_grid.py` / `resync_metadata.py` — migrations one-shot (grille 4→8 bacs, réparation metadata)
 - `clean_local_tracks.py` — nettoie tags et noms de fichiers, détecte les pochettes de sites pirates et les remplace via iTunes Search API
+- `make_og_image.py` — génère `og-image.png`, la vignette de partage (Open Graph / annuaires type TuneIn)
 - `import-rekordbox.ps1` — matche les exports `.txt` Rekordbox aux fichiers audio
 - `build_rotation.py` / `export_rotation.py` — ⚠️ superseded (l'ordonnancement est délégué à AzuraCast)
 
