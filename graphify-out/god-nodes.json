@@ -1,42 +1,52 @@
 [
-  {
-    "id": "index.html",
-    "degree": 20,
-    "label": "index.html"
-  },
-  {
-    "id": "ChatFeature",
-    "degree": 13,
-    "label": "Chat live"
-  },
-  {
-    "id": "api/telegram.js",
-    "degree": 13,
-    "label": "api/telegram.js"
-  },
-  {
-    "id": "AzuraCast",
-    "degree": 12,
-    "label": "AzuraCast"
-  },
-  {
-    "id": "api/chat.js",
-    "degree": 12,
-    "label": "api/chat.js"
-  },
-  {
-    "id": "ProgrammeGrid",
-    "degree": 11,
-    "label": "Horloge a bacs ponderes (8 bacs)"
-  },
-  {
-    "id": "RekordboxPipeline",
-    "degree": 7,
-    "label": "Pipeline Rekordbox → radio"
-  },
-  {
-    "id": "api/supporters.js",
-    "degree": 7,
-    "label": "api/supporters.js"
-  }
+ {
+  "id": "index.html",
+  "degree": 21,
+  "label": "index.html"
+ },
+ {
+  "id": "AzuraCast",
+  "degree": 16,
+  "label": "AzuraCast"
+ },
+ {
+  "id": "api/telegram.js",
+  "degree": 15,
+  "label": "api/telegram.js"
+ },
+ {
+  "id": "ChatFeature",
+  "degree": 13,
+  "label": "Chat live"
+ },
+ {
+  "id": "ProgrammeGrid",
+  "degree": 12,
+  "label": "Horloge a bacs ponderes (8 bacs)"
+ },
+ {
+  "id": "api/chat.js",
+  "degree": 12,
+  "label": "api/chat.js"
+ },
+ {
+  "id": "RekordboxPipeline",
+  "degree": 7,
+  "label": "Pipeline Rekordbox → radio"
+ },
+ {
+  "id": "api/supporters.js",
+  "degree": 7,
+  "label": "api/supporters.js"
+ },
+ {
+  "id": "RedisQuotaIncident",
+  "degree": 7,
+  "label": "Incident quota Upstash (2026-07-21)"
+ },
+ {
+  "id": "RotationContinue",
+  "degree": 7,
+  "label": "RotationContinue"
+ }
 ]

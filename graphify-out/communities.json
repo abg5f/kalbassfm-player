@@ -1,133 +1,151 @@
 {
-  "communities": [
-    {
-      "id": "player-frontend",
-      "label": "Player / Frontend",
-      "members": [
-        "index.html",
-        "sw.js",
-        "manifest.webmanifest",
-        "PWAFeature",
-        "EqualizerFeature",
-        "ChatFeature",
-        "ContactPopup",
-        "ProgrammeGrid",
-        "NowPlayingAPI",
-        "DesktopLayout",
-        "SupportersFeature",
-        "VibeStreakFeature",
-        "PinnedBannerFeature",
-        "RequestFeature",
-        "FlappyKalbassFeature",
-        "MyTracksFeature",
-        "WhatsNewModal",
-        "MixtapesFeature",
-        "PodcastAudioElement"
-      ]
-    },
-    {
-      "id": "infra-streaming",
-      "label": "Infra / Streaming",
-      "members": [
-        "AzuraCast",
-        "Icecast",
-        "Liquidsoap",
-        "VPS",
-        "DuckDNS",
-        "GitHubRepo",
-        "Vercel",
-        "AzuraCastAdminAPI",
-        "JinglesFeature",
-        "PodcastAzuraCast",
-        "MixtapeOnairPlaylist",
-        "PodcastMediaDuplication"
-      ]
-    },
-    {
-      "id": "serverless-api",
-      "label": "Serverless / API (chat + bot Telegram admin + Flappy) + vote playlist planifie",
-      "members": [
-        "api/chat.js",
-        "VercelKV",
-        "ChatFeature",
-        "VotingSystemPlan",
-        "api/telegram.js",
-        "TelegramBotFeature",
-        "api/supporters.js",
-        "api/flappy.js",
-        "FlappyKalbassFeature",
-        "ReplyFeature",
-        "SupporterBadgeFeature",
-        "ChatRenameFeature",
-        "ChatNicknameFeature",
-        "BpmGuesserFeature",
-        "RedisQuotaIncident",
-        "MoveTrackFeature",
-        "AudienceStatsFeature"
-      ]
-    },
-    {
-      "id": "external-integrations",
-      "label": "Intégrations externes (dons, IA)",
-      "members": [
-        "BuyMeACoffee",
-        "ClaudeAPI",
-        "api/supporters.js"
-      ]
-    },
-    {
-      "id": "tooling-pipeline",
-      "label": "Outillage / Pipeline musique",
-      "members": [
-        "RekordboxPipeline",
-        "tools/import-rekordbox.ps1",
-        "tools/clean_local_tracks.py",
-        "RaiDrive",
-        "iTunesSearchAPI",
-        "tools/classify_bins.py",
-        "tools/migrate_grid.py",
-        "tools/resync_metadata.py",
-        "tools/triage_new_tracks.py",
-        "tools/export_bpm_table.py",
-        "tools/publish_mixtape.py"
-      ]
-    },
-    {
-      "id": "essentia-rotation",
-      "label": "Pipeline Essentia / Rotation musicale",
-      "members": [
-        "tools/analyze_essentia.py",
-        "tools/build_rotation.py",
-        "tools/dedup_metadata.py",
-        "tools/normalize_and_dedup_metadata.py",
-        "tools/classify_bins.py",
-        "tools/migrate_grid.py",
-        "tools/resync_metadata.py",
-        "tools/triage_new_tracks.py",
-        "EnergyRmsLimitation",
-        "LibraryRecovery"
-      ]
-    },
-    {
-      "id": "planning-business",
-      "label": "Documents de planification / business",
-      "members": [
-        ".planning/PROJECT.md",
-        ".planning/ROADMAP.md",
-        ".planning/PLAN.md",
-        ".planning/REQUIREMENTS.md",
-        ".planning/EXECUTION_CHECKLIST.md",
-        ".planning/STATE.md",
-        "SACEM"
-      ]
-    },
-    {
-      "id": "session-context",
-      "label": "Contexte de session",
-      "members": [
-        "CONTEXT.md",
-        "README.md"
-      ]
-    }
-  ]
+ "communities": [
+  {
+   "id": "player-frontend",
+   "label": "Player / Frontend",
+   "members": [
+    "index.html",
+    "sw.js",
+    "manifest.webmanifest",
+    "PWAFeature",
+    "EqualizerFeature",
+    "ChatFeature",
+    "ContactPopup",
+    "ProgrammeGrid",
+    "NowPlayingAPI",
+    "DesktopLayout",
+    "SupportersFeature",
+    "VibeStreakFeature",
+    "PinnedBannerFeature",
+    "RequestFeature",
+    "FlappyKalbassFeature",
+    "MyTracksFeature",
+    "WhatsNewModal",
+    "MixtapesFeature",
+    "PodcastAudioElement"
+   ]
+  },
+  {
+   "id": "infra-streaming",
+   "label": "Infra / Streaming",
+   "members": [
+    "AzuraCast",
+    "Icecast",
+    "Liquidsoap",
+    "VPS",
+    "DuckDNS",
+    "GitHubRepo",
+    "Vercel",
+    "AzuraCastAdminAPI",
+    "JinglesFeature",
+    "PodcastAzuraCast",
+    "MixtapeOnairPlaylist",
+    "PodcastMediaDuplication"
+   ]
+  },
+  {
+   "id": "serverless-api",
+   "label": "Serverless / API (chat + bot Telegram admin + Flappy) + vote playlist planifie",
+   "members": [
+    "api/chat.js",
+    "VercelKV",
+    "ChatFeature",
+    "VotingSystemPlan",
+    "api/telegram.js",
+    "TelegramBotFeature",
+    "api/supporters.js",
+    "api/flappy.js",
+    "FlappyKalbassFeature",
+    "ReplyFeature",
+    "SupporterBadgeFeature",
+    "ChatRenameFeature",
+    "ChatNicknameFeature",
+    "BpmGuesserFeature",
+    "RedisQuotaIncident",
+    "MoveTrackFeature",
+    "AudienceStatsFeature"
+   ]
+  },
+  {
+   "id": "external-integrations",
+   "label": "Intégrations externes (dons, IA)",
+   "members": [
+    "BuyMeACoffee",
+    "ClaudeAPI",
+    "api/supporters.js"
+   ]
+  },
+  {
+   "id": "tooling-pipeline",
+   "label": "Outillage / Pipeline musique",
+   "members": [
+    "RekordboxPipeline",
+    "tools/import-rekordbox.ps1",
+    "tools/clean_local_tracks.py",
+    "RaiDrive",
+    "iTunesSearchAPI",
+    "tools/classify_bins.py",
+    "tools/migrate_grid.py",
+    "tools/resync_metadata.py",
+    "tools/triage_new_tracks.py",
+    "tools/export_bpm_table.py",
+    "tools/publish_mixtape.py"
+   ]
+  },
+  {
+   "id": "essentia-rotation",
+   "label": "Pipeline Essentia / Rotation musicale",
+   "members": [
+    "tools/analyze_essentia.py",
+    "tools/build_rotation.py",
+    "tools/dedup_metadata.py",
+    "tools/normalize_and_dedup_metadata.py",
+    "tools/classify_bins.py",
+    "tools/migrate_grid.py",
+    "tools/resync_metadata.py",
+    "tools/triage_new_tracks.py",
+    "EnergyRmsLimitation",
+    "LibraryRecovery"
+   ]
+  },
+  {
+   "id": "planning-business",
+   "label": "Documents de planification / business",
+   "members": [
+    ".planning/PROJECT.md",
+    ".planning/ROADMAP.md",
+    ".planning/PLAN.md",
+    ".planning/REQUIREMENTS.md",
+    ".planning/EXECUTION_CHECKLIST.md",
+    ".planning/STATE.md",
+    "SACEM"
+   ]
+  },
+  {
+   "id": "session-context",
+   "label": "Contexte de session",
+   "members": [
+    "CONTEXT.md",
+    "README.md"
+   ]
+  },
+  {
+   "id": "programmation-rotation",
+   "label": "Programmation / Rotation musicale",
+   "members": [
+    "RotationContinue",
+    "BacLiquid",
+    "StationTimezone",
+    "StockBibliotheque",
+    "AutoDJQueueDepth",
+    "BoostViaPlanningDate",
+    "EnergyBoostTelegram",
+    "tools/apply_rotation.py",
+    "tools/azuracast_snapshot_2026-08-31.json",
+    "tools/classify_bins.py",
+    "tools/migrate_grid.py",
+    "ProgrammeGrid"
+   ]
+  }
+ ]
 }

@@ -1,8 +1,23 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-08-08
+> Dernière mise à jour : 2026-08-31
 
-## État actuel (2026-08-08, émission mensuelle « Mixtapes » — antenne + podcast)
+## État actuel (2026-08-31, refonte de la programmation — plan validé, implémentation non commencée)
+
+**Session 2026-08-31** — session de conception : **aucun code applicatif modifié**, un seul fichier créé (le snapshot de rollback). Trois sujets traités : nom/domaine, refonte de la programmation musicale, brief pour agent développeur.
+
+- ✅ **Plan validé : rotation continue façon Nova / Radio Meuh** — remplace l'horloge à 7 créneaux. **6 bacs actifs 24 h/24 sans `schedule_items`**, aucun dominant : house 28 %, groove 23 %, deep 16 %, nightdub 14 %, liquid 9 %, chill 9 % (total 43). La variété vient du mélange, plus du calendrier.
+- ✅ **Montée du soir en heure de Paris**, qui **ajoute** `clubhouse`+`techno` sans rien remplacer : **0 % de club jusqu'à 19 h, 19 % (19-22 h), 28 % (22-01 h), 19 % (01-03 h)**, retour à 0 % à 3 h. Au pic, house+groove pèsent encore 34 % — l'identité diurne ne disparaît jamais.
+- 🔍 **`1_chill` contient 51 % de liquid DnB** (79 titres sur 156, mesuré avec `classify_bins.py` lui-même). Deux musiques dans un bac : ambient 70-90 BPM et rouleaux liquid à ~170 BPM (le BPM médian relevé, 87, est l'artefact de demi-tempo documenté sous `MORNING_BPM_ARTIFACT`). Tolérable quand chill ne passait qu'à 6-9 h, **intenable en rotation 24 h/24** → 9ᵉ bac `9_liquid`.
+- 🔍 **Stock réel relevé en direct : 125,9 h**, contre 106 h notées le 2026-08-08 — la bibliothèque a grossi (house 22 h 30 → 25 h 36, groove 17 h 45 → 22 h 12). Les poids ci-dessus sont calibrés sur ces chiffres-là, pas sur ceux du fichier.
+- 🔍 **File AutoDJ = 4 titres, ~27 min d'avance.** Tout changement de poids reste inaudible une demi-heure sans purge de file (`DELETE /api/station/1/queue/{id}`, sans jamais couper le titre en cours).
+- 🔍 **Fuseau station = `America/Martinique`** (UTC−4, sans heure d'été) : le bloc techno 23-02 h sortait entre **5 h et 8 h du matin à Paris**, où est l'audience. Cible `Europe/Paris` (heure d'été automatique) ; les compteurs applicatifs passent à UTC, indépendamment.
+- ✅ **Snapshot de rollback** `tools/azuracast_snapshot_2026-08-31.json` — 16 playlists (is_enabled, weight, schedule_items) + timezone, avant toute modification.
+- ✅ **Brief agent développeur produit** — 4 lots (bac liquid, rotation, UTC+player, `/energy` Telegram), avec ids AzuraCast réels, valeurs mesurées et pièges documentés. Livré hors dépôt.
+- 📌 **Nom et domaine reportés à début 2027** (installation à Nantes). Piste retenue : **CH 16**, le canal VHF international de détresse et d'appel — universel, et c'est un canal d'appel vers lequel on bascule, ce qui donne le système de nommage des émissions. `.fm` écarté (~100 €/an sans recette) ; `ch16.fr` ou `ch16.live` en entrée de gamme.
+- ⏸️ **Système de vote des auditeurs écarté** du périmètre, à reprendre plus tard.
+
+## État antérieur (2026-08-08, émission mensuelle « Mixtapes » — antenne + podcast)
 
 **Session 2026-08-08** — premier **rendez-vous éditorial** du projet, réponse directe au constat du 2026-07-28 (0,46 auditeur/30j : la technique est saine, la diffusion ne l'est pas). Une mixtape mixée passe à date fixe à l'antenne, puis reste réécoutable et suivable en RSS — contrairement à un flux live, un épisode se partage.
 
@@ -126,6 +141,11 @@
 
 | Décision | Rationale |
 |----------|-----------|
+| **Rotation continue plutôt qu'horloge à créneaux (2026-08-31)** | Modèle Nova / Radio Meuh : la variété vient du mélange, pas du calendrier. L'horloge à 7 dominantes (53-79 %) faisait changer le son brutalement 7 fois par jour, et obligeait à caler toute la grille sur un seul fuseau. Ici **75 % de la diffusion n'a aucune référence horaire** ; seuls 3 créneaux du soir sont calés sur Paris |
+| **Le liquid DnB quitte `1_chill` pour `9_liquid` (2026-08-31)** | 51 % du bac mesuré. La sélection par `mood.aggressive` était déjà bonne, c'est la **destination** qui ne tient plus en rotation continue. Bénéfice second : pondérable séparément, et c'est le meilleur pont vers la montée du soir (tempo élevé, texture douce) |
+| **Un boost d'énergie = une entrée de planning datée (2026-08-31)** | `start_date`/`end_date` : AzuraCast expire la fenêtre tout seul. **Aucun cron, aucun timer, aucune tâche de restauration à écrire.** Même mécanisme que la mixtape mensuelle dans `publish_mixtape.py` |
+| **Les 4 miroirs `*_guest` diurnes sont désactivés (2026-08-31)** | Ils n'existaient que pour donner deux poids différents à un même bac dans deux créneaux. Sans créneaux, la raison disparaît. Seuls `clubhouse_guest` et `techno_guest` survivent, pour porter le palier faible du soir |
+| **Domaine reporté, pseudos réservés d'abord (2026-08-31)** | Un domaine se rachète toujours (301 + `<itunes:new-feed-url>` déplacent proprement un podcast) ; un pseudo pris ne se récupère jamais. À 0,46 auditeur/30 j, 100 €/an de `.fm` ne répare pas la diffusion |
 | **Programmation = horloge à bacs pondérés, 100% native AzuraCast (2026-07-16)** | Exigences : "aucune journée ne doit ressembler à une autre" + "ne plus repasser dessus". L'ancien pipeline figeait UN ordre dans les noms de fichiers. Désormais : bacs curatés localement, ordonnancement délégué à AzuraCast (Shuffled + poids + chevauchement de plannings + séparation artiste 120 min) — zéro cron, zéro régénération, variété mathématiquement garantie |
 | **Seuils de classification auto-calibrés par percentiles par famille** | L'échelle d'énergie est compressée (p95 ≈ 0.56) et dépend de la bibliothèque — des seuils absolus étaient tous faux (8 morceaux en clubhouse au 1er essai). Les proportions (ex. "45% des techno les moins énergiques → nightdub") restent valables quelle que soit l'évolution de la bibliothèque |
 | **Jungle/DnB à 3 destins selon l'énergie** | Demande explicite : style rare qui "marque la fin d'un cycle" mais titres chill intégrables en journée. <p30 → 1_chill (journée), ≥p80 → 6_techno (rotation Peak), entre → 8_jungle en ponctuation "1/14 chansons" 23h-6h (~toutes les 1h20) |
@@ -172,6 +192,10 @@
 
 ## En cours / TODOs
 
+- [ ] **Exécuter le brief agent en 4 lots** — bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`
+- [ ] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — dry-run `migrate_grid.py` et validation AVANT `--apply`, puis SFTP port 2022 et **suppression des anciennes copies serveur** (sinon le morceau reste dans les deux playlists)
+- [ ] **Réserver les pseudos `ch16`** sur SoundCloud, Mixcloud, Instagram, Bandcamp, YouTube, Bluesky — gratuit, dix minutes, et c'est la seule ressource vraiment rare
+- [ ] **Trancher sur la régénération de la clé API AzuraCast** (cf. Problèmes connus) — implique de mettre à jour le fichier local **et** la variable Vercel dans le même geste
 - [ ] **Déposer les premières mixtapes dans `Mixtapes/`** (SFTP port 2022), puis `python tools/publish_mixtape.py` pour lister la banque
 - [ ] **Jouer `publish_mixtape.py --apply` une première fois sous surveillance** — le chemin complet n'a jamais tourné d'un bout à l'autre (lancement refusé par le classificateur de permissions). Seul `DELETE /playlist/{id}/empty` n'a été validé ni isolément ni en contexte
 - [ ] **Pousser le commit `adf3170`** (feature Mixtapes) — non poussé à date, donc pas encore déployé sur Vercel
@@ -215,6 +239,9 @@
 
 | Problème | Sévérité | Notes |
 |----------|----------|-------|
+| `CONTEXT.md` annonçait 106 h de stock, la valeur réelle est 125,9 h | INFO | Les chiffres de stock se périment vite. Les relever via l'API AzuraCast (`total_length` par playlist) plutôt que se fier au fichier — la calibration des poids en dépend directement |
+| Un vote auditeur exigerait un quorum inatteignable | INFO | À 0,46 auditeur/30 j, un seuil de 5 votes ne se déclenche jamais. Système écarté du plan, à reprendre quand l'audience existe |
+| L'ordre des bacs sur l'échelle d'énergie est un choix à l'oreille | INFO | `nightdub` avant `deep` est discutable. Idem pour les poids : ce sont des points de départ calculés, `apply_rotation.py` est réexécutable pour ça |
 | Ban contournable en vidant localStorage | LOW | Best effort assumé, cohérent avec le modèle de modération |
 | Renames WinSCP (`migration_sftp.txt`) non utilisés | INFO | Upload frais FileZilla choisi à la place (noms serveur ≠ noms locaux) — script obsolète, ignoré par git |
 | `Alex Cortex - Discola.mp3` corrompu | LOW | "can't sync to MPEG frame", à re-télécharger |
@@ -229,6 +256,8 @@
 
 | Fichier | Rôle | Statut |
 |---------|------|--------|
+| `tools/azuracast_snapshot_2026-08-31.json` | **Rollback de la bascule vers la rotation continue** : état complet des 16 playlists (is_enabled, weight, schedule_items) + timezone, capturé avant modification | ✅ Créé le 2026-08-31 |
+| `tools/apply_rotation.py` | **À écrire.** Table déclarative en tête de fichier = source de vérité unique de la rotation. Dry-run par défaut + diff, `--apply`. Réexécutable : c'est l'outil de réglage des dosages à l'oreille | ⏳ Planifié |
 | `tools/classify_bins.py` | **Source de vérité de la grille 8 bacs** : familles, SHARES, seuils auto-calibrés, classify_bin(). Depuis le 2026-07-28 : veto de tempo + sélection jungle par `mood.aggressive`, tous deux indépendants du RMS | ✅ Importé par migrate+triage |
 | `tools/azuracast_config.py` | **Clé API AzuraCast en local** (gitignored, même patron que `sftp_config.py`) — permet de piloter playlists, poids, plannings et rapports depuis Claude Code | ⚠️ Sa valeur est apparue en clair dans la session du 2026-07-28 : la révoquer et en générer une neuve est le réflexe propre |
 | `tools/migrate_grid.py` | Migration one-shot 4→8 bacs (dry-run/--apply, garde-fou _incoming, rapport, WinSCP) | ✅ Exécutée le 2026-07-16 |
@@ -259,12 +288,13 @@
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-08-08 (construction manuelle via /graphify, pas de CLI) — 74 nœuds, 148 relations
+> Mis à jour le 2026-08-31 (construction manuelle via /graphify, pas de CLI) — 84 nœuds, 169 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 20), `ChatFeature` (13), `api/telegram.js` (13), `AzuraCast` (12), `api/chat.js` (12), `ProgrammeGrid`/horloge à bacs pondérés (11).
-Nouveaux nœuds 2026-08-08 : `MixtapesFeature` (émission mensuelle), `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication` (contrainte API imposant le double stockage), `PodcastAudioElement` (pourquoi un second `<audio>`).
-Nœuds 2026-07-28 : `EnergyRmsLimitation` (le RMS ≠ énergie musicale, cause racine du bac du matin), `AudienceStatsFeature` (`/audience`), `LibraryRecovery` (82 titres retrouvés).
-Communautés détectées : 8 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte).
+God nodes (concepts centraux) : `index.html` (hub front, degré 21), `AzuraCast` (16), `api/telegram.js` (15), `ChatFeature` (13), `ProgrammeGrid` (12), `api/chat.js` (12).
+Nouveaux nœuds 2026-08-31 : `RotationContinue` (le nouveau modèle de programmation, supersède `ProgrammeGrid`), `BacLiquid` (9ᵉ bac), `StationTimezone`, `StockBibliotheque` (125,9 h relevées), `AutoDJQueueDepth` (les 27 min d'avance de l'AutoDJ), `BoostViaPlanningDate` (l'expiration native qui évite tout cron), `EnergyBoostTelegram`, `tools/apply_rotation.py`, `tools/azuracast_snapshot_2026-08-31.json`, `tools/fix_artwork.py`.
+Nœuds 2026-08-08 : `MixtapesFeature`, `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication`, `PodcastAudioElement`.
+Nœuds 2026-07-28 : `EnergyRmsLimitation`, `AudienceStatsFeature`, `LibraryRecovery`.
+Communautés détectées : 9 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte, **Programmation/Rotation musicale**).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

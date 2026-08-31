@@ -1,0 +1,730 @@
+{
+ "_comment": "Etat AzuraCast AVANT bascule rotation continue. Rollback: restaurer timezone + is_enabled + weight + schedule_items de chaque playlist par son id.",
+ "captured_at": "2026-08-31T20:34:25.885413+00:00",
+ "station": {
+  "id": 1,
+  "name": "KALBASS FM",
+  "shortcode": "kalbassfm",
+  "timezone": "America/Martinique"
+ },
+ "playlists": [
+  {
+   "station_id": 1,
+   "name": "chill",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 8,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T12:58:10.695691Z",
+   "queue_reset_at": "2026-08-31T11:37:53.061713Z",
+   "schedule_items": [
+    {
+     "start_time": 600,
+     "end_time": 900,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 8
+    }
+   ],
+   "podcasts": [],
+   "id": 11,
+   "short_name": "chill",
+   "num_songs": 158,
+   "total_length": 53166
+  },
+  {
+   "station_id": 1,
+   "name": "chill_guest",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 2,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T14:41:26.036865Z",
+   "queue_reset_at": "2026-08-15T15:35:21.947432Z",
+   "schedule_items": [
+    {
+     "start_time": 900,
+     "end_time": 1300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 15
+    },
+    {
+     "start_time": 200,
+     "end_time": 600,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 16
+    }
+   ],
+   "podcasts": [],
+   "id": 18,
+   "short_name": "chill_guest",
+   "num_songs": 158,
+   "total_length": 53166
+  },
+  {
+   "station_id": 1,
+   "name": "clubhouse",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 8,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T02:37:50.853887Z",
+   "queue_reset_at": "2026-08-26T02:02:35.474766Z",
+   "schedule_items": [
+    {
+     "start_time": 2000,
+     "end_time": 2300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 12
+    }
+   ],
+   "podcasts": [],
+   "id": 15,
+   "short_name": "clubhouse",
+   "num_songs": 108,
+   "total_length": 36893
+  },
+  {
+   "station_id": 1,
+   "name": "clubhouse_guest",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 4,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T05:56:00.077692Z",
+   "queue_reset_at": "2026-08-28T03:00:12.907188Z",
+   "schedule_items": [
+    {
+     "start_time": 2300,
+     "end_time": 200,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 25
+    }
+   ],
+   "podcasts": [],
+   "id": 22,
+   "short_name": "clubhouse_guest",
+   "num_songs": 105,
+   "total_length": 35431
+  },
+  {
+   "station_id": 1,
+   "name": "deep",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 9,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-30T23:50:09.006979Z",
+   "queue_reset_at": "2026-08-22T23:16:26.516169Z",
+   "schedule_items": [
+    {
+     "start_time": 1700,
+     "end_time": 2000,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 11
+    }
+   ],
+   "podcasts": [],
+   "id": 14,
+   "short_name": "deep",
+   "num_songs": 140,
+   "total_length": 52859
+  },
+  {
+   "station_id": 1,
+   "name": "deep_guest",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 3,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T20:16:19.439399Z",
+   "queue_reset_at": "2026-08-28T10:56:52.044213Z",
+   "schedule_items": [
+    {
+     "start_time": 600,
+     "end_time": 900,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 21
+    },
+    {
+     "start_time": 1300,
+     "end_time": 1700,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 22
+    },
+    {
+     "start_time": 2000,
+     "end_time": 2300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 23
+    }
+   ],
+   "podcasts": [],
+   "id": 21,
+   "short_name": "deep_guest",
+   "num_songs": 140,
+   "total_length": 52859
+  },
+  {
+   "station_id": 1,
+   "name": "groove",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 15,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T16:57:55.302248Z",
+   "queue_reset_at": "2026-08-31T15:43:20.548212Z",
+   "schedule_items": [
+    {
+     "start_time": 900,
+     "end_time": 1300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 9
+    }
+   ],
+   "podcasts": [],
+   "id": 12,
+   "short_name": "groove",
+   "num_songs": 204,
+   "total_length": 79763
+  },
+  {
+   "station_id": 1,
+   "name": "groove_guest",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 4,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T20:10:11.446411Z",
+   "queue_reset_at": "2026-08-26T23:04:57.839113Z",
+   "schedule_items": [
+    {
+     "start_time": 600,
+     "end_time": 900,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 29
+    },
+    {
+     "start_time": 1300,
+     "end_time": 1700,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 30
+    },
+    {
+     "start_time": 1700,
+     "end_time": 2000,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 31
+    },
+    {
+     "start_time": 2000,
+     "end_time": 2300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 32
+    }
+   ],
+   "podcasts": [],
+   "id": 19,
+   "short_name": "groove_guest",
+   "num_songs": 204,
+   "total_length": 79763
+  },
+  {
+   "station_id": 1,
+   "name": "house",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 15,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T19:58:50.634402Z",
+   "queue_reset_at": "2026-08-30T19:48:06.078049Z",
+   "schedule_items": [
+    {
+     "start_time": 1300,
+     "end_time": 1700,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 10
+    }
+   ],
+   "podcasts": [],
+   "id": 13,
+   "short_name": "house",
+   "num_songs": 245,
+   "total_length": 91992
+  },
+  {
+   "station_id": 1,
+   "name": "house_guest",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 4,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T16:32:29.833276Z",
+   "queue_reset_at": "2026-08-22T21:39:03.804482Z",
+   "schedule_items": [
+    {
+     "start_time": 900,
+     "end_time": 1300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 19
+    },
+    {
+     "start_time": 1700,
+     "end_time": 2000,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 20
+    }
+   ],
+   "podcasts": [],
+   "id": 20,
+   "short_name": "house_guest",
+   "num_songs": 245,
+   "total_length": 91992
+  },
+  {
+   "station_id": 1,
+   "name": "Jingles",
+   "description": null,
+   "type": "once_per_x_songs",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": true,
+   "play_per_songs": 15,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 3,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T19:14:49.776619Z",
+   "queue_reset_at": "2026-08-31T02:53:08.501237Z",
+   "schedule_items": [],
+   "podcasts": [],
+   "id": 10,
+   "short_name": "jingles",
+   "num_songs": 16,
+   "total_length": 74
+  },
+  {
+   "station_id": 1,
+   "name": "jungle",
+   "description": "",
+   "type": "once_per_x_songs",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 14,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 3,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T09:59:32.758915Z",
+   "queue_reset_at": "2026-08-30T09:05:53.148647Z",
+   "schedule_items": [
+    {
+     "start_time": 2300,
+     "end_time": 600,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 28
+    }
+   ],
+   "podcasts": [],
+   "id": 24,
+   "short_name": "jungle",
+   "num_songs": 44,
+   "total_length": 16701
+  },
+  {
+   "station_id": 1,
+   "name": "mixtape_onair",
+   "description": null,
+   "type": "default",
+   "source": "songs",
+   "order": "sequential",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 40,
+   "include_in_requests": false,
+   "include_in_on_demand": true,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": false,
+   "played_at": "2026-08-08T15:16:02.544031Z",
+   "queue_reset_at": null,
+   "schedule_items": [
+    {
+     "start_time": 1100,
+     "end_time": 1212,
+     "start_date": "2026-08-08",
+     "end_date": "2026-08-08",
+     "days": [],
+     "loop_once": true,
+     "id": 34
+    }
+   ],
+   "podcasts": [],
+   "id": 26,
+   "short_name": "mixtape_onair",
+   "num_songs": 1,
+   "total_length": 3730
+  },
+  {
+   "station_id": 1,
+   "name": "nightdub",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 15,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T09:50:54.618188Z",
+   "queue_reset_at": "2026-08-27T08:14:10.438495Z",
+   "schedule_items": [
+    {
+     "start_time": 200,
+     "end_time": 600,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 14
+    }
+   ],
+   "podcasts": [],
+   "id": 17,
+   "short_name": "nightdub",
+   "num_songs": 124,
+   "total_length": 52895
+  },
+  {
+   "station_id": 1,
+   "name": "techno",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 15,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T05:57:01.622223Z",
+   "queue_reset_at": "2026-08-31T05:28:40.799341Z",
+   "schedule_items": [
+    {
+     "start_time": 2300,
+     "end_time": 200,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 13
+    }
+   ],
+   "podcasts": [],
+   "id": 16,
+   "short_name": "techno",
+   "num_songs": 178,
+   "total_length": 68914
+  },
+  {
+   "station_id": 1,
+   "name": "techno_guest",
+   "description": "",
+   "type": "default",
+   "source": "songs",
+   "order": "shuffle",
+   "remote_url": null,
+   "remote_type": "stream",
+   "remote_buffer": 0,
+   "is_enabled": true,
+   "is_jingle": false,
+   "play_per_songs": 0,
+   "play_per_minutes": 0,
+   "play_per_hour_minute": 0,
+   "weight": 4,
+   "include_in_requests": true,
+   "include_in_on_demand": false,
+   "backend_options": [
+    ""
+   ],
+   "avoid_duplicates": true,
+   "played_at": "2026-08-31T09:23:47.741373Z",
+   "queue_reset_at": "2026-08-24T06:42:33.860633Z",
+   "schedule_items": [
+    {
+     "start_time": 2000,
+     "end_time": 2300,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 26
+    },
+    {
+     "start_time": 200,
+     "end_time": 600,
+     "start_date": null,
+     "end_date": null,
+     "days": [],
+     "loop_once": false,
+     "id": 27
+    }
+   ],
+   "podcasts": [],
+   "id": 23,
+   "short_name": "techno_guest",
+   "num_songs": 178,
+   "total_length": 68914
+  }
+ ]
+}
