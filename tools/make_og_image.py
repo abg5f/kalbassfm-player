@@ -10,8 +10,8 @@ Format impose par Open Graph : 1200x630 (ratio 1.91:1). Les plateformes
 recadrent souvent les bords, donc rien d'important ne touche la marge.
 
 Le texte est integralement en anglais, comme le player et les annuaires ou la
-station est reference. Pas de drapeau : la station diffuse depuis la Caraibe
-mais s'adresse a une audience internationale.
+station est referencee. Aucune mention d'origine geographique ni de drapeau :
+la station se presente uniquement par sa musique.
 
 Polices : Space Grotesk / Space Mono sont celles du player, mais elles ne sont
 pas installees par defaut sous Windows. On les utilise si elles sont presentes
@@ -89,18 +89,16 @@ def main():
 
     # ---- Barre d'accent sous le logo ----
     d.rectangle((x, y, x + 500, y + 9), fill=ACCENT)
-    y += 9 + 40
+    y += 9 + 54
 
     # ---- Accroche ----
-    f_tag = mono(37)
-    for line in ("THE 100% ELECTRONIC WEBRADIO", "FROM THE CARIBBEAN"):
-        d.text((x, y), line, font=f_tag, fill=FG)
-        y += d.textbbox((0, 0), line, font=f_tag)[3] + 14
-
-    y += 22
+    f_tag = mono(41)
+    tagline = "THE 100% ELECTRONIC WEBRADIO"
+    d.text((x, y), tagline, font=f_tag, fill=FG)
+    y += d.textbbox((0, 0), tagline, font=f_tag)[3] + 44
 
     # ---- Genres ----
-    f_gen = mono_b(32)
+    f_gen = mono_b(34)
     d.text((x, y), "HOUSE  -  DISCO  -  TECH HOUSE  -  TECHNO", font=f_gen, fill=ACCENT)
 
     # ---- Bandeau defilant, colle au bord interieur bas du cadre ----

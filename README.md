@@ -1,6 +1,6 @@
 # KALBASSFM — Web Player
 
-Player web pour **KALBASSFM**, webradio caribéenne diffusant électro, disco, funk et house 24/7.
+Player web pour **KALBASSFM**, webradio 100% électronique diffusant électro, disco, funk et house 24/7.
 
 🎧 **Live** → [kalbassfm-player.vercel.app](https://kalbassfm-player.vercel.app/)
 📡 **Stream** → `kalbassfm.duckdns.org` (Icecast / AzuraCast)
