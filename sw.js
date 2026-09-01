@@ -2,7 +2,7 @@
    Network-first pour la navigation (les mises à jour passent toujours),
    cache seulement la coquille + icônes pour l'installation PWA / mode hors-ligne.
    Ne met JAMAIS en cache le flux audio ni l'API now-playing. */
-const V = 'kfm-v24'; // rotation continue : indicateur Vibe reecrit (bac reel, plus de grille horaire)
+const V = 'kfm-v25'; // description/OG : "100% House & some Liquid DnB", free/no ads
 const SHELL = ['/', '/index.html', '/icon-192.png', '/icon-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
