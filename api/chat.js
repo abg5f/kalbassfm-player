@@ -99,8 +99,9 @@ const REDIS_PAUSED = false;
       jour. Retirees a la demande : elles polluaient le fil, qui recoit peu de
       messages d'auditeurs — deux annonces automatiques suffisaient a noyer une
       vraie conversation. L'information reste disponible en permanence dans le
-      player, via l'indicateur "Vibe now/next" sous le titre en cours, qui
-      calcule le creneau courant cote client sans aucun appel serveur.
+      player, via l'indicateur "Vibe now" sous le titre en cours, qui affiche
+      le bac reellement joue (champ `playlist` de nowplaying, deja recu a
+      chaque sondage) sans aucun appel serveur supplementaire.
 
    2. maybeAnnounceOnce : annonce unique de lancement d'une feature (Flappy),
       protegee par un verrou SET NX permanent. Le verrou etant pose depuis
@@ -227,8 +228,8 @@ export default async function handler(req, res) {
       : { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: finalNick, text, ts: Date.now(), clientId };
     await kv('lpush', 'chat:messages', JSON.stringify(msg));
     await kv('ltrim', 'chat:messages', '0', '99');
-    // Compteur quotidien (jour Martinique UTC-4) lu par /stats du bot Telegram.
-    const day = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
+    // Compteur quotidien (jour UTC) lu par /stats du bot Telegram.
+    const day = new Date().toISOString().slice(0, 10);
     await kv('incr', `stats:msg:${day}`);
     await kv('expire', `stats:msg:${day}`, '172800');
     await notifyTelegram(kv, msg, clientId);

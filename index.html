@@ -751,7 +751,6 @@
       letter-spacing: .02em;
     }
     .vibe b { color: var(--accent); font-weight: 700; }
-    .vibe .vibe-next { opacity: .7; }
     /* Vibe Streak : compteur de fidelite personnel, prive (localStorage) */
     .streak-badge {
       display: none;
@@ -1692,6 +1691,13 @@
     pollMs:      8000,
   };
 
+  // AzuraCast repond 302 vers son image generique quand le morceau n'a pas de
+  // cover : l'URL ne porte alors aucun horodatage (comparer fix_artwork.py,
+  // meme regle cote outillage). On la filtre pour ne pas l'afficher.
+  function realArt(url) {
+    return url && /-\d+\.(jpe?g|png)$/i.test(url) ? url : '';
+  }
+
   const audio     = document.getElementById('audio');
   const btnPlay   = document.getElementById('btnPlay');
   const icPlay    = document.getElementById('icPlay');
@@ -2424,14 +2430,32 @@
       const s = h.song || {};
       const el = document.createElement('div');
       el.className = 'hist-item';
+      const histArt = realArt(s.art);
       el.innerHTML =
-        '<div class="hist-art" style="' + (s.art ? "background-image:url('" + s.art + "')" : '') + '"></div>' +
+        '<div class="hist-art" style="' + (histArt ? "background-image:url('" + histArt + "')" : '') + '"></div>' +
         '<div class="hist-meta">' +
           '<div class="hist-title">' + (s.title || '—') + '</div>' +
           '<div class="hist-artist">' + (s.artist || '') + '</div>' +
         '</div>';
       historyList.appendChild(el);
     });
+  }
+
+  /* ── Vibe now : le bac reellement joue, pas une grille horaire ──
+     La rotation continue (2026-08-31) n'a plus de fenetres horaires fixes :
+     le libellé vient du champ `playlist` de nowplaying (deja recu a chaque
+     sondage), pas d'un calcul d'heure. Zero appel supplementaire, zero Redis.
+     Playlist inconnue/absente -> rien affiche plutot qu'un libelle faux. */
+  const vibeEl = document.getElementById('vibe');
+  const BIN_LABELS = {
+    house: 'eclectic house', groove: 'disco & funk', deep: 'deep & melodic',
+    nightdub: 'dub & minimal', chill: 'ambient', liquid: 'liquid drum & bass',
+    clubhouse: 'club house', techno: 'techno', jungle: 'jungle',
+    clubhouse_guest: 'club house', techno_guest: 'techno', liquid_guest: 'liquid drum & bass',
+  };
+  function updateVibeLabel(playlist) {
+    const label = BIN_LABELS[playlist];
+    vibeEl.innerHTML = label ? '🎵 Now · <b>' + label + '</b>' : '';
   }
 
   /* ── Polling now-playing ── */
@@ -2459,12 +2483,13 @@
       const song = np.song || {};
       const title = song.title || '—';
       const artist = song.artist || '—';
-      current = { title, artist, art: song.art || '', songId: song.id || String(np.sh_id || '') };
+      current = { title, artist, art: realArt(song.art), songId: song.id || String(np.sh_id || '') };
+      updateVibeLabel(np.playlist);
 
       artistEl.textContent = artist.toUpperCase();
       titleEl.textContent = title.length > 26 ? title.toUpperCase() + '   //   ' + title.toUpperCase() : title.toUpperCase();
       titleEl.classList.toggle('scroll', title.length > 26);
-      artwork.style.backgroundImage = song.art ? `url("${song.art}")` : '';
+      artwork.style.backgroundImage = current.art ? `url("${current.art}")` : '';
 
       actionsRow.style.display = 'flex';
       updateFindLinks();
@@ -2474,35 +2499,6 @@
   }
   pollNowPlaying();
   setInterval(pollNowPlaying, CONFIG.pollMs);
-
-  /* ── Vibe now/next (horloge a bacs, heure Martinique UTC-4 fixe) ──
-     Les 7 fenetres refletent la programmation ; calcul 100% client, aucune
-     donnee serveur. order[] est en ordre chronologique pour trouver la fenetre
-     courante et la suivante (avec wrap : 0h-1h59 -> Peak time de la veille). */
-  const vibeEl = document.getElementById('vibe');
-  const VIBE_WINDOWS = [
-    { h: 2,  emoji: '🌙', name: 'Deep Night',   desc: 'deep, minimal & dub' },
-    { h: 6,  emoji: '🌅', name: 'Sunrise',      desc: 'ambient & downtempo' },
-    { h: 9,  emoji: '☀️', name: 'Solar Groove', desc: 'disco, funk & nu-disco' },
-    { h: 13, emoji: '🌴', name: 'Trade Winds',  desc: 'eclectic house' },
-    { h: 17, emoji: '🌇', name: 'Sunset',       desc: 'deep & melodic house' },
-    { h: 20, emoji: '🔥', name: 'Warm-up',      desc: 'tech house' },
-    { h: 23, emoji: '⚡', name: 'Peak time',    desc: 'techno' },
-  ];
-  function vibeHourLabel(h) { const ap = h < 12 ? 'AM' : 'PM'; let hh = h % 12; if (hh === 0) hh = 12; return hh + ap; }
-  function renderVibe() {
-    const m = new Date(Date.now() - 4 * 3600 * 1000);
-    const hr = m.getUTCHours();
-    let ci = -1;
-    for (let i = 0; i < VIBE_WINDOWS.length; i++) { if (hr >= VIBE_WINDOWS[i].h) ci = i; }
-    if (ci === -1) ci = VIBE_WINDOWS.length - 1; // avant 2h -> Peak time (wrap nocturne)
-    const cur = VIBE_WINDOWS[ci];
-    const nxt = VIBE_WINDOWS[(ci + 1) % VIBE_WINDOWS.length];
-    vibeEl.innerHTML = cur.emoji + ' Now · <b>' + cur.name + '</b> — ' + cur.desc +
-      ' <span class="vibe-next">· Next ' + vibeHourLabel(nxt.h) + ' ' + nxt.name + '</span>';
-  }
-  renderVibe();
-  setInterval(renderVibe, 60000);
 
   /* ── Vibe Streak : fidelite gamifiee, 100% locale (localStorage) ──
      Aucun compte, aucun serveur, aucun classement public : juste un compteur
@@ -2516,7 +2512,7 @@
     { n: 30,  emoji: '👑' }, { n: 60,  emoji: '🏝️' }, { n: 100, emoji: '🐚' },
   ];
   function streakDay(offsetDays) {
-    return new Date(Date.now() - 4 * 3600 * 1000 - (offsetDays || 0) * 86400000).toISOString().slice(0, 10);
+    return new Date(Date.now() - (offsetDays || 0) * 86400000).toISOString().slice(0, 10);
   }
   function getStreak() {
     try { return JSON.parse(localStorage.getItem(STREAK_KEY)) || { current: 0, longest: 0, lastDate: null, lastMilestone: 0 }; }
