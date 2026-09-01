@@ -742,15 +742,6 @@
       opacity: .8;
     }
     .chat-reply b { color: var(--accent); }
-    /* Vibe now/next : ligne fine d'ambiance sous le titre */
-    .vibe {
-      font-family: 'Space Mono', monospace;
-      font-size: .58rem;
-      color: var(--muted);
-      margin: 4px 0 0;
-      letter-spacing: .02em;
-    }
-    .vibe b { color: var(--accent); font-weight: 700; }
     /* Vibe Streak : compteur de fidelite personnel, prive (localStorage) */
     .streak-badge {
       display: none;
@@ -1319,7 +1310,6 @@
         <p class="track-title" id="trackTitle">WAITING FOR STREAM</p>
       </div>
       <p class="track-artist" id="trackArtist">— ARTIST</p>
-      <p class="vibe" id="vibe"></p>
       <p class="streak-badge" id="streakBadge"></p>
 
       <div class="actions-row" id="actionsRow" style="display:none">
@@ -2441,23 +2431,6 @@
     });
   }
 
-  /* ── Vibe now : le bac reellement joue, pas une grille horaire ──
-     La rotation continue (2026-08-31) n'a plus de fenetres horaires fixes :
-     le libellé vient du champ `playlist` de nowplaying (deja recu a chaque
-     sondage), pas d'un calcul d'heure. Zero appel supplementaire, zero Redis.
-     Playlist inconnue/absente -> rien affiche plutot qu'un libelle faux. */
-  const vibeEl = document.getElementById('vibe');
-  const BIN_LABELS = {
-    house: 'eclectic house', groove: 'disco & funk', deep: 'deep & melodic',
-    nightdub: 'dub & minimal', chill: 'ambient', liquid: 'liquid drum & bass',
-    clubhouse: 'club house', techno: 'techno', jungle: 'jungle',
-    clubhouse_guest: 'club house', techno_guest: 'techno', liquid_guest: 'liquid drum & bass',
-  };
-  function updateVibeLabel(playlist) {
-    const label = BIN_LABELS[playlist];
-    vibeEl.innerHTML = label ? '🎵 Now · <b>' + label + '</b>' : '';
-  }
-
   /* ── Polling now-playing ── */
   let lastId = null;
   async function pollNowPlaying() {
@@ -2484,7 +2457,6 @@
       const title = song.title || '—';
       const artist = song.artist || '—';
       current = { title, artist, art: realArt(song.art), songId: song.id || String(np.sh_id || '') };
-      updateVibeLabel(np.playlist);
 
       artistEl.textContent = artist.toUpperCase();
       titleEl.textContent = title.length > 26 ? title.toUpperCase() + '   //   ' + title.toUpperCase() : title.toUpperCase();

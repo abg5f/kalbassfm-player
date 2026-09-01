@@ -98,10 +98,11 @@ const REDIS_PAUSED = false;
       paresseusement au fil des GET avec un verrou Redis par annonce et par
       jour. Retirees a la demande : elles polluaient le fil, qui recoit peu de
       messages d'auditeurs — deux annonces automatiques suffisaient a noyer une
-      vraie conversation. L'information reste disponible en permanence dans le
-      player, via l'indicateur "Vibe now" sous le titre en cours, qui affiche
-      le bac reellement joue (champ `playlist` de nowplaying, deja recu a
-      chaque sondage) sans aucun appel serveur supplementaire.
+      vraie conversation. Un indicateur "Vibe now" sous le titre en cours a
+      brievement affiche le bac reellement joue (2026-08-31, champ `playlist`
+      de nowplaying) avant d'etre retire a son tour (2026-09-01, juge peu
+      utile) : aucune info de programmation n'est plus resurfacee dans le
+      player aujourd'hui.
 
    2. maybeAnnounceOnce : annonce unique de lancement d'une feature (Flappy),
       protegee par un verrou SET NX permanent. Le verrou etant pose depuis
