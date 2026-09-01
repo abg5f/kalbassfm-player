@@ -10,6 +10,8 @@ tools/filezilla_worksheet.txt
 tools/orphans_report.txt
 tools/sftp_config.py
 tools/azuracast_config.py
+tools/kv_config.py
+tools/mixtape_state.json
 tools/pending_uploads.json
 tools/artwork_scan.json
 tools/artwork_review.html

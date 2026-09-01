@@ -338,6 +338,11 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, '📜 Historique — que veux-tu voir ?', { reply_markup: logsKeyboard() });
   }
 
+  if (text === '/queue_mix') {
+    const { text: msg, keyboard } = await queueMixStatus();
+    return sendMessage(token, chatId, msg, keyboard ? { reply_markup: keyboard } : undefined);
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n\n' +
     '🎵 Diffusion\n' +
@@ -345,7 +350,8 @@ async function handleMessage(token, message) {
     '/move — deplacer le morceau en cours vers une autre playlist\n' +
     '/delete — supprimer le morceau en cours et passer au suivant\n' +
     '/energy — pousser ou calmer la rotation (boost temporaire, retour automatique)\n' +
-    '/logs — historique de diffusion (dernier titre / 3 / 10, ou par duree)\n\n' +
+    '/logs — historique de diffusion (dernier titre / 3 / 10, ou par duree)\n' +
+    '/queue_mix — choisir la prochaine mixtape a diffuser un dimanche 18h\n\n' +
     '💬 Chat live\n' +
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -517,6 +523,11 @@ async function handleCallback(token, cb) {
     const label = minutes < 60 ? `Derniers ${minutes} min` : `Derniere ${minutes / 60} h`;
     const text = entries === null ? '❌ Historique AzuraCast indisponible.' : logsText(entries, label);
     await editMessageText(token, cb.message.chat.id, cb.message.message_id, text, logsKeyboard(), 'HTML');
+  } else if (data.startsWith('qm:')) {
+    const fileId = data.slice(3);
+    const r = await scheduleMixtape(fileId);
+    await answerCallback(token, cb.id, r.ok ? '✅ Programmé' : `❌ Échec (${r.status || ''})`);
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, r.text);
   } else {
     await answerCallback(token, cb.id, '');
   }
@@ -851,6 +862,116 @@ async function stopBoost() {
   if (!r.ok) return { ok: false, text: `❌ Échec de l'arrêt du boost (${r.status}).` };
   await purgeQueue();
   return { ok: true, text: '⏹ Boost arrêté — retour à la rotation normale.' };
+}
+
+/* ---- Mixtape du dimanche (/queue_mix) ----
+
+   mixtape_onair contient plusieurs mixtapes candidates EN MEME TEMPS
+   (deposees a la main par l'admin sur AzuraCast). AzuraCast ne planifie
+   qu'au niveau playlist, jamais au niveau morceau — la date de diffusion
+   choisie pour chaque morceau est donc stockee dans son champ Album
+   (AAAA-MM-JJ), PAS ISRC (reserve aux rapports de licence SACEM, a ne pas
+   detourner). tools/mixtape_weekly.py (tache planifiee Windows, hors de ce
+   fichier) lit ce champ chaque jour pour savoir quoi annoncer/diffuser —
+   cette commande ne fait QUE choisir et ecrire la date, jamais la diffusion
+   elle-meme. */
+async function getMixtapeCandidates(playlistId) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(
+      `${AZURACAST_BASE}/api/station/${STATION}/files?searchPhrase=${encodeURIComponent('Mixtapes/')}&rowCount=500`,
+      { headers: { 'X-API-Key': apiKey } }
+    );
+    if (!r.ok) return { ok: false, status: r.status };
+    const body = await r.json();
+    const rows = Array.isArray(body) ? body : (body.rows || []);
+    const list = rows.filter((f) => (f.playlists || []).some((p) => (p.id ?? p) === playlistId));
+    return { ok: true, list };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+async function setFileAlbum(fileId, album) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/file/${encodeURIComponent(fileId)}`, {
+      method: 'PUT',
+      headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ album }),
+    });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Prochain dimanche libre (aujourd'hui compte si on est deja dimanche, meme
+// convention que --next-sunday dans publish_mixtape.py), en sautant les
+// dates deja prises par une autre mixtape candidate.
+function nextFreeSunday(takenDates) {
+  const taken = new Set(takenDates);
+  const nowParis = parisWallParts(new Date());
+  const d = new Date(Date.UTC(nowParis.y, nowParis.mo - 1, nowParis.d));
+  d.setUTCDate(d.getUTCDate() + ((7 - d.getUTCDay()) % 7));
+  while (taken.has(d.toISOString().slice(0, 10))) {
+    d.setUTCDate(d.getUTCDate() + 7);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+async function queueMixStatus() {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { text: '❌ Impossible de récupérer les playlists AzuraCast.', keyboard: null };
+  const onair = findPlaylist(pl.list, 'mixtape_onair');
+  if (!onair) return { text: '❌ Playlist mixtape_onair introuvable.', keyboard: null };
+  const cand = await getMixtapeCandidates(onair.id);
+  if (!cand.ok) return { text: `❌ Lecture de la bibliothèque impossible (${cand.status}).`, keyboard: null };
+
+  const unscheduled = cand.list.filter((f) => !f.album);
+  const scheduled = cand.list.filter((f) => f.album).sort((a, b) => a.album.localeCompare(b.album));
+
+  if (!unscheduled.length) {
+    const lines = scheduled.map((f) => `${f.album} — ${f.artist || '?'} — ${f.title || '?'}`);
+    return {
+      text: '📀 Aucun mix en attente de date.\n\n' +
+        (lines.length ? 'Déjà programmés :\n' + lines.join('\n')
+          : "mixtape_onair est vide — ajoute d'abord des morceaux dans AzuraCast."),
+      keyboard: null,
+    };
+  }
+
+  const lines = unscheduled.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || '?'}`);
+  const buttons = unscheduled.slice(0, 10).map((f, i) => ({ text: String(i + 1), callback_data: 'qm:' + f.id }));
+  const rows = [];
+  for (let i = 0; i < buttons.length; i += 5) rows.push(buttons.slice(i, i + 5));
+  const already = scheduled.length ? `\n\nDéjà programmés :\n${scheduled.map((f) => `${f.album} — ${f.artist || '?'} — ${f.title || '?'}`).join('\n')}` : '';
+  return {
+    text: '📀 Mix en attente de date — choisis lequel programmer ensuite :\n\n' + lines.join('\n') + already,
+    keyboard: { inline_keyboard: rows },
+  };
+}
+
+async function scheduleMixtape(fileId) {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { ok: false, text: '❌ Impossible de récupérer les playlists AzuraCast.' };
+  const onair = findPlaylist(pl.list, 'mixtape_onair');
+  if (!onair) return { ok: false, text: '❌ Playlist mixtape_onair introuvable.' };
+  const cand = await getMixtapeCandidates(onair.id);
+  if (!cand.ok) return { ok: false, text: `❌ Lecture de la bibliothèque impossible (${cand.status}).` };
+  const target = cand.list.find((f) => String(f.id) === String(fileId));
+  if (!target) return { ok: false, text: '❌ Morceau introuvable (retire ou déjà modifié entre-temps).' };
+
+  const takenDates = cand.list.filter((f) => f.album).map((f) => f.album);
+  const date = nextFreeSunday(takenDates);
+  const r = await setFileAlbum(fileId, date);
+  if (!r.ok) return { ok: false, status: r.status, text: `❌ Échec de la programmation (${r.status}).` };
+  return {
+    ok: true,
+    text: `✅ "${target.title || '?'}" par ${target.artist || '?'} — programmé pour dimanche ${date} 18h00 (Paris).`,
+  };
 }
 
 async function nowPlaying() {
