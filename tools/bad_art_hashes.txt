@@ -1,0 +1,40 @@
+# Empreintes dHash des pochettes a remplacer (fix_artwork.py).
+# Une ligne = une empreinte 16 hex, le reste apres '#' est un commentaire.
+# Pour en ajouter : `fix_artwork.py scan` (station) ou `local-scan` (disque),
+# ouvrir le rapport HTML, cocher les vignettes fautives, coller la liste ici.
+#
+# Le matching tolere 8 bits d'ecart (BLOCK_TOLERANCE) : un meme visuel recadre
+# reste attrape, inutile de lister chaque variante au pixel pres.
+#
+# Verifie a l'oeil sur le rapport du 2026-08-31 (station 1300 + disque 1402) :
+
+8e3c62e66ee8ccc0  # note de musique bleue generique (205 fichiers, 134 artistes)
+8e5b1b172f3e9f0d  # banniere grise www.electronicfresh.com (15)
+c8f0ccc4d4cce9cc  # www.djsoundtop.com "Exclusive" (10)
+e8e0ccb89c78f084  # www.heydj.pro fond bleu nuit "Get Access Now" (10)
+0000006d2d000000  # ClapCrate.com sur fond blanc (6)
+d486745caaa6ccf0  # FTP DJEMILIO.COM logo rouge (6)
+cb4f460f3717cf2e  # electronicfresh.com fond blanc (5)
+489d96040d0b5300  # DJPOOLRECORDS.COM "for professionals" (4)
+0016290105090306  # HEY DJ turquoise "Stay exclusive with music you play" (4)
+00c0240000602182  # Hey Dj bleu "The newest music for professional" (4)
+0000404d41430000  # quality-dance-music.com (3)
+
+# Ajouts du 2026-08-31 apres signalement (exemples VLC) :
+e0f0ccf89870f084  # www.heydj.pro recadre 836x744 (14 fichiers locaux)
+2525242465357535  # IPT / TorrentDay banniere 1156x432 (13 locaux)
+64b4d0d5d0d7a764  # meme banniere IPT / TorrentDay, 432x432 (10 sur la station)
+9c1d4b1d5e2b9f0d  # electronicfresh.com 1024x1024 (variante a 16 bits de la grise)
+0000408595200881  # www.mypromosound.com, texte noir sur blanc (1 seul fichier)
+
+# Volontairement PAS blocklistes (image partagee mais legitime) :
+#   0f1715ae4c17330f  Hellbent Records - Hotter Than Hell III (compilation)
+#   9a9292aab292d292  Heist Recordings (artwork de label)
+#   33313c36d4ccf188  LouLou Records - Barcelona 2024 Sampler
+#   b2f0ecd4339ec871  Zuku Records - Orbital Grooves
+#   4f93b29694133337  NYE 2026 - Disco Lines (DJ mix Apple Music)
+#   0f4da7cce833030f  label sticker UBP feat. Bobby Pruitt
+#
+# A trancher (image partagee par 10 artistes, mais pas un logo de site) :
+#   feff7fbf9f1f5fb6  "Limousine Dream" (10)
+#   64b4d0d5d0d7a764  collage 432x432 (10)

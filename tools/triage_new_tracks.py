@@ -6,12 +6,12 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
 2. Detecte les doublons (artiste+titre normalises) contre ce qui existe deja
    dans New_prog -> deplace vers _incoming/_duplicates/ et ignore
 3. Analyse Essentia (energie, bpm, genre, mood, danceability)
-4. Classe le morceau dans un des 8 BACS de la grille "horloge a bacs ponderes"
-   (classify_bins.py : genre d'abord, energie ensuite, seuils auto-calibres)
+4. Classe le morceau dans un des 9 BACS de la grille (classify_bins.py :
+   genre d'abord, energie ensuite, seuils auto-calibres)
 5. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
    PAS de prefixe d'ordre : l'ordonnancement est le travail d'AzuraCast
-   (playlists Shuffled + poids + separation artiste). Seuls les nouveaux
-   morceaux ont besoin d'etre uploades en SFTP.
+   (rotation continue ponderee, cf. tools/apply_rotation.py). Seuls les
+   nouveaux morceaux ont besoin d'etre uploades en SFTP.
 6. Ajoute le resultat a metadata.json
 
 Les fichiers illisibles/en erreur sont deplaces dans _incoming/_failed/ et
@@ -291,6 +291,38 @@ def unique_target(folder, name):
     return candidate
 
 
+_ART_TOOLS = []  # cache : [] = pas encore teste, [None] = indisponible
+
+
+def _artwork_tools():
+    """fix_artwork.py si Pillow est installe dans l'environnement, sinon None.
+
+    Le triage tourne dans le venv WSL Essentia, ou Pillow n'est pas garanti :
+    l'absence degrade la detection, elle ne casse pas le pipeline.
+    """
+    if not _ART_TOOLS:
+        try:
+            import fix_artwork
+            _ART_TOOLS.append(fix_artwork)
+        except Exception as e:
+            print(f"    [info] detection des logos de site desactivee ({e})")
+            _ART_TOOLS.append(None)
+    return _ART_TOOLS[0]
+
+
+def is_site_logo(img_bytes):
+    """True si la cover embarquee est une banniere de site connue."""
+    fa = _artwork_tools()
+    if not fa:
+        return False
+    try:
+        import io
+        from PIL import Image
+        return fa.dhash(Image.open(io.BytesIO(img_bytes))) in fa.load_blocklist()
+    except Exception:
+        return False
+
+
 def clean_tags_and_filename(path):
     """Nettoie tags/nom de fichier in place, retourne le nouveau chemin."""
     from mutagen import File as MFile
@@ -326,15 +358,24 @@ def clean_tags_and_filename(path):
             os.rename(path, candidate)
             new_path = candidate
 
+    # Une cover presente ne veut pas dire une cover valable : les sites de
+    # telechargement (heydj.pro, ClapCrate.com...) embarquent leur banniere.
+    # bad_art_hashes.txt liste leurs empreintes, alimente par fix_artwork.py.
     try:
         tags = ID3(new_path)
-        has_cover = bool(tags.getall("APIC"))
+        apics = tags.getall("APIC")
+        has_cover = bool(apics)
+        if has_cover and is_site_logo(apics[0].data):
+            print("    cover = logo de site -> remplacement")
+            has_cover = False
     except Exception:
         has_cover = False
 
     if not has_cover and (title or artist):
         time.sleep(clt.ITUNES_DELAY_SEC)
         img_bytes, _ = clt.itunes_lookup(artist, title)
+        if not img_bytes and _artwork_tools():
+            img_bytes, _ = _artwork_tools().lookup_deezer(artist, title)
         if img_bytes:
             try:
                 t = ID3(new_path)

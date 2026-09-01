@@ -75,6 +75,14 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
 - `analyze_essentia.py` — analyse BPM/énergie/genre/mood (WSL2, modèles TensorFlow)
 - `migrate_grid.py` / `resync_metadata.py` — migrations one-shot (grille 4→8 bacs, réparation metadata)
 - `clean_local_tracks.py` — nettoie tags et noms de fichiers, détecte les pochettes de sites pirates et les remplace via iTunes Search API
+- `fix_artwork.py` — chasse aux **bannières de site** (heydj.pro, ClapCrate, TorrentDay, mypromosound…) là où `clean_local_tracks.py` ne va pas : sur la station en ligne (API AzuraCast) **et** sur le disque. Empreinte perceptuelle (dHash, tolérance 8 bits pour les recadrages), regroupement, rapport visuel à cocher, puis remplacement via iTunes + Deezer. Les empreintes validées vivent dans `bad_art_hashes.txt`, que le triage consulte aussi pour refuser ces images à l'ingestion.
+  ```
+  python fix_artwork.py scan                        # station : empreinte + rapport HTML
+  python fix_artwork.py fix --apply                 # remplace les bannières
+  python fix_artwork.py fix --apply --fill-missing  # + morceaux sans aucune pochette
+  python fix_artwork.py local-scan                  # disque : New_prog
+  python fix_artwork.py local-fix --apply           # écrit dans les MP3 (re-upload SFTP ensuite)
+  ```
 - `make_og_image.py` — génère `og-image.png`, la vignette de partage (Open Graph / annuaires type TuneIn)
 - `import-rekordbox.ps1` — matche les exports `.txt` Rekordbox aux fichiers audio
 - `build_rotation.py` / `export_rotation.py` — ⚠️ superseded (l'ordonnancement est délégué à AzuraCast)

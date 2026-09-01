@@ -11,3 +11,8 @@ tools/orphans_report.txt
 tools/sftp_config.py
 tools/azuracast_config.py
 tools/pending_uploads.json
+tools/artwork_scan.json
+tools/artwork_review.html
+
+tools/artwork_scan_local.json
+tools/artwork_review_local.html

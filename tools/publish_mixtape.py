@@ -55,6 +55,10 @@ PODCAST_TITLE = "KALBASSFM Mixtapes"
 # exacte de démarrage en fin de script).
 ONAIR_WEIGHT = 40
 
+# Taille d'un morceau d'upload. Confortablement sous la limite nginx de
+# l'instance (413 constaté sur un envoi d'un seul bloc de 149 Mo).
+CHUNK_SIZE = 5 * 1024 * 1024
+
 
 # --------------------------------------------------------------------------- API
 
@@ -75,26 +79,64 @@ def call(method, path, body=None):
         return e.code, e.read().decode(errors="replace")[:600]
 
 
-def upload_media(podcast_id, episode_id, filepath):
-    """multipart/form-data à un seul champ 'file' (requestBodies/FlowFileUpload)."""
-    filepath = Path(filepath)
-    boundary = uuid.uuid4().hex
-    ctype = mimetypes.guess_type(filepath.name)[0] or "application/octet-stream"
-    pre = (f"--{boundary}\r\n"
-           f'Content-Disposition: form-data; name="file"; filename="{filepath.name}"\r\n'
-           f"Content-Type: {ctype}\r\n\r\n").encode()
-    body = pre + filepath.read_bytes() + f"\r\n--{boundary}--\r\n".encode()
+def upload_media(podcast_id, episode_id, filepath, progress=True):
+    """Upload découpé en chunks (protocole Flow.js), comme l'interface AzuraCast.
 
+    Envoyer le fichier en un seul corps multipart se heurte à la limite
+    `client_max_body_size` de nginx : **HTTP 413** dès ~50 Mo, alors qu'une
+    mixtape d'une heure en 320 kbps pèse ~150 Mo (constaté le 2026-08-08).
+    L'endpoint attend un `requestBodies/FlowFileUpload` : les champs `flow*`
+    accompagnent chaque morceau, et le serveur réassemble le fichier quand le
+    dernier arrive. Seule la réponse au dernier chunk porte l'épisode complet.
+    """
+    filepath = Path(filepath)
+    total = filepath.stat().st_size
+    total_chunks = max(1, -(-total // CHUNK_SIZE))  # division entière par excès
+    identifier = f"{total}-{uuid.uuid4().hex}"
+    ctype = mimetypes.guess_type(filepath.name)[0] or "application/octet-stream"
     url = f"{BASE}/api/station/{STATION}/podcast/{podcast_id}/episode/{episode_id}/media"
-    req = urllib.request.Request(url, data=body, method="POST")
-    req.add_header("X-API-Key", AZURACAST_API_KEY)
-    req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
-    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-    try:
-        with urllib.request.urlopen(req, timeout=1800) as r:
-            return r.status, json.loads(r.read() or b"null")
-    except urllib.error.HTTPError as e:
-        return e.code, e.read().decode(errors="replace")[:600]
+
+    last = (0, None)
+    with open(filepath, "rb") as fh:
+        for n in range(1, total_chunks + 1):
+            chunk = fh.read(CHUNK_SIZE)
+            fields = {
+                "flowChunkNumber": str(n),
+                "flowChunkSize": str(CHUNK_SIZE),
+                "flowCurrentChunkSize": str(len(chunk)),
+                "flowTotalSize": str(total),
+                "flowIdentifier": identifier,
+                "flowFilename": filepath.name,
+                "flowRelativePath": filepath.name,
+                "flowTotalChunks": str(total_chunks),
+            }
+            boundary = uuid.uuid4().hex
+            parts = []
+            for key, value in fields.items():
+                parts.append(f"--{boundary}\r\n"
+                             f'Content-Disposition: form-data; name="{key}"\r\n\r\n'
+                             f"{value}\r\n".encode())
+            parts.append((f"--{boundary}\r\n"
+                          f'Content-Disposition: form-data; name="file"; '
+                          f'filename="{filepath.name}"\r\n'
+                          f"Content-Type: {ctype}\r\n\r\n").encode())
+            body = b"".join(parts) + chunk + f"\r\n--{boundary}--\r\n".encode()
+
+            req = urllib.request.Request(url, data=body, method="POST")
+            req.add_header("X-API-Key", AZURACAST_API_KEY)
+            req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+            req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+            try:
+                with urllib.request.urlopen(req, timeout=600) as r:
+                    last = (r.status, json.loads(r.read() or b"null"))
+            except urllib.error.HTTPError as e:
+                return e.code, (f"chunk {n}/{total_chunks} : "
+                                f"{e.read().decode(errors='replace')[:600]}")
+            if progress:
+                print(f"\r    chunk {n}/{total_chunks}", end="", flush=True)
+    if progress:
+        print()
+    return last
 
 
 def die(msg):
