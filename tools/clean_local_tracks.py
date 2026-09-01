@@ -34,6 +34,7 @@ DEFAULT_ROOTS = [
     r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\6_techno",
     r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\7_nightdub",
     r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\8_jungle",
+    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\9_liquid",
 ]
 arg_roots = [a for a in sys.argv[1:] if not a.startswith('--')]
 ROOTS = arg_roots if arg_roots else DEFAULT_ROOTS

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Classification partagee des morceaux dans les 8 bacs "horloge a bacs ponderes".
+"""Classification partagee des morceaux dans les 9 bacs de la grille.
 
 Source de verite unique pour la grille : utilisee par migrate_grid.py (migration
 one-shot) et triage_new_tracks.py (nouveaux morceaux). Modele radio pro : des
 bacs curates genre-d'abord/energie-ensuite, l'ordonnancement etant delegue a
-AzuraCast (Shuffled + poids + separation artiste) — aucun ordre calcule ici.
+AzuraCast — rotation continue ponderee depuis le 2026-08-31 (plus de creneaux
+horaires fixes, cf. tools/apply_rotation.py), aucun ordre calcule ici.
 
-    1_chill      Ambient, Downtempo, deep house lente, jungle chill
+    1_chill      Ambient, Downtempo, deep house lente
     2_groove     Disco, Funk, Soul, Boogie, Nu-Disco, house solaire
     3_house      House eclectique diurne, UK Garage, Electro mid-tempo
     4_deep       House deep/melodique crepusculaire, trance douce
@@ -14,6 +15,7 @@ AzuraCast (Shuffled + poids + separation artiste) — aucun ordre calcule ici.
     6_techno     Techno, trance energique, jungle tres club
     7_nightdub   Deep/minimal/dub techno
     8_jungle     PONCTUATION nocturne : jungle/dnb intermediaire
+    9_liquid     Liquid drum & bass (jungle/DnB peu agressif)
 
 Les seuils d'energie sont AUTO-CALIBRES par percentiles au sein de chaque
 famille de genre (l'echelle d'energie est compressee, p95 global ~0.56, et
@@ -33,9 +35,18 @@ dependent PAS du RMS :
     d'energie retenait la jungle old-school mixee bas (Source Direct, Dillinja)
     en laissant le vrai liquid DnB (Hybrid Minds, Monrroe, Whiney) en
     ponctuation nocturne, alors que c'est exactement la matiere "matin/travail".
+
+BAC 9_LIQUID (separe de 1_chill le 2026-08-31) : le liquid DnB choisi par
+mood.aggressive n'a plus sa place dans 1_chill. Mesure sur metadata.json :
+1_chill contenait 156 titres dont 79 de liquid (51%), melangeant deux musiques
+sans rapport — ambient/downtempo a 70-90 BPM et rouleaux liquid a ~170 BPM (le
+BPM median releve, 87, est l'artefact MORNING_BPM_ARTIFACT). Tolerable tant que
+chill ne passait qu'en creneau matinal, intenable en rotation continue 24h/24.
+La SELECTION par mood.aggressive reste inchangee (cf. ci-dessus) ; seule la
+DESTINATION change : 9_liquid au lieu de 1_chill.
 """
 
-NEW_BINS = ["1_chill", "2_groove", "3_house", "4_deep", "5_clubhouse", "6_techno", "7_nightdub", "8_jungle"]
+NEW_BINS = ["1_chill", "2_groove", "3_house", "4_deep", "5_clubhouse", "6_techno", "7_nightdub", "8_jungle", "9_liquid"]
 ROTATION_BINS = [b for b in NEW_BINS if b != "8_jungle"]  # 8_jungle = ponctuation
 
 # Tempo plafond du bac du matin : au-dela, un titre est un titre de club quel
@@ -190,12 +201,14 @@ def classify_bin(subgenre, energy, mood, cut, bpm=None):
     if fam == "groove":
         return "2_groove"
     if fam == "jungle":
-        # Liquide (peu agressif) -> matin, c'est la matiere "DnB pour
-        # travailler". Selection par mood.aggressive et NON par energie : le
-        # RMS trie par niveau de mastering et retenait la jungle old-school
+        # Liquide (peu agressif) -> bac dedie 9_liquid, c'est la matiere "DnB
+        # pour travailler". Selection par mood.aggressive et NON par energie :
+        # le RMS trie par niveau de mastering et retenait la jungle old-school
         # mixee bas en laissant le vrai liquid en ponctuation nocturne.
+        # Destination 9_liquid (et non 1_chill) depuis le 2026-08-31 : les deux
+        # musiques n'ont pas leur place dans le meme bac en rotation continue.
         if mood.get("aggressive", 1.0) < cut["jungle_liquid"]:
-            return "1_chill"
+            return "9_liquid"
         if energy >= cut["jungle_club"]:
             return "6_techno"         # tres club : rotation Peak occasionnelle
         return "8_jungle"             # coeur du style : ponctuation nocturne

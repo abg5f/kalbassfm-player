@@ -3,7 +3,7 @@
 Nettoyage complet CLAPCRATE.COM : serveur (SFTP) + local + metadata.json
 
 Étapes :
-1. Connecte en SFTP, liste tous les fichiers dans les 8 bacs
+1. Connecte en SFTP, liste tous les fichiers dans les 9 bacs
 2. Identifie les fichiers avec "clapcrate" dans le nom
 3. Supprime sur le serveur
 4. Supprime les fichiers audio locaux correspondants
@@ -24,9 +24,12 @@ from mutagen import File as MFile
 sys.stdout.reconfigure(encoding='utf-8') if hasattr(sys.stdout, 'reconfigure') else None
 
 TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, TOOLS_DIR)
+from classify_bins import NEW_BINS  # noqa: E402  (source de verite unique de la grille)
+
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 NEW_PROG_LOCAL = r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog"
-SLOTS = ["1_chill", "2_groove", "3_house", "4_deep", "5_clubhouse", "6_techno", "7_nightdub", "8_jungle"]
+SLOTS = NEW_BINS
 APPLY = "--apply" in sys.argv
 
 # SFTP config

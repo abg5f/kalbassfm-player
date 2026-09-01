@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
-"""Migration vers la grille 8 bacs "horloge a bacs ponderes".
+"""Migration vers la grille 9 bacs.
 
 RE-EXECUTABLE (depuis le 2026-07-28) : a l'origine one-shot 4 creneaux -> 8
 bacs, le script sert desormais aussi a REJOUER la classification apres une
-evolution des regles de classify_bins.py. Un morceau deja dans le bon bac est
-saute — sans ce garde-fou, unique_target() voyait le fichier lui-meme comme un
-doublon de nom et renommait en "Titre_2.mp3" les centaines de morceaux qui ne
-bougent pas.
+evolution des regles de classify_bins.py — c'est ce qui a servi le 2026-08-31
+pour extraire le 9e bac (9_liquid) de 1_chill (voir --filter ci-dessous). Un
+morceau deja dans le bon bac est saute — sans ce garde-fou, unique_target()
+voyait le fichier lui-meme comme un doublon de nom et renommait en
+"Titre_2.mp3" les centaines de morceaux qui ne bougent pas.
 
 ATTENTION COTE SERVEUR : les bacs sont des dossiers = des playlists AzuraCast.
 Re-uploader les fichiers deplaces ne suffit PAS — il faut aussi SUPPRIMER leur
 ancienne copie du dossier d'origine, sinon le morceau reste dans les deux
-playlists et continue de sortir sur l'ancien creneau. Le rapport
-migration_todo.txt liste les deux operations, dossier par dossier.
+playlists. Le rapport migration_todo.txt liste les deux operations, dossier
+par dossier.
 
 Modele radio pro (FIP/Radio Meuh) : des BACS curates (genre d'abord, energie
-ensuite), une HORLOGE cote AzuraCast (playlists planifiees + poids), la variete
-quotidienne assuree par le mode Shuffled + Avoid Duplicate Artists/Titles.
-L'ordre de lecture n'est plus jamais calcule localement (plus de prefixe NNN_).
+ensuite), une ROTATION CONTINUE ponderee cote AzuraCast (depuis le 2026-08-31,
+cf. tools/apply_rotation.py — plus de creneaux horaires fixes pour la base),
+la variete assuree par le mode Shuffled + Avoid Duplicate Artists/Titles.
+L'ordre de lecture n'est jamais calcule localement (plus de prefixe NNN_).
 
-    1_chill      Ambient, Downtempo, deep house lente, jungle chill
+    1_chill      Ambient, Downtempo, deep house lente
     2_groove     Disco, Funk, Soul, Boogie, Nu-Disco, house solaire
     3_house      House eclectique diurne, UK Garage, Electro mid-tempo
     4_deep       House deep/melodique crepusculaire, trance douce
@@ -27,10 +29,15 @@ L'ordre de lecture n'est plus jamais calcule localement (plus de prefixe NNN_).
     6_techno     Techno, trance energique, jungle tres club (>= 0.70)
     7_nightdub   Deep/minimal/dub techno (< 0.6)
     8_jungle     PONCTUATION : jungle/dnb 0.45-0.70 (1 titre / 14 chansons, nuit)
+    9_liquid     Liquid drum & bass (jungle/DnB peu agressif, ex-1_chill)
 
 Usage :
-    python migrate_grid.py            # dry-run : rapport seul, rien n'est deplace
-    python migrate_grid.py --apply    # deplace les fichiers + metadata.json + script WinSCP
+    python migrate_grid.py                       # dry-run : rapport seul, rien n'est deplace
+    python migrate_grid.py --apply                # deplace les fichiers + metadata.json + script WinSCP
+    python migrate_grid.py --filter=OLD:NEW        # restreint aux mouvements OLD_BIN -> NEW_BIN
+                                                     # (ex. --filter=1_chill:9_liquid pour un split
+                                                     # cible, sans embarquer la derive de recalibrage
+                                                     # des autres bacs due a la croissance de la lib)
 
 Garde-fou : refuse de tourner tant que _incoming contient des fichiers a
 traiter (triage pas fini) — la classification part du metadata.json complet.
@@ -146,6 +153,18 @@ def main():
     changed = [(t, e, p, b) for t, e, p, b in moves
                if os.path.basename(os.path.dirname(p)) != b]
 
+    # --filter=OLD:NEW restreint le deplacement a une seule paire de bacs —
+    # utile pour appliquer un split cible (ex. 1_chill -> 9_liquid) sans
+    # embarquer la derive de recalibrage des seuils sur le reste de la lib.
+    filter_arg = next((a for a in sys.argv if a.startswith("--filter=")), None)
+    if filter_arg:
+        old_bin, _, new_bin = filter_arg[len("--filter="):].partition(":")
+        before = len(changed)
+        changed = [(t, e, p, b) for t, e, p, b in changed
+                   if os.path.basename(os.path.dirname(p)) == old_bin and b == new_bin]
+        print(f"\n--filter={old_bin}:{new_bin} : {len(changed)} mouvement(s) retenu(s) "
+              f"sur {before} detectes au total.")
+
     if missing:
         print(f"ATTENTION : {len(missing)} chemin(s) de metadata.json introuvable(s) sur disque :")
         for p in missing[:10]:
@@ -165,7 +184,7 @@ def main():
           f"{'OK, aucune violation' if not veto_violations else str(len(veto_violations)) + ' VIOLATION(S) !'}")
 
     # Rapport : effectifs + heures estimees par bac
-    print("\nRepartition dans les 8 bacs :")
+    print(f"\nRepartition dans les {len(NEW_BINS)} bacs :")
     print(f"{'bac':<13} {'morceaux':>8} {'heures':>8}")
     total_h = 0.0
     bin_counts = {b: 0 for b in NEW_BINS}
