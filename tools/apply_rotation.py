@@ -9,11 +9,28 @@ Reexecutable : c'est l'outil de reglage des dosages a l'oreille par la suite
 un diff contre l'etat live de l'API et n'ecrit que ce qui a change.
 
 Trois groupes de playlists :
-  - BASE       : rotation permanente, AUCUN schedule_items (24h/24).
+  - BASE       : rotation permanente, planning "toute la journee" (00:00-23:59).
   - EVENING    : s'AJOUTE a la base le soir (heure de Paris), schedule_items poses.
   - PUNCTUATION: jungle, once_per_x_songs, planning recale sur la montee du soir.
 Plus DISABLE : les 4 miroirs *_guest devenus inutiles (poids unique en base
 desormais) -> is_enabled False, ni supprimes ni autrement modifies.
+
+PIEGE AZURACAST DECOUVERT LE 2026-09-01 (corrige ce meme jour) : les
+playlists SANS schedule_items ("default_unscheduled") ne sont PAS dans le
+meme pool de tirage que celles AVEC schedule_items ("default_scheduled") --
+AzuraCast tire EXCLUSIVEMENT parmi les "scheduled" des qu'au moins une est
+eligible, en excluant totalement les "unscheduled", meme a poids nul. La
+version initiale de ce script posait schedule_items=[] pour BASE ("aucun
+planning = 24h/24"), ce qui semblait logique mais faisait taire les 6 bacs
+de base durant TOUTE la fenetre du soir (19h-03h, des que liquid_guest est
+eligible) au lieu de se contenter de baisser leur part comme prevu. Verifie
+via /api/admin/debug/station/1/clearqueue, qui liste les "N playable
+playlist(s) of type 'default_scheduled' found" a chaque calcul AutoDJ.
+Correction : donner a BASE un planning explicite 00:00-23:59 (tous les
+jours, sans dates) plutot qu'un planning vide -- les fait entrer dans le
+meme pool "scheduled" que le reste, ou le tirage pondere fonctionne comme
+documente. Sans cette entree, la reexecution de ce script regresserait le
+bug.
 
 Le fuseau station passe a Europe/Paris (heure d'ete automatique) ; c'est le
 SEUL champ touche sur la ressource station.
@@ -44,9 +61,10 @@ STATION = "kalbassfm"
 TIMEZONE_TARGET = "Europe/Paris"
 
 # ----------------------------------------------------------------- la grille
-# id AzuraCast -> (nom, poids, schedule_items). schedule_items = [] pour la
-# rotation de base (aucun planning = actif 24h/24). Heures en HHMM (int),
-# toujours en heure de Paris une fois le fuseau station bascule.
+# id AzuraCast -> (nom, poids, schedule_items). Heures en HHMM (int), toujours
+# en heure de Paris une fois le fuseau station bascule.
+
+BASE_ALL_DAY = [(0, 2359)]  # planning "toute la journee" -> voir PIEGE AZURACAST en tete de fichier
 
 BASE = {
     # id: (nom, poids)
@@ -176,14 +194,14 @@ def main():
     else:
         print(f"[station] timezone : deja {TIMEZONE_TARGET}, inchange")
 
-    # ---- rotation de base : poids, AUCUN planning
+    # ---- rotation de base : poids, planning toute la journee (cf. PIEGE AZURACAST)
     playlist_payloads = {}
-    print("\n-- Rotation de base (24h/24, aucun schedule_items) --")
+    print("\n-- Rotation de base (planning 00:00-23:59, tous les jours) --")
     for pid, (name, weight) in BASE.items():
         live = by_id.get(pid)
         if not live:
             die(f"playlist id={pid} ({name}) introuvable sur le serveur")
-        payload, lines = diff_playlist(live, weight, True, [])
+        payload, lines = diff_playlist(live, weight, True, BASE_ALL_DAY)
         if lines:
             print(f"[{name} #{pid}]")
             print("\n".join(lines))
