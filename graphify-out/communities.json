@@ -68,7 +68,9 @@
     "RedisQuotaIncident",
     "MoveTrackFeature",
     "AudienceStatsFeature",
-    "LogsTelegramCommand"
+    "LogsTelegramCommand",
+    "api/submit-mix.js",
+    "DjMixUploadPortalRejected"
    ]
   },
   {

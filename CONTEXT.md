@@ -2,7 +2,15 @@
 
 > Dernière mise à jour : 2026-09-01
 
-## État actuel (2026-09-01, exécution du brief + bug critique corrigé + nouvelles automatisations)
+## État actuel (2026-09-01, suite — kv_config rempli + portail d'upload DJ discuté et écarté)
+
+**Session 2026-09-01 (suite)** — session courte : complété le seul TODO bloquant de la session précédente, puis discussion (sans code) sur l'automatisation du dépôt des mixes DJ.
+
+- ✅ **`tools/kv_config.py` rempli** avec les vraies valeurs Upstash (`KV_REST_API_URL`/`KV_REST_API_TOKEN`, récupérées par l'utilisateur sur Vercel). Le pin J-3 et l'annonce chat de la mixtape hebdo (`tools/mixtape_weekly.py`) sont désormais opérationnels — seule la diffusion+podcast fonctionnait avant. Vérifié : import Python OK, fichier absent de `git status` (bien gitignored).
+- ✍️ **Description Reddit rédigée** (anglais, versions longue/courte/130-150 car.) pour présenter la station — pas de fichier associé, livrée en conversation.
+- 🔍 **Discussion : automatiser le dépôt des mixes DJ candidats** (aujourd'hui : lien dans `api/submit-mix.js` + dépôt manuel FileZilla par l'utilisateur). Trois pistes évaluées et écartées pour l'instant, cf. Décisions — le circuit actuel est conservé.
+
+## État antérieur (2026-09-01, exécution du brief + bug critique corrigé + nouvelles automatisations)
 
 **Session 2026-09-01** — exécution complète du brief du 2026-08-31 (4 lots), un bug critique AzuraCast découvert et corrigé le jour même, plus deux extensions décidées en cours de session (nettoyage bot Telegram, automatisation mixtape hebdo).
 
@@ -158,6 +166,7 @@
 
 | Décision | Rationale |
 |----------|-----------|
+| **Pas de portail d'upload direct pour les candidatures DJ, circuit lien+dépôt manuel conservé (2026-09-01)** | Trois pistes évaluées : SFTP direct au DJ écarté (portée = toute la médiathèque station, pas juste `Mixtapes/`) ; portail web avec upload chunked vers `POST /station/{id}/files/upload` (endpoint natif AzuraCast, vérifié dans `openapi.yml`) jugé sur-ingénierie vu le volume actuel (quelques candidatures/mois) ; stockage Telegram écarté (API Bot standard : 50 Mo upload / 20 Mo download, hors mixes réels de 100-300 Mo). Alternative plus légère identifiée si besoin futur : garder le lien (déjà collecté par `api/submit-mix.js`) et automatiser juste la récupération (téléchargement + push AzuraCast) au moment de la validation Telegram — à reconsidérer si le volume de candidatures augmente |
 | **Bacs de base avec planning explicite `00:00-23:59` plutôt qu'aucun `schedule_items` (2026-09-01)** | AzuraCast tire *exclusivement* parmi les playlists ayant un planning dès qu'au moins une est éligible, excluant totalement celles sans planning — même à poids nul. `schedule_items: []` ("aucun planning = 24h/24") rendait donc les 6 bacs de base muets toute la soirée. Un planning "toute la journée" les fait entrer dans le même pool de tirage que le reste |
 | **Champ Album (pas ISRC) pour stocker la date de diffusion d'une mixtape (2026-09-01)** | ISRC est explicitement réservé aux rapports de licence SACEM (TODO ouvert) — le détourner pour un usage interne polluerait de futures données de licensing. Album est un champ purement décoratif dans AzuraCast, sans conséquence |
 | **`mixtape_onair` = queue de plusieurs candidats + réduction dynamique à un seul avant diffusion (2026-09-01)** | AzuraCast ne planifie qu'au niveau playlist, jamais au niveau morceau. L'utilisateur avait déjà déposé plusieurs mixtapes dans `mixtape_onair` directement sur AzuraCast (pas de nouvelle playlist "queue" séparée demandée) — l'automatisation réduit donc la playlist au seul morceau du jour juste avant de poser le planning, plutôt que d'exiger une réorganisation du setup existant |
@@ -216,7 +225,7 @@
 
 - [x] **Exécuter le brief agent en 4 lots** — fait le 2026-09-01 (bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`)
 - [x] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — fait le 2026-09-01, vérifié iso local/serveur
-- [ ] **Remplir `tools/kv_config.py`** avec les vraies valeurs Upstash (`KV_REST_API_URL`/`KV_REST_API_TOKEN`, mêmes que sur Vercel) — sans ça, `mixtape_weekly.py` programme bien la diffusion+podcast mais le pin/l'annonce chat échouent silencieusement
+- [x] **Remplir `tools/kv_config.py`** avec les vraies valeurs Upstash — fait le 2026-09-01, pin/annonce chat mixtape opérationnels
 - [ ] **Surveiller la première exécution réelle de la tâche planifiée Windows** (dimanche 2026-09-06, premier cycle complet pin J-3 + diffusion) — jamais tournée en conditions réelles, seulement testée en dry-run/simulation de dates
 - [ ] **Reprendre le plan "emails candidature mix"** (notif admin à `theguybehindtheradio@pm.me` + confirmation DJ) — en pause, bloqué sur le choix/la vérification d'un domaine d'envoi Resend (plan détaillé écrit, implémentation non commencée)
 - [ ] **Nettoyer les tracks club/night à la main** puis lancer `python tools/prune_deleted_tracks.py 5_clubhouse 7_nightdub` pour répercuter sur AzuraCast — reporté par l'utilisateur, outil prêt
@@ -291,7 +300,8 @@
 | `tools/classify_bins.py` | **Source de vérité de la grille 9 bacs** (9ᵉ bac `9_liquid` ajouté le 2026-08-31/09-01) : familles, SHARES, seuils auto-calibrés, classify_bin(). Veto de tempo (`CHILL_BPM_MAX`, ex-`MORNING_BPM_MAX`) + sélection jungle par `mood.aggressive`, indépendants du RMS | ✅ Importé par migrate+triage+clean_clapcrate_full |
 | `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py` | Setup ponctuel LOT 1/4 : création+peuplement des playlists AzuraCast `liquid`/`liquid_guest`/`boost_up`/`boost_down`, sync SFTP de la migration `9_liquid` | ✅ Exécutés le 2026-09-01 |
 | `tools/check_local_vs_server.py`, `tools/prune_deleted_tracks.py` | Vérification/nettoyage local↔serveur : compare New_prog aux fichiers AzuraCast, supprime (fichier+entrée bibliothèque) ce qui a disparu en local | ✅ Créés le 2026-09-01, `prune_deleted_tracks.py` pas encore utilisé (nettoyage manuel club/night en attente) |
-| `tools/mixtape_weekly.py`, `tools/kv_config.py` | Automatisation mixtape du dimanche (tâche planifiée Windows) + client Redis Python manquant (gitignored, à remplir) | ✅ Créés le 2026-09-01, `kv_config.py` en placeholder |
+| `tools/mixtape_weekly.py`, `tools/kv_config.py` | Automatisation mixtape du dimanche (tâche planifiée Windows) + client Redis Python (gitignored) | ✅ Créés le 2026-09-01, `kv_config.py` rempli (valeurs Upstash réelles) le même jour |
+| `api/submit-mix.js` | Formulaire de candidature DJ ("Submit a mix") : lien du set + socials, relayé vers Telegram, archivé Redis. Pas de node graphify avant le 2026-09-01 bien que le code soit déjà en place | ✅ Existant, inchangé cette session (discussion sur un portail d'upload direct — écartée) |
 | `tools/azuracast_config.py` | **Clé API AzuraCast en local** (gitignored, même patron que `sftp_config.py`) — permet de piloter playlists, poids, plannings et rapports depuis Claude Code | ⚠️ Sa valeur est apparue en clair dans la session du 2026-07-28 : la révoquer et en générer une neuve est le réflexe propre |
 | `tools/migrate_grid.py` | Migration one-shot 4→8 bacs (dry-run/--apply, garde-fou _incoming, rapport, WinSCP) | ✅ Exécutée le 2026-07-16 |
 | `tools/resync_metadata.py` | Réparation metadata↔disque par nom sans préfixe (948→825 entrées) | ✅ Exécutée le 2026-07-16 |
@@ -323,10 +333,11 @@
 - **Automatisation locale** : tâche planifiée Windows `KalbassFM Mixtape hebdo` (PowerShell `Register-ScheduledTask`, quotidienne 9h) — exécute `tools/mixtape_weekly.py --apply`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-09-01 (construction manuelle via /graphify, pas de CLI) — 94 nœuds, 188 relations
+> Mis à jour le 2026-09-01, deux fois (construction manuelle via /graphify, pas de CLI) — 96 nœuds, 192 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 22), `api/telegram.js` (19), `AzuraCast` (16), `ChatFeature`/`api/chat.js` (13 chacun), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (10), `BacLiquid`/`EnergyBoostTelegram` (7 chacun).
-Nouveaux nœuds 2026-09-01 : `AzuraCastSchedulePriorityBug` (le bug critique — scheduled exclut unscheduled), `LogsTelegramCommand`, `MixtapeWeeklyAutomation`, `tools/mixtape_weekly.py`, `tools/kv_config.py`, `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py`, `VibeIndicator` (ajouté puis retiré), `JinglesPlaylistFix`.
+God nodes (concepts centraux) : `index.html` (hub front, degré 22), `api/telegram.js` (20), `AzuraCast` (17), `ChatFeature`/`api/chat.js` (13 chacun), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (10), `MixtapesFeature`/`BacLiquid`/`EnergyBoostTelegram` (7 chacun).
+Nouveaux nœuds 2026-09-01 (1ère passe) : `AzuraCastSchedulePriorityBug` (le bug critique — scheduled exclut unscheduled), `LogsTelegramCommand`, `MixtapeWeeklyAutomation`, `tools/mixtape_weekly.py`, `tools/kv_config.py`, `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py`, `VibeIndicator` (ajouté puis retiré), `JinglesPlaylistFix`.
+Nouveaux nœuds 2026-09-01 (2ème passe) : `api/submit-mix.js` (formulaire candidature DJ, code déjà en place mais absent du graphe jusqu'ici), `DjMixUploadPortalRejected` (décision : portail d'upload écarté, cf. Décisions).
 Nœuds 2026-08-31 : `RotationContinue`, `BacLiquid`, `StationTimezone`, `StockBibliotheque`, `AutoDJQueueDepth`, `BoostViaPlanningDate`, `EnergyBoostTelegram`, `tools/apply_rotation.py`, `tools/azuracast_snapshot_2026-08-31.json`, `tools/fix_artwork.py`.
 Nœuds 2026-08-08 : `MixtapesFeature`, `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication`, `PodcastAudioElement`.
 Communautés détectées : 9 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 9 bacs, Planning/Business, Contexte, Programmation/Rotation musicale).

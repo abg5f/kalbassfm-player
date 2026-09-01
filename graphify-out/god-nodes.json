@@ -6,12 +6,12 @@
  },
  {
   "id": "api/telegram.js",
-  "degree": 19,
+  "degree": 20,
   "label": "api/telegram.js"
  },
  {
   "id": "AzuraCast",
-  "degree": 16,
+  "degree": 17,
   "label": "AzuraCast"
  },
  {
@@ -33,6 +33,11 @@
   "id": "RotationContinue",
   "degree": 10,
   "label": "RotationContinue"
+ },
+ {
+  "id": "MixtapesFeature",
+  "degree": 7,
+  "label": "Mixtapes (emission mensuelle)"
  },
  {
   "id": "RekordboxPipeline",

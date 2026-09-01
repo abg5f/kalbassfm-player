@@ -532,7 +532,7 @@
    "id": "tools/kv_config.py",
    "label": "kv_config.py",
    "type": "file",
-   "summary": "Nouveau 2026-09-01 (gitignored). Client Redis Upstash REST manquant cote Python - meme patron que azuracast_config.py/sftp_config.py. Necessaire pour que mixtape_weekly.py puisse poster dans le chat live."
+   "summary": "Cree 2026-09-01 (gitignored), rempli avec les vraies valeurs Upstash le meme jour (session suivante). Client Redis Upstash REST cote Python - meme patron que azuracast_config.py/sftp_config.py. Necessaire pour que mixtape_weekly.py puisse poster dans le chat live. Plus un placeholder : le pin J-3 et l'annonce chat de la mixtape sont operationnels."
   },
   {
    "id": "tools/create_liquid_playlists.py",
@@ -563,9 +563,45 @@
    "label": "Reparation playlist Jingles",
    "type": "fix",
    "summary": "2026-09-01 : la playlist Jingles etait activee et programmee correctement mais vide (0 morceau) - les 13 nouveaux jingles (generes via Suno cette session) etaient uploades dans le dossier mais jamais rattaches a la playlist (meme piege que BacLiquid : appartenance = champ par fichier, pas regle de dossier). Corrige par rattachement direct API."
+  },
+  {
+   "id": "api/submit-mix.js",
+   "label": "submit-mix.js (candidature DJ)",
+   "type": "file",
+   "summary": "Formulaire de candidature DJ 'Submit a mix' : nom, style, email, lien du set (SoundCloud/Drive/...), socials optionnels (Instagram/SoundCloud reduits a un pseudo, jamais une URL libre - anti-usurpation dans l'annonce chat admin). Relaye vers Telegram (jamais publie dans le chat live) + archive Redis (liste mix:submissions, rate-limit 1/10min par clientId). Pas de node avant la session du 2026-09-01, code deja en place."
+  },
+  {
+   "id": "DjMixUploadPortalRejected",
+   "label": "Portail d'upload direct DJ - ecarte",
+   "type": "decision",
+   "summary": "2026-09-01 : discussion sur comment recevoir les mixes DJ sans depot manuel FileZilla. SFTP direct au DJ ecarte (portee = toute la mediatheque station, pas juste Mixtapes/). Portail web avec upload chunked vers l'API AzuraCast (/files/upload existe nativement, verifie via openapi.yml) juge sur-ingenierie vu le volume actuel (quelques candidatures/mois). Stockage Telegram ecarte : API Bot standard plafonne a 50 Mo upload / 20 Mo download, hors mixes reels de 100-300 Mo. Decision : garder le circuit actuel (lien dans submit-mix.js, depot manuel), a reconsiderer si le volume augmente."
   }
  ],
  "edges": [
+  {
+   "source": "api/submit-mix.js",
+   "target": "MixtapesFeature",
+   "relation": "alimente en candidats",
+   "weight": 1
+  },
+  {
+   "source": "api/submit-mix.js",
+   "target": "api/telegram.js",
+   "relation": "notifie la candidature (jamais publie dans le chat)",
+   "weight": 1
+  },
+  {
+   "source": "DjMixUploadPortalRejected",
+   "target": "api/submit-mix.js",
+   "relation": "circuit actuel conserve (lien + depot manuel)",
+   "weight": 1
+  },
+  {
+   "source": "DjMixUploadPortalRejected",
+   "target": "AzuraCast",
+   "relation": "endpoint upload natif verifie mais ecarte (sur-ingenierie)",
+   "weight": 1
+  },
   {
    "source": "index.html",
    "target": "NowPlayingAPI",
