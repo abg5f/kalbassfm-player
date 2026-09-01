@@ -262,7 +262,7 @@
    "id": "api/telegram.js",
    "label": "api/telegram.js",
    "type": "file",
-   "summary": "Webhook du bot Telegram admin (@kalbassfm_bot), secret + chat_id unique autorise. Commandes : /skip, /msg, /jingle, /ban /unban, /pause_chat (bandeau d'avertissement auto-epingle, restaure l'annonce existante) /resume_chat, reponse native Telegram citee, /recent /recent_supporters, /add_supporter, /pin /unpin, /np /stats, /delete_track /delete_current_track, /ask (API Claude), /mark_supporter /unmark_supporter, /rename /unrename /rename_nick (ChatRenameFeature, stripAngles() + garde-fou LINDEX), /move (MoveTrackFeature, migration du morceau en cours vers un des 8 bacs). handleCallback repond toujours au tap (try/catch, message d'echec explicite). kvClient() retourne null pendant REDIS_PAUSED. Pseudo admin renomme 'Admin' (etait '📻 KALBASSFM'). /reset_top5 retire avec le Top 5. Ajout 2026-07-28 : /audience (moyennes ponderees 24h/30j + localisation), et formulation unifiee des auditeurs via listenersText() — on annonce des PERSONNES (listeners.unique) et non des connexions (listeners.total), l'ecart venant des reconnexions mobiles."
+   "summary": "Bot Telegram admin. Perimetre resserre le 2026-09-01 : retires /jingle, /np, /recent, /ask, /delete_track (recherche libre) ; /delete_current_track renomme /delete. Ajouts : /energy (boost rotation), /logs (historique de diffusion), /queue_mix (choix hebdo de la mixtape du dimanche)."
   },
   {
    "id": "TelegramBotFeature",
@@ -448,19 +448,19 @@
    "id": "RotationContinue",
    "label": "RotationContinue",
    "type": "planned-feature",
-   "summary": "Rotation eclectique unique 24h/24 facon Nova / Radio Meuh (validee 2026-08-31, non implementee). Remplace l horloge a 7 creneaux : 6 bacs actifs en permanence SANS schedule_items, aucun dominant (house 28%, groove 23%, deep 16%, nightdub 14%, liquid 9%, chill 9%, total 43). La variete vient du melange, plus du calendrier. Par-dessus, une montee du soir en heure de Paris qui AJOUTE clubhouse+techno sans rien remplacer : 0% de club jusqu a 19h, 19% (19-22h), 28% (22-01h), 19% (01-03h). Au pic house+groove pesent encore 34%."
+   "summary": "EN PROD depuis le 2026-09-01 (execute via apply_rotation.py --apply). 6 bacs de base (43 de poids) + montee du soir Paris + jungle recale. Bug critique decouvert et corrige le meme jour : cf. AzuraCastSchedulePriorityBug."
   },
   {
    "id": "BacLiquid",
    "label": "BacLiquid",
    "type": "planned-feature",
-   "summary": "9e bac 9_liquid (validee 2026-08-31, non implementee). Mesure avec le classifieur : 1_chill contient 156 titres dont 79 de liquid drum & bass, soit 51%. Le bac melange de l ambient a 70-90 BPM et des rouleaux liquid a ~170 BPM (BPM median releve 87 = artefact de demi-tempo, cf. MORNING_BPM_ARTIFACT). Tolerable tant que chill ne passait qu a 6-9h ; intenable en rotation 24h/24. Le liquid sert aussi de pont vers la montee du soir : tempo eleve, texture douce."
+   "summary": "Migre en prod le 2026-09-01 : 79 fichiers deplaces (local+SFTP), playlists liquid/liquid_guest creees et peuplees via tools/create_liquid_playlists.py."
   },
   {
    "id": "EnergyBoostTelegram",
    "label": "EnergyBoostTelegram",
    "type": "planned-feature",
-   "summary": "Commande /energy du bot (validee 2026-08-31, non implementee). L admin pousse ou calme la rotation de +/-1 ou 2 points pour une duree choisie (30min/1h/2h/4h), claviers inline en deux temps sur le patron de /move. Le poids s auto-ajuste : poids = round(T * part / (1-part)) ou T est la somme des poids actifs a l instant T (43 en journee, 64 a 22h) ; 1 point = 15% de part, 2 points = 25%."
+   "summary": "Construit et teste de bout en bout le 2026-09-01 contre l'API AzuraCast reelle. Flux 2 etapes (intensite -2..+2 puis duree), poids auto-ajuste a la rotation active a l'instant T, playlists boost_up/boost_down (tools/create_boost_playlists.py), aucun Redis - etat entierement dans la playlist AzuraCast (schedule_items dates + description)."
   },
   {
    "id": "BoostViaPlanningDate",
@@ -490,7 +490,7 @@
    "id": "tools/apply_rotation.py",
    "label": "tools/apply_rotation.py",
    "type": "planned-feature",
-   "summary": "A ecrire. Table declarative en tete de fichier = source de verite unique de la rotation (timezone, poids, plannings, activations). Dry-run par defaut avec diff avant/apres, --apply pour ecrire. Reexecutable : c est l outil de reglage des dosages a l oreille."
+   "summary": "EXECUTE (etait planifie au 2026-08-31). Bascule timezone Europe/Paris, poids/plannings/activations de la rotation continue. Corrige le 2026-09-01 : les 6 bacs de base recoivent desormais un planning explicite 00:00-23:59 (au lieu d'aucun planning) pour contourner AzuraCastSchedulePriorityBug."
   },
   {
    "id": "tools/fix_artwork.py",
@@ -503,6 +503,66 @@
    "label": "StockBibliotheque",
    "type": "concept",
    "summary": "Stock reel releve en direct sur AzuraCast le 2026-08-31 : 125,9 h (contre 106 h notees le 2026-08-08 - la bibliotheque a grossi, house est passe de 22h30 a 25h36). Par bac : house 25,6h, groove 22,2h, techno 19,1h, chill 14,8h, deep 14,7h, nightdub 14,7h, clubhouse 10,2h, jungle 4,6h. Contrainte structurelle : 125,9h de stock pour 168h d antenne/semaine = chaque morceau passe ~1,3 fois par semaine quoi qu on fasse. Les poids repartissent la pression, ils ne changent pas ce total."
+  },
+  {
+   "id": "AzuraCastSchedulePriorityBug",
+   "label": "Priorite scheduled > unscheduled (AzuraCast)",
+   "type": "concept",
+   "summary": "Decouverte critique du 2026-09-01 : AzuraCast tire EXCLUSIVEMENT parmi les playlists avec schedule_items des qu'au moins une est eligible, excluant totalement les playlists sans planning (meme a poids nul). Rendait les 6 bacs de base muets 19h-03h chaque soir depuis le lancement de RotationContinue. Diagnostique via /api/admin/debug/station/1/clearqueue (log 'N playable playlist(s) of type default_scheduled'). Corrige en donnant aux bacs de base un planning 00:00-23:59 explicite."
+  },
+  {
+   "id": "LogsTelegramCommand",
+   "label": "/logs (Telegram)",
+   "type": "feature",
+   "summary": "Commande ajoutee le 2026-09-01 : clavier inline (1/3/10 derniers titres, ou fenetre 15min/30min/1h), historique reel via fetchHistory() (deja utilise par /audience), format monospace HTML <pre>. A permis de diagnostiquer AzuraCastSchedulePriorityBug."
+  },
+  {
+   "id": "MixtapeWeeklyAutomation",
+   "label": "Automatisation mixtape du dimanche",
+   "type": "feature",
+   "summary": "Construite le 2026-09-01 : mixtape_onair contient plusieurs mixtapes candidates simultanement (deposees a la main sur AzuraCast) ; /queue_mix (Telegram) choisit laquelle passe le prochain dimanche libre, date ecrite dans le champ Album (pas ISRC, reserve SACEM) ; tools/mixtape_weekly.py (tache planifiee Windows quotidienne, idempotente) execute : bandeau pin J-3, puis jour J diffusion+podcast+annonce chat. Reutilise tools/publish_mixtape.py sans duplication."
+  },
+  {
+   "id": "tools/mixtape_weekly.py",
+   "label": "mixtape_weekly.py",
+   "type": "file",
+   "summary": "Nouveau 2026-09-01. Tourne via tache planifiee Windows quotidienne. Lit le champ Album des candidats de mixtape_onair, poste le pin J-3 et execute la diffusion+podcast+annonce chat le jour J. Importe publish_mixtape.py (call/upload_media/hhmm/resolve_targets), etat local mixtape_state.json (gitignored)."
+  },
+  {
+   "id": "tools/kv_config.py",
+   "label": "kv_config.py",
+   "type": "file",
+   "summary": "Nouveau 2026-09-01 (gitignored). Client Redis Upstash REST manquant cote Python - meme patron que azuracast_config.py/sftp_config.py. Necessaire pour que mixtape_weekly.py puisse poster dans le chat live."
+  },
+  {
+   "id": "tools/create_liquid_playlists.py",
+   "label": "create_liquid_playlists.py",
+   "type": "file",
+   "summary": "Nouveau 2026-09-01. Cree et peuple les playlists liquid/liquid_guest sur AzuraCast (LOT 1)."
+  },
+  {
+   "id": "tools/create_boost_playlists.py",
+   "label": "create_boost_playlists.py",
+   "type": "file",
+   "summary": "Nouveau 2026-09-01. Cree et peuple boost_up (5_clubhouse+6_techno) / boost_down (1_chill+7_nightdub) pour EnergyBoostTelegram (LOT 4)."
+  },
+  {
+   "id": "tools/sync_liquid_bin.py",
+   "label": "sync_liquid_bin.py",
+   "type": "file",
+   "summary": "Nouveau 2026-09-01. Upload SFTP + suppression des anciennes copies serveur pour la migration 1_chill -> 9_liquid."
+  },
+  {
+   "id": "VibeIndicator",
+   "label": "Indicateur Vibe (player)",
+   "type": "feature",
+   "summary": "Ajoute puis retire le 2026-09-01 : affichait le bac reellement joue (champ playlist de nowplaying) sous le titre en cours, en remplacement de l'ancien Vibe now/next base sur l'heure. Juge peu utile a l'usage, retire le meme jour (index.html, api/chat.js)."
+  },
+  {
+   "id": "JinglesPlaylistFix",
+   "label": "Reparation playlist Jingles",
+   "type": "fix",
+   "summary": "2026-09-01 : la playlist Jingles etait activee et programmee correctement mais vide (0 morceau) - les 13 nouveaux jingles (generes via Suno cette session) etaient uploades dans le dossier mais jamais rattaches a la playlist (meme piege que BacLiquid : appartenance = champ par fichier, pas regle de dossier). Corrige par rattachement direct API."
   }
  ],
  "edges": [
@@ -1518,6 +1578,120 @@
    "source": "StockBibliotheque",
    "target": "AzuraCast",
    "relation": "releve via l API de",
+   "weight": 1
+  },
+  {
+   "source": "tools/apply_rotation.py",
+   "target": "RotationContinue",
+   "relation": "implemente",
+   "weight": 1
+  },
+  {
+   "source": "tools/apply_rotation.py",
+   "target": "AzuraCastSchedulePriorityBug",
+   "relation": "corrige",
+   "weight": 1
+  },
+  {
+   "source": "AzuraCastSchedulePriorityBug",
+   "target": "RotationContinue",
+   "relation": "a-casse",
+   "weight": 1
+  },
+  {
+   "source": "tools/create_liquid_playlists.py",
+   "target": "BacLiquid",
+   "relation": "peuple",
+   "weight": 1
+  },
+  {
+   "source": "tools/sync_liquid_bin.py",
+   "target": "BacLiquid",
+   "relation": "migre-fichiers",
+   "weight": 1
+  },
+  {
+   "source": "BacLiquid",
+   "target": "tools/classify_bins.py",
+   "relation": "defini-dans",
+   "weight": 1
+  },
+  {
+   "source": "api/telegram.js",
+   "target": "EnergyBoostTelegram",
+   "relation": "expose",
+   "weight": 1
+  },
+  {
+   "source": "tools/create_boost_playlists.py",
+   "target": "EnergyBoostTelegram",
+   "relation": "peuple",
+   "weight": 1
+  },
+  {
+   "source": "EnergyBoostTelegram",
+   "target": "RotationContinue",
+   "relation": "ajuste-temporairement",
+   "weight": 1
+  },
+  {
+   "source": "api/telegram.js",
+   "target": "LogsTelegramCommand",
+   "relation": "expose",
+   "weight": 1
+  },
+  {
+   "source": "LogsTelegramCommand",
+   "target": "AzuraCastSchedulePriorityBug",
+   "relation": "a-permis-de-diagnostiquer",
+   "weight": 1
+  },
+  {
+   "source": "api/telegram.js",
+   "target": "MixtapeWeeklyAutomation",
+   "relation": "expose-selection",
+   "weight": 1
+  },
+  {
+   "source": "tools/mixtape_weekly.py",
+   "target": "MixtapeWeeklyAutomation",
+   "relation": "execute",
+   "weight": 1
+  },
+  {
+   "source": "tools/mixtape_weekly.py",
+   "target": "tools/publish_mixtape.py",
+   "relation": "reutilise",
+   "weight": 1
+  },
+  {
+   "source": "tools/mixtape_weekly.py",
+   "target": "tools/kv_config.py",
+   "relation": "depend-de",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeWeeklyAutomation",
+   "target": "MixtapeOnairPlaylist",
+   "relation": "orchestre",
+   "weight": 1
+  },
+  {
+   "source": "index.html",
+   "target": "VibeIndicator",
+   "relation": "affichait",
+   "weight": 1
+  },
+  {
+   "source": "api/chat.js",
+   "target": "VibeIndicator",
+   "relation": "documentait-le-retrait",
+   "weight": 1
+  },
+  {
+   "source": "JinglesPlaylistFix",
+   "target": "api/telegram.js",
+   "relation": "diagnostique-via-logs",
    "weight": 1
   }
  ]

@@ -1,8 +1,13 @@
 [
  {
   "id": "index.html",
-  "degree": 21,
+  "degree": 22,
   "label": "index.html"
+ },
+ {
+  "id": "api/telegram.js",
+  "degree": 19,
+  "label": "api/telegram.js"
  },
  {
   "id": "AzuraCast",
@@ -10,29 +15,29 @@
   "label": "AzuraCast"
  },
  {
-  "id": "api/telegram.js",
-  "degree": 15,
-  "label": "api/telegram.js"
- },
- {
   "id": "ChatFeature",
   "degree": 13,
   "label": "Chat live"
  },
  {
-  "id": "ProgrammeGrid",
-  "degree": 12,
-  "label": "Horloge a bacs ponderes (8 bacs)"
+  "id": "api/chat.js",
+  "degree": 13,
+  "label": "api/chat.js"
  },
  {
-  "id": "api/chat.js",
+  "id": "ProgrammeGrid",
   "degree": 12,
-  "label": "api/chat.js"
+  "label": "Horloge a bacs ponderes (8 bacs, supersede par RotationContinue)"
+ },
+ {
+  "id": "RotationContinue",
+  "degree": 10,
+  "label": "RotationContinue"
  },
  {
   "id": "RekordboxPipeline",
   "degree": 7,
-  "label": "Pipeline Rekordbox → radio"
+  "label": "Pipeline Rekordbox -> radio"
  },
  {
   "id": "api/supporters.js",
@@ -45,8 +50,13 @@
   "label": "Incident quota Upstash (2026-07-21)"
  },
  {
-  "id": "RotationContinue",
+  "id": "BacLiquid",
   "degree": 7,
-  "label": "RotationContinue"
+  "label": "BacLiquid (9_liquid)"
+ },
+ {
+  "id": "EnergyBoostTelegram",
+  "degree": 7,
+  "label": "/energy (Telegram)"
  }
 ]

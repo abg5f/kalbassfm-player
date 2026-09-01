@@ -22,7 +22,8 @@
     "MyTracksFeature",
     "WhatsNewModal",
     "MixtapesFeature",
-    "PodcastAudioElement"
+    "PodcastAudioElement",
+    "VibeIndicator"
    ]
   },
   {
@@ -40,7 +41,10 @@
     "JinglesFeature",
     "PodcastAzuraCast",
     "MixtapeOnairPlaylist",
-    "PodcastMediaDuplication"
+    "PodcastMediaDuplication",
+    "MixtapeWeeklyAutomation",
+    "tools/mixtape_weekly.py",
+    "JinglesPlaylistFix"
    ]
   },
   {
@@ -63,7 +67,8 @@
     "BpmGuesserFeature",
     "RedisQuotaIncident",
     "MoveTrackFeature",
-    "AudienceStatsFeature"
+    "AudienceStatsFeature",
+    "LogsTelegramCommand"
    ]
   },
   {
@@ -89,7 +94,8 @@
     "tools/resync_metadata.py",
     "tools/triage_new_tracks.py",
     "tools/export_bpm_table.py",
-    "tools/publish_mixtape.py"
+    "tools/publish_mixtape.py",
+    "tools/kv_config.py"
    ]
   },
   {
@@ -144,7 +150,11 @@
     "tools/azuracast_snapshot_2026-08-31.json",
     "tools/classify_bins.py",
     "tools/migrate_grid.py",
-    "ProgrammeGrid"
+    "ProgrammeGrid",
+    "AzuraCastSchedulePriorityBug",
+    "tools/create_liquid_playlists.py",
+    "tools/create_boost_playlists.py",
+    "tools/sync_liquid_bin.py"
    ]
   }
  ]

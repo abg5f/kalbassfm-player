@@ -1,8 +1,25 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
-## État actuel (2026-08-31, refonte de la programmation — plan validé, implémentation non commencée)
+## État actuel (2026-09-01, exécution du brief + bug critique corrigé + nouvelles automatisations)
+
+**Session 2026-09-01** — exécution complète du brief du 2026-08-31 (4 lots), un bug critique AzuraCast découvert et corrigé le jour même, plus deux extensions décidées en cours de session (nettoyage bot Telegram, automatisation mixtape hebdo).
+
+- ✅ **LOT 1-4 exécutés et vérifiés en prod** : `9_liquid` migré (79 fichiers, local+SFTP+playlists), `tools/apply_rotation.py` écrit et appliqué (fuseau `Europe/Paris`, poids/plannings de la rotation continue), compteurs applicatifs passés en UTC, indicateur "Vibe now" (bac courant) construit puis **retiré le même jour** (jugé peu utile), commande **`/energy`** construite et testée de bout en bout contre l'API AzuraCast réelle.
+- 🔥 **Bug critique découvert et corrigé : AzuraCast exclut totalement les playlists sans planning dès qu'une playlist planifiée est éligible.** Poser `schedule_items: []` sur les 6 bacs de base (hypothèse du 2026-08-31 : "aucun planning = 24h/24") les rendait **complètement muets 19h-03h chaque soir** depuis le lancement de la rotation continue, au lieu de simplement voir leur part diluée. Repéré à l'oreille par l'utilisateur via `/logs` ("je n'ai plus de house"), diagnostiqué via les logs réels de `/api/admin/debug/station/1/clearqueue` (liste les "N playable playlist(s) of type default_scheduled"), confirmé par la doc/les tickets AzuraCast. Corrigé en donnant aux 6 bacs de base un planning explicite `00:00-23:59` (au lieu d'aucun) — les fait entrer dans le même pool de tirage que le reste. Vérifié : les 10 playlists concourent maintenant ensemble avec leurs vrais poids.
+- ✅ **Commande Telegram `/logs`** — historique de diffusion à la demande (1/3/10 derniers titres, ou fenêtre 15min/30min/1h), a directement servi à diagnostiquer le bug ci-dessus.
+- ✅ **Automatisation mixtape du dimanche** — `mixtape_onair` contient plusieurs mixtapes candidates en même temps (déposées à la main sur AzuraCast, métadonnées Artiste/Titre/Paroles remplies via l'UI AzuraCast, réseaux sociaux stockés dans le champ Paroles faute de champs dédiés). **`/queue_mix`** (Telegram) choisit laquelle passe le prochain dimanche libre, date écrite dans le champ **Album** (pas ISRC, réservé aux rapports de licence SACEM). **`tools/mixtape_weekly.py`**, déclenché par une **tâche planifiée Windows quotidienne** (créée via PowerShell `Register-ScheduledTask`, pas `schtasks.exe` — celui-ci a un bug connu de parsing de guillemets imbriqués dès que l'exécutable ET l'argument ont des espaces dans leur chemin), exécute ce qui a été choisi : bandeau pin J-3, puis diffusion+podcast+annonce chat le jour J. Réutilise `tools/publish_mixtape.py` sans duplication.
+- ✅ **Bot Telegram resserré** — retirés `/jingle`, `/np`, `/recent`, `/ask`, `/delete_track` (recherche libre) et leur code mort associé ; `/delete_current_track` renommé `/delete`.
+- ✅ **`tools/kv_config.py`** (nouveau, gitignored) — client Redis Upstash manquant côté Python, nécessaire à `mixtape_weekly.py` pour poster dans le chat live. **Placeholder non rempli** — à compléter avec les vraies valeurs Upstash avant que le pin/l'annonce chat fonctionnent (la programmation AzuraCast + le podcast marchent déjà sans ça).
+- ✅ **Playlist Jingles réparée** — activée et programmée correctement mais vide (0 morceau) ; 13 nouveaux jingles (générés via Suno cette session, contenus fournis à l'utilisateur) uploadés dans le dossier mais jamais rattachés à la playlist (même piège que `9_liquid` : appartenance = champ par fichier, pas règle de dossier).
+- ✅ **Corrections de pipeline découvertes en creusant la question "les scripts de qualification sont-ils à jour ?"** : `tools/analyze_essentia.py` pointait sur les 4 dossiers créneaux morts d'avant le 2026-07-16 (outil autonome de ré-analyse en masse, sans effet sur le triage quotidien) ; `tools/clean_clapcrate_full.py` avait sa propre liste de bacs en dur sans `9_liquid` (import `NEW_BINS` désormais) ; `MORNING_BPM_MAX`/`_morning_tempo` renommés `CHILL_BPM_MAX`/`_chill_tempo_ok` dans `classify_bins.py` (le garde-fou reste nécessaire, le nom "matin" n'avait plus de sens en rotation continue).
+- ✅ **Description/OG changée** — retrait de la liste de styles ("House · Disco · Tech House · Techno"), remplacée par "100% House & some Liquid DnB. Free, no ads" partout (meta description, og/twitter, manifest PWA).
+- ⏸️ **Plan "emails candidature mix" (notif admin + confirmation DJ) mis en pause** — bloqué sur le choix d'un provider email (Resend recommandé) et la vérification d'un domaine (aucun envoi vers une adresse arbitraire n'est possible sans domaine vérifié en DNS ; `kalbassfm.duckdns.org` ne convient pas). Plan détaillé écrit mais **implémentation non commencée**.
+- 📌 **10 jingles "movie-trailer" puis 12 "joyeux" puis 12 "décalés/absurdes" générés en texte** (paroles + style + structure Suno) pour `theguybehindtheradio` — contenu livré en conversation, pas dans le repo. 13 des jingles "décalés" ont été effectivement produits et uploadés par l'utilisateur pendant la session (cf. réparation playlist Jingles ci-dessus).
+- ⏸️ **Nettoyage manuel des tracks club/night reporté** — `tools/prune_deleted_tracks.py` (dry-run par défaut) prêt à l'usage quand l'utilisateur aura fini de trier à la main dans l'explorateur Windows.
+
+## État antérieur (2026-08-31, refonte de la programmation — plan validé, implémentation non commencée)
 
 **Session 2026-08-31** — session de conception : **aucun code applicatif modifié**, un seul fichier créé (le snapshot de rollback). Trois sujets traités : nom/domaine, refonte de la programmation musicale, brief pour agent développeur.
 
@@ -141,6 +158,11 @@
 
 | Décision | Rationale |
 |----------|-----------|
+| **Bacs de base avec planning explicite `00:00-23:59` plutôt qu'aucun `schedule_items` (2026-09-01)** | AzuraCast tire *exclusivement* parmi les playlists ayant un planning dès qu'au moins une est éligible, excluant totalement celles sans planning — même à poids nul. `schedule_items: []` ("aucun planning = 24h/24") rendait donc les 6 bacs de base muets toute la soirée. Un planning "toute la journée" les fait entrer dans le même pool de tirage que le reste |
+| **Champ Album (pas ISRC) pour stocker la date de diffusion d'une mixtape (2026-09-01)** | ISRC est explicitement réservé aux rapports de licence SACEM (TODO ouvert) — le détourner pour un usage interne polluerait de futures données de licensing. Album est un champ purement décoratif dans AzuraCast, sans conséquence |
+| **`mixtape_onair` = queue de plusieurs candidats + réduction dynamique à un seul avant diffusion (2026-09-01)** | AzuraCast ne planifie qu'au niveau playlist, jamais au niveau morceau. L'utilisateur avait déjà déposé plusieurs mixtapes dans `mixtape_onair` directement sur AzuraCast (pas de nouvelle playlist "queue" séparée demandée) — l'automatisation réduit donc la playlist au seul morceau du jour juste avant de poser le planning, plutôt que d'exiger une réorganisation du setup existant |
+| **Tâche planifiée Windows plutôt que Vercel Cron pour l'automatisation mixtape (2026-09-01)** | Cohérent avec le reste de l'outillage (scripts Python locaux) ; accepté le compromis "dépend du PC allumé" contre la simplicité de ne pas introduire une toute première brique d'infra cron serverless dans ce projet |
+| **`Register-ScheduledTask` (PowerShell) plutôt que `schtasks.exe` (2026-09-01)** | `schtasks.exe` a un bug de parsing connu et non contournable par échappement quand *à la fois* l'exécutable et un argument contiennent un chemin avec espaces — deux tentatives d'échappement différentes ont échoué avec des erreurs différentes avant le changement d'outil |
 | **Rotation continue plutôt qu'horloge à créneaux (2026-08-31)** | Modèle Nova / Radio Meuh : la variété vient du mélange, pas du calendrier. L'horloge à 7 dominantes (53-79 %) faisait changer le son brutalement 7 fois par jour, et obligeait à caler toute la grille sur un seul fuseau. Ici **75 % de la diffusion n'a aucune référence horaire** ; seuls 3 créneaux du soir sont calés sur Paris |
 | **Le liquid DnB quitte `1_chill` pour `9_liquid` (2026-08-31)** | 51 % du bac mesuré. La sélection par `mood.aggressive` était déjà bonne, c'est la **destination** qui ne tient plus en rotation continue. Bénéfice second : pondérable séparément, et c'est le meilleur pont vers la montée du soir (tempo élevé, texture douce) |
 | **Un boost d'énergie = une entrée de planning datée (2026-08-31)** | `start_date`/`end_date` : AzuraCast expire la fenêtre tout seul. **Aucun cron, aucun timer, aucune tâche de restauration à écrire.** Même mécanisme que la mixtape mensuelle dans `publish_mixtape.py` |
@@ -192,8 +214,13 @@
 
 ## En cours / TODOs
 
-- [ ] **Exécuter le brief agent en 4 lots** — bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`
-- [ ] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — dry-run `migrate_grid.py` et validation AVANT `--apply`, puis SFTP port 2022 et **suppression des anciennes copies serveur** (sinon le morceau reste dans les deux playlists)
+- [x] **Exécuter le brief agent en 4 lots** — fait le 2026-09-01 (bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`)
+- [x] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — fait le 2026-09-01, vérifié iso local/serveur
+- [ ] **Remplir `tools/kv_config.py`** avec les vraies valeurs Upstash (`KV_REST_API_URL`/`KV_REST_API_TOKEN`, mêmes que sur Vercel) — sans ça, `mixtape_weekly.py` programme bien la diffusion+podcast mais le pin/l'annonce chat échouent silencieusement
+- [ ] **Surveiller la première exécution réelle de la tâche planifiée Windows** (dimanche 2026-09-06, premier cycle complet pin J-3 + diffusion) — jamais tournée en conditions réelles, seulement testée en dry-run/simulation de dates
+- [ ] **Reprendre le plan "emails candidature mix"** (notif admin à `theguybehindtheradio@pm.me` + confirmation DJ) — en pause, bloqué sur le choix/la vérification d'un domaine d'envoi Resend (plan détaillé écrit, implémentation non commencée)
+- [ ] **Nettoyer les tracks club/night à la main** puis lancer `python tools/prune_deleted_tracks.py 5_clubhouse 7_nightdub` pour répercuter sur AzuraCast — reporté par l'utilisateur, outil prêt
+- [ ] **Générer/uploader le reste des jingles proposés** (10 "movie-trailer" + 12 "joyeux" écrits en conversation, seuls 13 "décalés" ont été produits et attachés à la playlist Jingles à ce jour)
 - [ ] **Réserver les pseudos `ch16`** sur SoundCloud, Mixcloud, Instagram, Bandcamp, YouTube, Bluesky — gratuit, dix minutes, et c'est la seule ressource vraiment rare
 - [ ] **Trancher sur la régénération de la clé API AzuraCast** (cf. Problèmes connus) — implique de mettre à jour le fichier local **et** la variable Vercel dans le même geste
 - [ ] **Déposer les premières mixtapes dans `Mixtapes/`** (SFTP port 2022), puis `python tools/publish_mixtape.py` pour lister la banque
@@ -239,6 +266,9 @@
 
 | Problème | Sévérité | Notes |
 |----------|----------|-------|
+| Tâche planifiée Windows dépend du PC allumé/connecté | INFO | Créée sans compte spécifique — ne se déclenche que si la session Windows est ouverte à l'heure prévue (9h). Reconfigurable en `-RunLevel Highest` + identifiants stockés si besoin de tourner même déconnecté |
+| `mixtape_weekly.py` jamais exécuté en conditions réelles (tâche planifiée) | INFO | Toute la logique a été testée en dry-run / avec des dates simulées puis nettoyées ; le premier vrai cycle (pin J-3 + diffusion) aura lieu autour du 2026-09-06 selon ce qui est programmé via `/queue_mix` |
+| Plan emails candidature mix bloqué sur domaine Resend | INFO | Aucun provider transactionnel n'autorise l'envoi vers une adresse arbitraire sans domaine vérifié en DNS — `kalbassfm.duckdns.org` ne convient pas (DuckDNS ne donne pas la main sur DKIM/SPF). Décision : vérifier un petit domaine dédié (quelques €/an) avant de reprendre ce plan |
 | `CONTEXT.md` annonçait 106 h de stock, la valeur réelle est 125,9 h | INFO | Les chiffres de stock se périment vite. Les relever via l'API AzuraCast (`total_length` par playlist) plutôt que se fier au fichier — la calibration des poids en dépend directement |
 | Un vote auditeur exigerait un quorum inatteignable | INFO | À 0,46 auditeur/30 j, un seuil de 5 votes ne se déclenche jamais. Système écarté du plan, à reprendre quand l'audience existe |
 | L'ordre des bacs sur l'échelle d'énergie est un choix à l'oreille | INFO | `nightdub` avant `deep` est discutable. Idem pour les poids : ce sont des points de départ calculés, `apply_rotation.py` est réexécutable pour ça |
@@ -257,15 +287,19 @@
 | Fichier | Rôle | Statut |
 |---------|------|--------|
 | `tools/azuracast_snapshot_2026-08-31.json` | **Rollback de la bascule vers la rotation continue** : état complet des 16 playlists (is_enabled, weight, schedule_items) + timezone, capturé avant modification | ✅ Créé le 2026-08-31 |
-| `tools/apply_rotation.py` | **À écrire.** Table déclarative en tête de fichier = source de vérité unique de la rotation. Dry-run par défaut + diff, `--apply`. Réexécutable : c'est l'outil de réglage des dosages à l'oreille | ⏳ Planifié |
-| `tools/classify_bins.py` | **Source de vérité de la grille 8 bacs** : familles, SHARES, seuils auto-calibrés, classify_bin(). Depuis le 2026-07-28 : veto de tempo + sélection jungle par `mood.aggressive`, tous deux indépendants du RMS | ✅ Importé par migrate+triage |
+| `tools/apply_rotation.py` | Table déclarative = source de vérité unique de la rotation continue. Dry-run par défaut + diff, `--apply`. Réexécutable : c'est l'outil de réglage des dosages à l'oreille | ✅ Écrit, appliqué et corrigé le 2026-09-01 (bacs de base : planning `00:00-23:59` explicite, cf. Problèmes connus/Décisions) |
+| `tools/classify_bins.py` | **Source de vérité de la grille 9 bacs** (9ᵉ bac `9_liquid` ajouté le 2026-08-31/09-01) : familles, SHARES, seuils auto-calibrés, classify_bin(). Veto de tempo (`CHILL_BPM_MAX`, ex-`MORNING_BPM_MAX`) + sélection jungle par `mood.aggressive`, indépendants du RMS | ✅ Importé par migrate+triage+clean_clapcrate_full |
+| `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py` | Setup ponctuel LOT 1/4 : création+peuplement des playlists AzuraCast `liquid`/`liquid_guest`/`boost_up`/`boost_down`, sync SFTP de la migration `9_liquid` | ✅ Exécutés le 2026-09-01 |
+| `tools/check_local_vs_server.py`, `tools/prune_deleted_tracks.py` | Vérification/nettoyage local↔serveur : compare New_prog aux fichiers AzuraCast, supprime (fichier+entrée bibliothèque) ce qui a disparu en local | ✅ Créés le 2026-09-01, `prune_deleted_tracks.py` pas encore utilisé (nettoyage manuel club/night en attente) |
+| `tools/mixtape_weekly.py`, `tools/kv_config.py` | Automatisation mixtape du dimanche (tâche planifiée Windows) + client Redis Python manquant (gitignored, à remplir) | ✅ Créés le 2026-09-01, `kv_config.py` en placeholder |
 | `tools/azuracast_config.py` | **Clé API AzuraCast en local** (gitignored, même patron que `sftp_config.py`) — permet de piloter playlists, poids, plannings et rapports depuis Claude Code | ⚠️ Sa valeur est apparue en clair dans la session du 2026-07-28 : la révoquer et en générer une neuve est le réflexe propre |
 | `tools/migrate_grid.py` | Migration one-shot 4→8 bacs (dry-run/--apply, garde-fou _incoming, rapport, WinSCP) | ✅ Exécutée le 2026-07-16 |
 | `tools/resync_metadata.py` | Réparation metadata↔disque par nom sans préfixe (948→825 entrées) | ✅ Exécutée le 2026-07-16 |
 | `tools/triage_new_tracks.py` | Pipeline ingestion → 8 bacs, nom propre, plus d'étape d'ordre | ✅ Mis à jour, à retester sur les 97 orphelins |
 | `tools/build_rotation.py`, `tools/export_rotation.py` | Ancien calcul/export d'ordre | ⚠️ Superseded (en-têtes marqués) |
 | `tools/orphans_report.txt` | 97 fichiers jamais analysés + 14 doublons physiques | ⏳ À traiter (gitignored) |
-| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes (skip/msg/jingle/ban/pause avec bandeau auto, reply avec citation, supporters, rename/rename_nick, np/stats, suppression bibliothèque, /ask Claude, **/move** migration de morceau entre bacs), handleCallback resilient, pseudo "Admin" | ✅ Déployé |
+| `api/telegram.js` | Bot Telegram admin — hub de toutes les commandes. **Périmètre resserré le 2026-09-01** (retire /jingle, /np, /recent, /ask, /delete_track ; /delete_current_track→/delete) ; ajoute **/energy** (boost rotation), **/logs** (historique diffusion), **/queue_mix** (sélection mixtape dominicale). Reste : skip/msg/ban/pause avec bandeau auto, reply avec citation, supporters, rename/rename_nick, stats/audience, /move, suppression bibliothèque. handleCallback resilient, pseudo "Admin" | ✅ Déployé |
+| `tools/analyze_essentia.py`, `tools/clean_clapcrate_full.py` | Pipeline de qualification des tracks — le premier pointait sur les 4 dossiers créneaux morts d'avant le 2026-07-16 (`ROOTS`), le second dupliquait sa propre liste de bacs sans `9_liquid` (`SLOTS`) | ✅ Corrigés le 2026-09-01 (dérivent désormais de `classify_bins.NEW_BINS`) |
 | `api/chat.js` | Chat live + modération + rename admin (chat:nicknames) + pseudo choisi par l'auditeur (chat:pseudos) + jeu BPM (BPM GUESSER) + pseudo "Admin" + messages auto EN + detection erreur Upstash | ✅ Déployé (crash 500 corrigé le 2026-07-21) |
 | `api/flappy.js` | Mini-jeu Flappy Kalbass — classement global (ajouté depuis une autre session) | ✅ Déployé |
 | `api/bpm-table.json` | Table artiste+titre → BPM (749/825 morceaux), générée par tools/export_bpm_table.py | ✅ À régénérer après chaque triage |
@@ -280,21 +314,22 @@
 ## Infrastructure
 
 **Hébergement :**
-- **Streaming** : VPS `167.233.226.128` (Ubuntu, Docker) — AzuraCast v0.23.7 + Icecast + Liquidsoap, `kalbassfm.duckdns.org` HTTPS, fuseau America/Martinique
+- **Streaming** : VPS `167.233.226.128` (Ubuntu, Docker) — AzuraCast v0.23.7 + Icecast + Liquidsoap, `kalbassfm.duckdns.org` HTTPS, fuseau **Europe/Paris** (bascule le 2026-09-01, était America/Martinique — heure d'été automatique)
 - **Player** : Vercel — kalbassfm-player.vercel.app, deploy auto sur push GitHub (`abg5f/kalbassfm-player`)
-- **Musique serveur** : volume Docker, dossier `Progv2/` contenant les 8 bacs ; anciens dossiers morning/... encore présents (filet 24h)
+- **Musique serveur** : volume Docker, dossier `Progv2/` contenant les **9 bacs** (`9_liquid` ajouté le 2026-09-01) ; anciens dossiers morning/... encore présents (filet, non nettoyé)
 - **Musique locale** : `C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\<bac>` + `_incoming` (triage)
 - **Réseau perso** : RaiDrive `Z:` sur le SFTP AzuraCast (port 2022) ; FileZilla pour les gros uploads
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
+- **Automatisation locale** : tâche planifiée Windows `KalbassFM Mixtape hebdo` (PowerShell `Register-ScheduledTask`, quotidienne 9h) — exécute `tools/mixtape_weekly.py --apply`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-08-31 (construction manuelle via /graphify, pas de CLI) — 84 nœuds, 169 relations
+> Mis à jour le 2026-09-01 (construction manuelle via /graphify, pas de CLI) — 94 nœuds, 188 relations
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 21), `AzuraCast` (16), `api/telegram.js` (15), `ChatFeature` (13), `ProgrammeGrid` (12), `api/chat.js` (12).
-Nouveaux nœuds 2026-08-31 : `RotationContinue` (le nouveau modèle de programmation, supersède `ProgrammeGrid`), `BacLiquid` (9ᵉ bac), `StationTimezone`, `StockBibliotheque` (125,9 h relevées), `AutoDJQueueDepth` (les 27 min d'avance de l'AutoDJ), `BoostViaPlanningDate` (l'expiration native qui évite tout cron), `EnergyBoostTelegram`, `tools/apply_rotation.py`, `tools/azuracast_snapshot_2026-08-31.json`, `tools/fix_artwork.py`.
+God nodes (concepts centraux) : `index.html` (hub front, degré 22), `api/telegram.js` (19), `AzuraCast` (16), `ChatFeature`/`api/chat.js` (13 chacun), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (10), `BacLiquid`/`EnergyBoostTelegram` (7 chacun).
+Nouveaux nœuds 2026-09-01 : `AzuraCastSchedulePriorityBug` (le bug critique — scheduled exclut unscheduled), `LogsTelegramCommand`, `MixtapeWeeklyAutomation`, `tools/mixtape_weekly.py`, `tools/kv_config.py`, `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py`, `VibeIndicator` (ajouté puis retiré), `JinglesPlaylistFix`.
+Nœuds 2026-08-31 : `RotationContinue`, `BacLiquid`, `StationTimezone`, `StockBibliotheque`, `AutoDJQueueDepth`, `BoostViaPlanningDate`, `EnergyBoostTelegram`, `tools/apply_rotation.py`, `tools/azuracast_snapshot_2026-08-31.json`, `tools/fix_artwork.py`.
 Nœuds 2026-08-08 : `MixtapesFeature`, `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication`, `PodcastAudioElement`.
-Nœuds 2026-07-28 : `EnergyRmsLimitation`, `AudienceStatsFeature`, `LibraryRecovery`.
-Communautés détectées : 9 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 8 bacs, Planning/Business, Contexte, **Programmation/Rotation musicale**).
+Communautés détectées : 9 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 9 bacs, Planning/Business, Contexte, Programmation/Rotation musicale).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

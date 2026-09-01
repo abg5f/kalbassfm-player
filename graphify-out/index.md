@@ -1,10 +1,10 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois) le 2026-07-28 puis le 2026-08-08 via `/graphify` (codebase complet : player, serverless, outillage, docs de planification).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois), le 2026-07-28, le 2026-08-08, le 2026-08-31 (conception rotation continue) et le 2026-09-01 (exécution + bug critique + nouvelles features) via `/graphify` (construction manuelle, pas de CLI).
 
 ## Vue d'ensemble
 
-- **74 nœuds**, **148 relations**, **8 communautés** détectées.
+- **94 nœuds**, **188 relations**, **9 communautés** détectées.
 - Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), la **commande Telegram `/move`** pour migrer le morceau en cours entre les 8 bacs (`MoveTrackFeature`, 2026-07-24), la sauvegarde locale de titres likés (`MyTracksFeature`, 2026-07-24) et la popup de découverte des features (`WhatsNewModal`, 2026-07-24), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, le plan (non codé) du système de vote de playlist par genre, et l'**émission mensuelle Mixtapes** (`MixtapesFeature`, `tools/publish_mixtape.py`, podcast AzuraCast natif + playlist `mixtape_onair`, 2026-08-08).
 
 ## Communautés
@@ -22,13 +22,14 @@
 
 ## God nodes (les plus connectés)
 
-1. **index.html** (degré 20) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, **My tracks**, **popup What's new**, PWA). Se détache encore avec le panneau Mixtapes (2026-08-08), également 100 % client.
-2. **ChatFeature** (degré 13) — panneau chat live, cible de la plupart des features de modération, du jeu BPM, du choix de pseudo et désormais des commandes locales `!save`/`!saved`/`!help`.
-3. **api/chat.js** (degré 12) — chat live + modération + renommage (admin et auditeur) + jeu BPM (BpmGuesserFeature) + annonce Flappy + détection d'erreur Upstash.
-4. **api/telegram.js** (degré 13) — bot admin, toutes les commandes (reply, supporters, renommage modérateur, bandeau épinglé + auto-pin pause, /ask Claude, suppression bibliothèque, **/move** de migration entre bacs), résilience handleCallback, kill-switch Redis.
-5. **AzuraCast** (degré 12) — cœur de l'infra streaming ET de la programmation (l'horloge est exécutée par ses playlists Shuffled + poids).
-6. **ProgrammeGrid / Horloge à bacs pondérés** (degré 11) — grille 8 bacs, remplace les 4 créneaux à ordre figé.
-7. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles).
+1. **index.html** (degré 22) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, My tracks, popup What's new, panneau Mixtapes, PWA). L'indicateur Vibe (bac courant) y a été ajouté puis retiré le 2026-09-01.
+2. **api/telegram.js** (degré 19) — hub du bot admin. Périmètre resserré le 2026-09-01 (retire /jingle, /np, /recent, /ask, /delete_track), ajoute **/energy** (boost temporaire de rotation), **/logs** (historique de diffusion) et **/queue_mix** (sélection hebdo de la mixtape du dimanche).
+3. **AzuraCast** (degré 16) — cœur de l'infra streaming ET de la programmation. Comportement critique découvert le 2026-09-01 : voir `AzuraCastSchedulePriorityBug`.
+4. **ChatFeature** / **api/chat.js** (degré 13 chacun) — chat live, modération, jeu BPM, pseudo choisi par l'auditeur.
+5. **ProgrammeGrid** (degré 12) — grille à créneaux d'origine (8 bacs), **supersédée par `RotationContinue`** depuis le 2026-08-31/09-01.
+6. **RotationContinue** (degré 10) — EN PROD depuis le 2026-09-01 : rotation continue façon Nova/Radio Meuh, exécutée par `tools/apply_rotation.py`, débuggée le jour même (`AzuraCastSchedulePriorityBug`).
+7. **BacLiquid** / **EnergyBoostTelegram** (degré 7 chacun) — 9ᵉ bac migré et `/energy` construit+testé le 2026-09-01.
+8. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles, désormais 9 bacs).
 
 ## Note — 2026-07-21 : incident de quota Upstash et suppression du Top 5
 
@@ -111,3 +112,19 @@ Premier rendez-vous éditorial du projet : une mixtape mixée diffusée à date 
 **Deux éléments `<audio>`, imposés par le player.** `#audio` est auto-réparant (listeners `pause`/`error`/`visibilitychange` + watchdog `setInterval` qui relancent le flux). Le réutiliser ferait écraser la mixtape par le direct en pleine lecture. `#podcastAudio` est donc un élément séparé, et lancer une mixtape appelle `stopStream()` — qui pose `userStopped = true` et neutralise le watchdog. Vérifié en conditions réelles : direct coupé au lancement, toujours coupé 6 s plus tard. Voir `PodcastAudioElement`.
 
 **Côté auditeur, zéro coût serveur.** Le panneau lit les endpoints *publics* d'AzuraCast (`/public/podcasts`, `/public/podcast/{id}/episodes`) : aucun fichier `api/`, zéro commande Redis, zéro invocation de fonction Vercel — le même arbitrage que `MyTracksFeature`. Le panneau se masque de lui-même tant qu'aucun épisode n'est publié.
+
+## Note — 2026-08-31 : conception de la rotation continue
+
+Session de conception pure (aucun code applicatif modifié). Le modèle "horloge à 7 fenêtres" (`ProgrammeGrid`) est remplacé par une **rotation continue** façon Nova/Radio Meuh : 6 bacs actifs en permanence sans dominante de créneau (house 28 %, groove 23 %, deep 16 %, nightdub 14 %, liquid 9 %, chill 9 %), une **montée du soir** en heure de Paris qui *ajoute* club/techno sans rien retirer à la base, et un **9ᵉ bac `9_liquid`** séparé de `1_chill` (qui contenait 51 % de liquid DnB mesuré, intenable en diffusion 24h/24 — voir `BacLiquid`). Un **boost d'énergie Telegram** (`EnergyBoostTelegram`) est conçu comme une entrée de planning datée plutôt qu'un cron. Snapshot de rollback créé (`tools/azuracast_snapshot_2026-08-31.json`), brief en 4 lots produit pour l'exécution.
+
+## Note — 2026-09-01 : exécution du brief, bug critique AzuraCast, nouvelles automatisations
+
+Session d'exécution du brief du 2026-08-31, plus plusieurs extensions décidées en cours de route.
+
+**LOT 1-4 exécutés en prod** : `BacLiquid` migré (79 fichiers, local+SFTP, playlists `liquid`/`liquid_guest`), `tools/apply_rotation.py` écrit et appliqué (fuseau Europe/Paris, poids/plannings de `RotationContinue`), compteurs applicatifs passés en UTC, `EnergyBoostTelegram` (`/energy`) construit et testé de bout en bout contre l'API réelle.
+
+**Bug critique découvert et corrigé le jour même : `AzuraCastSchedulePriorityBug`.** AzuraCast tire *exclusivement* parmi les playlists ayant un `schedule_items` dès qu'au moins une est éligible, excluant *totalement* les playlists sans planning — même à poids nul. Poser `schedule_items: []` sur les 6 bacs de base ("aucun planning = 24h/24", hypothèse de conception du 2026-08-31) les rendait donc **complètement muets 19h-03h chaque soir**, au lieu de simplement voir leur part diluée comme prévu. Repéré à l'oreille par l'utilisateur ("je n'ai plus de house"), diagnostiqué via les logs réels de `/api/admin/debug/station/1/clearqueue` (qui liste les "N playable playlist(s) of type default_scheduled"), confirmé par la doc/les tickets AzuraCast, corrigé en donnant aux bacs de base un planning explicite 00:00-23:59.
+
+**Nouvelles features Telegram** : `/logs` (historique de diffusion à la demande, a servi à diagnostiquer le bug ci-dessus), `/queue_mix` + `tools/mixtape_weekly.py` (`MixtapeWeeklyAutomation` — sélection manuelle hebdo de la mixtape du dimanche via Telegram, exécution automatique via tâche planifiée Windows : bandeau pin J-3, diffusion+podcast+annonce chat le jour J). Périmètre du bot resserré (retire /jingle, /np, /recent, /ask, /delete_track).
+
+**Autres corrections** : `tools/analyze_essentia.py` pointait sur les 4 dossiers créneaux morts d'avant le 2026-07-16 ; `tools/clean_clapcrate_full.py` avait sa propre liste de bacs en dur sans `9_liquid` ; `MORNING_BPM_MAX`/`_morning_tempo` renommés `CHILL_BPM_MAX`/`_chill_tempo_ok` (la rotation continue rend l'ancien nom trompeur). Playlist Jingles réparée (`JinglesPlaylistFix` — 13 nouveaux jingles générés via Suno cette session, uploadés mais jamais rattachés à la playlist). Indicateur `VibeIndicator` ajouté puis retiré le même jour (jugé peu utile à l'usage).
