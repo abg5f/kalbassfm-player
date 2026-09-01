@@ -334,13 +334,18 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, msg, keyboard ? { reply_markup: keyboard } : undefined);
   }
 
+  if (text === '/logs') {
+    return sendMessage(token, chatId, '📜 Historique — que veux-tu voir ?', { reply_markup: logsKeyboard() });
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n\n' +
     '🎵 Diffusion\n' +
     '/skip — passer au morceau suivant\n' +
     '/move — deplacer le morceau en cours vers une autre playlist\n' +
     '/delete — supprimer le morceau en cours et passer au suivant\n' +
-    '/energy — pousser ou calmer la rotation (boost temporaire, retour automatique)\n\n' +
+    '/energy — pousser ou calmer la rotation (boost temporaire, retour automatique)\n' +
+    '/logs — historique de diffusion (dernier titre / 3 / 10, ou par duree)\n\n' +
     '💬 Chat live\n' +
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
@@ -498,6 +503,20 @@ async function handleCallback(token, cb) {
           { text: '4 h', callback_data: `nrgd:${points}:240` },
         ]],
       });
+  } else if (data.startsWith('logs:n:')) {
+    const count = Number(data.slice(7));
+    await answerCallback(token, cb.id, '');
+    const entries = await fetchRecentEntries(count);
+    const label = count === 1 ? 'Dernier titre' : `${count} derniers titres`;
+    const text = entries === null ? '❌ Historique AzuraCast indisponible.' : logsText(entries, label);
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, text, logsKeyboard(), 'HTML');
+  } else if (data.startsWith('logs:t:')) {
+    const minutes = Number(data.slice(7));
+    await answerCallback(token, cb.id, '');
+    const entries = await fetchWindowEntries(minutes);
+    const label = minutes < 60 ? `Derniers ${minutes} min` : `Derniere ${minutes / 60} h`;
+    const text = entries === null ? '❌ Historique AzuraCast indisponible.' : logsText(entries, label);
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, text, logsKeyboard(), 'HTML');
   } else {
     await answerCallback(token, cb.id, '');
   }
@@ -915,6 +934,64 @@ async function fetchHistory(startTs, endTs) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/* ---- Historique formate (/logs) — reutilise fetchHistory() et parisWallParts()
+   (deja utilises par /audience et /energy). Deux modes : compte fixe de titres
+   (fenetre large de 4h, largement suffisante, puis tri+troncature — evite de
+   deviner une fenetre exacte) ou fenetre temporelle explicite. */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+function formatLogLine(entry) {
+  const t = parisWallParts(new Date((Number(entry.played_at) || 0) * 1000));
+  const hhmm = `${String(t.h).padStart(2, '0')}:${String(t.mi).padStart(2, '0')}`;
+  const pl = (entry.playlist || '?').padEnd(16);
+  const song = entry.song || {};
+  const label = song.title ? `${song.artist || '?'} - ${song.title}` : '(inconnu)';
+  return `${hhmm} | ${pl} | ${label}`;
+}
+
+function logsText(entries, label) {
+  if (!entries.length) return `📜 <b>${escapeHtml(label)}</b>\n\nAucun titre trouvé sur cette période.`;
+  const lines = entries.map((e) => escapeHtml(formatLogLine(e))).join('\n');
+  return `📜 <b>${escapeHtml(label)}</b>\n<pre>${lines}</pre>`;
+}
+
+function logsKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: '1 dernier', callback_data: 'logs:n:1' },
+        { text: '3 derniers', callback_data: 'logs:n:3' },
+        { text: '10 derniers', callback_data: 'logs:n:10' },
+      ],
+      [
+        { text: '15 min', callback_data: 'logs:t:15' },
+        { text: '30 min', callback_data: 'logs:t:30' },
+        { text: '1 h', callback_data: 'logs:t:60' },
+      ],
+    ],
+  };
+}
+
+async function fetchRecentEntries(count) {
+  const now = Date.now();
+  const entries = await fetchHistory(now - 4 * 3600 * 1000, now);
+  if (!entries) return null;
+  return entries
+    .slice()
+    .sort((a, b) => (Number(b.played_at) || 0) - (Number(a.played_at) || 0))
+    .slice(0, count)
+    .reverse(); // chronologique (plus ancien -> plus recent), comme l'exemple fourni
+}
+
+async function fetchWindowEntries(minutes) {
+  const now = Date.now();
+  const entries = await fetchHistory(now - minutes * 60 * 1000, now);
+  if (!entries) return null;
+  return entries.slice().sort((a, b) => (Number(a.played_at) || 0) - (Number(b.played_at) || 0));
 }
 
 async function fetchListeners() {
@@ -1381,13 +1458,14 @@ async function answerCallback(token, callbackId, text) {
   }).catch(() => {});
 }
 
-async function editMessageText(token, chatId, messageId, text, replyMarkup) {
+async function editMessageText(token, chatId, messageId, text, replyMarkup, parseMode) {
   await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: chatId, message_id: messageId, text,
       ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+      ...(parseMode ? { parse_mode: parseMode } : {}),
     }),
   }).catch(() => {});
 }
