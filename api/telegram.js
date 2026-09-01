@@ -7,9 +7,8 @@
    - TELEGRAM_BOT_TOKEN     : token BotFather
    - TELEGRAM_WEBHOOK_SECRET: verifie contre X-Telegram-Bot-Api-Secret-Token
    - TELEGRAM_CHAT_ID       : seul chat_id autorise a utiliser le bot
-   - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip, /jingle, /delete_track
+   - AZURACAST_API_KEY      : auth API AzuraCast (My API Keys) pour /skip, /move, /delete, /energy
    - KV_REST_API_URL / KV_REST_API_TOKEN : memes que api/chat.js
-   - ANTHROPIC_API_KEY      : cle API Claude (console.anthropic.com) pour /ask
 */
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
 const STATION = 'kalbassfm';
@@ -18,8 +17,7 @@ const STATION = 'kalbassfm';
 // (gros consommateur), donc quota nettement moins a risque.
 const REDIS_PAUSED = false;
 
-// Marge large : les autres commandes (AzuraCast, Redis) sont deja rapides,
-// mais /ask attend une reponse Claude avant de repondre a Telegram — sur le
+// Marge large : /audience interroge 30 jours d'historique AzuraCast — sur le
 // plan Vercel Hobby ce champ est plafonne a 10s de toute facon (ignore
 // silencieusement au-dela), sur Pro il autorise jusqu'a 30s.
 export const config = { maxDuration: 30 };
@@ -103,11 +101,6 @@ async function handleMessage(token, message) {
     return confirmWithDelete(token, chatId, '✅ Message envoyé dans le chat live.', id);
   }
 
-  if (text === '/jingle') {
-    const r = await triggerJingle();
-    return sendMessage(token, chatId, r.message);
-  }
-
   if (text.startsWith('/ban')) {
     const id = stripAngles(text.slice(4).trim());
     if (!id) return sendMessage(token, chatId, 'Usage : /ban <clientId> (copie-le depuis une notification de chat)');
@@ -177,10 +170,6 @@ async function handleMessage(token, message) {
     return sendMessage(token, chatId, ok ? '▶️ Chat réactivé.' : '❌ Echec (store non configure ?).');
   }
 
-  if (text === '/np') {
-    return sendMessage(token, chatId, await nowPlayingText());
-  }
-
   if (text === '/stats') {
     return sendMessage(token, chatId, await statsText());
   }
@@ -201,30 +190,6 @@ async function handleMessage(token, message) {
   if (text === '/unpin') {
     const ok = await setPinned(null);
     return sendMessage(token, chatId, ok ? '✅ Annonce dépinglée.' : '❌ Echec (store non configure ?).');
-  }
-
-  if (text === '/recent') {
-    const msgs = await getRecentMessages(10);
-    if (!msgs.length) return sendMessage(token, chatId, 'Aucun message à afficher.');
-    // Liste numerotee + un bouton "🗑 N" par message (auditeurs ET bot/auto),
-    // ce qui permet de supprimer les annonces automatiques et les messages
-    // admin, qui n'ont pas de notification individuelle. Apres une suppression,
-    // les boutons de ce message disparaissent (comportement partage avec les
-    // notifications) : relancer /recent rafraichit la liste sans le supprime.
-    const lines = msgs.map((m, i) => `${i + 1}. ${m.nick}: ${m.text}`);
-    const buttons = msgs.map((m, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'del:' + m.id }));
-    const rows = [];
-    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
-    return sendMessage(token, chatId, 'Derniers messages du chat :\n' + lines.join('\n'), {
-      reply_markup: { inline_keyboard: rows },
-    });
-  }
-
-  if (text.startsWith('/ask')) {
-    const q = text.slice('/ask'.length).trim();
-    if (!q) return sendMessage(token, chatId, 'Usage : /ask <ta question> — ex: /ask propose-moi un message a pin pour annoncer le mode support');
-    const answer = await askClaude(q);
-    return sendMessage(token, chatId, answer || '❌ Échec de la requête Claude (clé API manquante ou erreur réseau).');
   }
 
   if (text.startsWith('/add_supporter')) {
@@ -281,24 +246,7 @@ async function handleMessage(token, message) {
       });
   }
 
-  if (text.startsWith('/delete_track')) {
-    const q = text.slice('/delete_track'.length).trim();
-    if (!q) return sendMessage(token, chatId, 'Usage : /delete_track <titre ou artiste> — cherche dans la bibliotheque AzuraCast.');
-    const r = await searchTracks(q);
-    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche (${r.status}).`);
-    if (!r.list.length) return sendMessage(token, chatId, `Aucune piste trouvée pour « ${q} ».`);
-    const top = r.list.slice(0, 8);
-    const lines = top.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`);
-    const buttons = top.map((f, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'delfile:' + f.id }));
-    const rows = [];
-    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
-    return sendMessage(token, chatId,
-      `Résultats pour « ${q} » — clique 🗑 pour supprimer définitivement (fichier + entrée bibliothèque) :\n` + lines.join('\n'), {
-        reply_markup: { inline_keyboard: rows },
-      });
-  }
-
-  if (text === '/delete_current_track') {
+  if (text === '/delete') {
     const d = await nowPlaying();
     if (!d) return sendMessage(token, chatId, '❌ Impossible de joindre AzuraCast.');
     const song = (d.now_playing && d.now_playing.song) || {};
@@ -344,7 +292,7 @@ async function handleMessage(token, message) {
     if (!d) return sendMessage(token, chatId, '❌ Impossible de joindre AzuraCast.');
     const song = (d.now_playing && d.now_playing.song) || {};
     if (!song.title) return sendMessage(token, chatId, '❌ Aucun morceau identifiable en cours.');
-    // Même logique que /delete_current_track : cherche d'abord par titre seul,
+    // Même logique que /delete : cherche d'abord par titre seul,
     // puis par artiste seul, puis les deux combinés en dernier recours.
     let r = await searchTracks(song.title);
     if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
@@ -381,19 +329,21 @@ async function handleMessage(token, message) {
       });
   }
 
+  if (text === '/energy') {
+    const { text: msg, keyboard } = await energyStatus();
+    return sendMessage(token, chatId, msg, keyboard ? { reply_markup: keyboard } : undefined);
+  }
+
   return sendMessage(token, chatId,
     'Commandes disponibles :\n\n' +
     '🎵 Diffusion\n' +
-    '/np — morceau en cours + auditeurs\n' +
     '/skip — passer au morceau suivant\n' +
-    '/jingle — declencher un jingle (best effort)\n' +
     '/move — deplacer le morceau en cours vers une autre playlist\n' +
-    '/delete_track <recherche> — supprimer une piste de la bibliothèque AzuraCast\n' +
-    '/delete_current_track — supprimer le morceau en cours et passer au suivant\n\n' +
+    '/delete — supprimer le morceau en cours et passer au suivant\n' +
+    '/energy — pousser ou calmer la rotation (boost temporaire, retour automatique)\n\n' +
     '💬 Chat live\n' +
     '/msg <texte> — envoyer un message admin dans le chat live\n' +
     '/pin <texte> / /unpin — epingler/retirer une annonce en haut du chat\n' +
-    '/recent — lister les 10 derniers messages avec un bouton pour les supprimer\n' +
     '/pause_chat / /resume_chat — couper/reactiver le chat (bandeau epingle automatiquement pendant la pause)\n\n' +
     '👤 Auditeurs & supporters\n' +
     '/ban <clientId> / /unban <clientId> — bloquer/debloquer un auditeur\n' +
@@ -405,8 +355,6 @@ async function handleMessage(token, message) {
     '🎛 Candidatures DJ\n' +
     '/submissions — lister les 10 dernières candidatures mix (nom, style, mail, lien du set, réseaux)\n' +
     '   bouton 📣 sous la liste — annoncer le DJ dans le chat live avec ses liens Insta/SoundCloud\n\n' +
-    '🤖 Assistant\n' +
-    '/ask <question> — demander de l\'aide à Claude (messages à pin, idées pour animer le chat, etc.)\n\n' +
     '📊 Stats\n' +
     '/stats — auditeurs et messages du jour\n' +
     '/audience — moyennes 24 h / 30 j, pics, meilleur jour et localisation des auditeurs\n\n' +
@@ -448,20 +396,6 @@ async function handleCallback(token, cb) {
     await setBanned(id, true);
     await answerCallback(token, cb.id, 'Banni ✅');
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
-  } else if (data.startsWith('delfile:')) {
-    const id = data.slice(8);
-    // Recupere le libelle avant suppression (apres, le fichier n'existe plus).
-    const info = await getTrack(id);
-    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || id}` : id;
-    const r = await deleteTrack(id);
-    // Toast immediat (disparait vite) + message persistant dans le chat admin,
-    // pour avoir une trace claire de validation/echec meme si le toast est rate.
-    await answerCallback(token, cb.id, r.ok ? '🗑 Supprimé' : `❌ Échec (${r.status})`);
-    await sendMessage(token, cb.message.chat.id,
-      r.ok
-        ? `✅ Piste supprimée d'AzuraCast : ${label}`
-        : `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
-    if (r.ok) await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('delcur:')) {
     const id = data.slice(7);
     const info = await getTrack(id);
@@ -529,6 +463,41 @@ async function handleCallback(token, cb) {
     await sendMessage(token, cb.message.chat.id,
       `✅ Morceau déplacé : ${label}\n${summary}`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('nrgd:')) {
+    // Etape 2 : points deja choisis (embarques dans callback_data, pas besoin
+    // d'etat serveur entre les deux etapes), l'admin vient de choisir la duree.
+    const [, pointsStr, minutesStr] = data.split(':');
+    const points = Number(pointsStr);
+    const minutes = Number(minutesStr);
+    if (!points || !minutes) {
+      await answerCallback(token, cb.id, '❌ Paramètres invalides.');
+      return;
+    }
+    await answerCallback(token, cb.id, 'Application du boost…');
+    const r = await applyBoost(points, minutes);
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, r.text, energyKeyboard(r.ok));
+  } else if (data === 'nrgstop') {
+    await answerCallback(token, cb.id, 'Arrêt du boost…');
+    const r = await stopBoost();
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, r.text, energyKeyboard(false));
+  } else if (data.startsWith('nrg:')) {
+    // Etape 1 : l'admin vient de choisir le sens/l'intensite -> on redemande
+    // la duree en reecrivant le message en place (pattern demande par le brief).
+    const points = Number(data.slice(4));
+    if (!points) {
+      await answerCallback(token, cb.id, '❌ Paramètres invalides.');
+      return;
+    }
+    await answerCallback(token, cb.id, '');
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id,
+      `${boostLabel(points)} sélectionné — pendant combien de temps ?`, {
+        inline_keyboard: [[
+          { text: '30 min', callback_data: `nrgd:${points}:30` },
+          { text: '1 h', callback_data: `nrgd:${points}:60` },
+          { text: '2 h', callback_data: `nrgd:${points}:120` },
+          { text: '4 h', callback_data: `nrgd:${points}:240` },
+        ]],
+      });
   } else {
     await answerCallback(token, cb.id, '');
   }
@@ -548,45 +517,10 @@ async function skipSong() {
   return { ok: r.ok, status: r.status };
 }
 
-// Best effort : AzuraCast n'a pas d'API "jouer immediatement", seule l'API
-// Requests existe (queue le morceau, pas instantane, peut refuser un jingle
-// rejoue trop recemment). Necessite "Autoriser les demandes" active sur la
-// playlist Jingles dans AzuraCast.
-// AzuraCast refuse les demandes envoyees sans User-Agent credible (detection
-// anti-robots/crawlers cote SubmitAction) — un appel serveur sans navigateur
-// derriere doit donc se presenter comme tel.
+// AzuraCast refuse les requetes envoyees sans User-Agent credible (detection
+// anti-robots/crawlers) — un appel serveur sans navigateur derriere doit donc
+// se presenter comme tel.
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
-
-async function triggerJingle() {
-  const apiKey = process.env.AZURACAST_API_KEY;
-  try {
-    const listRes = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/requests`, {
-      headers: { 'User-Agent': BROWSER_UA, ...(apiKey ? { 'X-API-Key': apiKey } : {}) },
-    });
-    if (!listRes.ok) return { message: `Echec de la liste des demandes (${listRes.status}).` };
-    const list = await listRes.json();
-    // Les jingles sont des voix off dont le titre est le texte lu (pas de nom
-    // generique "jingle") : "kalbass fm" est le marqueur fiable commun aux 15,
-    // absent de tous les autres morceaux demandables (verifie manuellement).
-    const jingles = (Array.isArray(list) ? list : []).filter((r) => {
-      const song = r.song || {};
-      const hay = `${song.title || ''} ${song.artist || ''}`.toLowerCase();
-      return hay.includes('kalbass fm');
-    });
-    if (!jingles.length) {
-      return { message: 'Aucun jingle trouvable — vérifie que la playlist Jingles autorise les demandes dans AzuraCast.' };
-    }
-    const pick = jingles[Math.floor(Math.random() * jingles.length)];
-    const subRes = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/request/${encodeURIComponent(pick.request_id)}`, {
-      method: 'POST',
-      headers: { 'User-Agent': BROWSER_UA, ...(apiKey ? { 'X-API-Key': apiKey } : {}) },
-    });
-    const sub = await subRes.json().catch(() => ({}));
-    return { message: sub.message || (subRes.ok ? '🎙 Jingle demandé.' : `Echec (${subRes.status}).`) };
-  } catch {
-    return { message: '❌ Erreur réseau vers AzuraCast.' };
-  }
-}
 
 // Recherche par titre/artiste dans la bibliotheque media de la station (pas
 // la file d'attente ni les demandes). L'API publique renvoie soit un tableau
@@ -679,6 +613,227 @@ async function moveTrackToPlaylist(trackId, playlistId) {
   }
 }
 
+/* ---- Boost d'energie (/energy) ----
+
+   Un boost est une entree de planning DATEE (start_date/end_date +
+   start_time/end_time) sur une playlist boost_up/boost_down : AzuraCast
+   cesse de l'appliquer tout seul a la fin de la fenetre, exactement le
+   mecanisme que tools/publish_mixtape.py utilise deja pour la mixtape
+   mensuelle. Aucun cron, aucun timer, aucune tache de restauration ici.
+
+   Pas de Redis pour l'etat du boost : la playlist EST l'etat (is_enabled,
+   weight, schedule_items, et les points retrouves via description). AzuraCast
+   est la source de verite unique, comme pour le reste de la rotation.
+
+   Playlists creees par tools/create_boost_playlists.py :
+   - boost_up   (5_clubhouse + 6_techno) — "pousser" la rotation
+   - boost_down (1_chill + 7_nightdub)   — "calmer" la rotation */
+const BOOST_PART_BY_POINTS = { 1: 0.15, 2: 0.25 }; // |points| -> part visee de la rotation
+
+async function updatePlaylist(id, payload) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/playlist/${id}`, {
+      method: 'PUT',
+      headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Vide la file AutoDJ deja construite (~27 min d'avance mesurees le
+// 2026-08-31) et la regenere avec les poids courants — sans jamais couper le
+// titre en cours (endpoint dedie, verifie en prod lors du LOT 2).
+async function purgeQueue() {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/admin/debug/station/1/clearqueue`, {
+      method: 'PUT',
+      headers: { 'X-API-Key': apiKey },
+    });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+function findPlaylist(list, name) {
+  return list.find((p) => p.name === name) || null;
+}
+
+// Heure murale a Paris via Intl (gere l'heure d'ete automatiquement, meme
+// raison que le choix du fuseau station au LOT 2 — pas de decalage fixe).
+function parisWallParts(date) {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(date).map((p) => [p.type, p.value]));
+  return { y: +parts.year, mo: +parts.month, d: +parts.day, h: +parts.hour, mi: +parts.minute };
+}
+
+// Represente l'heure murale de Paris comme un timestamp "UTC" fictif, pour
+// une arithmetique de duree simple (ajouter des minutes) sans repasser par le
+// fuseau a chaque etape.
+function wallToFakeUtcMs(p) {
+  return Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi);
+}
+function fmtDateYMD(ms) { return new Date(ms).toISOString().slice(0, 10); }
+function fmtHHMMInt(ms) { const d = new Date(ms); return d.getUTCHours() * 100 + d.getUTCMinutes(); }
+function fmtHHMMLabel(hhmm) {
+  return `${String(Math.floor(hhmm / 100)).padStart(2, '0')}:${String(hhmm % 100).padStart(2, '0')}`;
+}
+
+// Fenetre de planning datee pour un boost de `minutes` a partir de maintenant
+// (heure de Paris). Piege documente dans le brief : un boost qui franchit
+// minuit doit avoir un end_date le jour suivant — naturel ici puisque
+// startMs/endMs partagent la meme ligne de temps continue.
+function boostWindow(minutes) {
+  const startMs = wallToFakeUtcMs(parisWallParts(new Date()));
+  const endMs = startMs + minutes * 60000;
+  return {
+    start_date: fmtDateYMD(startMs), end_date: fmtDateYMD(endMs),
+    start_time: fmtHHMMInt(startMs), end_time: fmtHHMMInt(endMs),
+    endIsToday: fmtDateYMD(endMs) === fmtDateYMD(startMs),
+  };
+}
+
+// Cette entree de planning couvre-t-elle l'instant present (heure de Paris) ?
+// Meme convention que la grille posee au LOT 2 : days=[] partout, une fenetre
+// qui franchit minuit a end_time < start_time.
+function scheduleCoversNow(item, nowParis) {
+  const nowHHMM = nowParis.h * 100 + nowParis.mi;
+  const nowDate = `${nowParis.y}-${String(nowParis.mo).padStart(2, '0')}-${String(nowParis.d).padStart(2, '0')}`;
+  if (item.start_date && nowDate < item.start_date) return false;
+  if (item.end_date && nowDate > item.end_date) return false;
+  const s = item.start_time, e = item.end_time;
+  if (s === e) return true;
+  return s < e ? (nowHHMM >= s && nowHHMM < e) : (nowHHMM >= s || nowHHMM < e);
+}
+
+function isPlaylistActiveNow(p, nowParis) {
+  if (!p.is_enabled || p.type !== 'default') return false; // exclut Jingles/jungle (once_per_x_songs)
+  const items = p.schedule_items || [];
+  return items.length ? items.some((it) => scheduleCoversNow(it, nowParis)) : true; // pas de planning = 24h/24
+}
+
+// Somme des poids REELLEMENT actifs a l'instant present (hors boost_up/down
+// eux-memes) : la base pese 43 le jour, jusqu'a 64 au pic du soir (LOT 2) —
+// un poids de boost fixe n'aurait donc pas le meme effet selon l'heure.
+function currentRotationWeight(playlists) {
+  const nowParis = parisWallParts(new Date());
+  return playlists
+    .filter((p) => p.name !== 'boost_up' && p.name !== 'boost_down' && isPlaylistActiveNow(p, nowParis))
+    .reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
+}
+
+// part visee : 1 point -> 15%, 2 points -> 25%.
+function boostWeightFor(points, currentT) {
+  const part = BOOST_PART_BY_POINTS[Math.abs(points)];
+  return Math.max(1, Math.round(currentT * part / (1 - part)));
+}
+
+// Boost actuellement actif (au plus un des deux sens), avec ses points
+// retrouves via le champ description — seul endroit ou l'etat persiste,
+// volontairement pas de Redis pour ca (cf. en-tete de section).
+function activeBoost(playlists) {
+  for (const name of ['boost_up', 'boost_down']) {
+    const p = findPlaylist(playlists, name);
+    if (p && p.is_enabled) {
+      const m = (p.description || '').match(/^boost:(-?\d+)$/);
+      const points = m ? Number(m[1]) : (name === 'boost_up' ? 1 : -1);
+      const item = (p.schedule_items || [])[0];
+      return { playlist: p, points, endTime: item ? item.end_time : null, endDate: item ? item.end_date : null };
+    }
+  }
+  return null;
+}
+
+function energyKeyboard(withStop) {
+  const rows = [[
+    { text: '🌙 −2', callback_data: 'nrg:-2' },
+    { text: '🌙 −1', callback_data: 'nrg:-1' },
+    { text: '⚡ +1', callback_data: 'nrg:1' },
+    { text: '⚡ +2', callback_data: 'nrg:2' },
+  ]];
+  if (withStop) rows.push([{ text: '⏹ Stop', callback_data: 'nrgstop' }]);
+  return { inline_keyboard: rows };
+}
+
+function boostLabel(points) {
+  return points > 0 ? `⚡ +${points}` : `🌙 ${points}`;
+}
+
+async function energyStatus() {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { text: '❌ Impossible de récupérer les playlists AzuraCast.', keyboard: null };
+  if (!findPlaylist(pl.list, 'boost_up') || !findPlaylist(pl.list, 'boost_down')) {
+    return { text: '❌ Playlists boost_up/boost_down introuvables — lance tools/create_boost_playlists.py --apply.', keyboard: null };
+  }
+  const boost = activeBoost(pl.list);
+  if (!boost) {
+    return { text: '🎛 Rotation normale — aucun boost actif.\n\nPousser ou calmer la rotation ?', keyboard: energyKeyboard(false) };
+  }
+  const nowParis = parisWallParts(new Date());
+  const today = `${nowParis.y}-${String(nowParis.mo).padStart(2, '0')}-${String(nowParis.d).padStart(2, '0')}`;
+  const when = boost.endTime === null ? '?'
+    : fmtHHMMLabel(boost.endTime) + (boost.endDate && boost.endDate !== today ? ' (demain)' : '');
+  return { text: `🎛 Boost actif : ${boostLabel(boost.points)}\n⏱ Fin prévue : ${when}\n\nChanger ?`, keyboard: energyKeyboard(true) };
+}
+
+// Applique un boost : calcule le poids sur la rotation reellement active,
+// pose le planning date, purge la file AutoDJ (sinon inaudible ~27 min),
+// desactive l'autre sens s'il etait actif (un seul boost a la fois).
+async function applyBoost(points, minutes) {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { ok: false, text: '❌ Impossible de récupérer les playlists AzuraCast.' };
+  const targetName = points > 0 ? 'boost_up' : 'boost_down';
+  const otherName = points > 0 ? 'boost_down' : 'boost_up';
+  const target = findPlaylist(pl.list, targetName);
+  const other = findPlaylist(pl.list, otherName);
+  if (!target) {
+    return { ok: false, text: `❌ Playlist ${targetName} introuvable — lance tools/create_boost_playlists.py --apply.` };
+  }
+  const T = currentRotationWeight(pl.list);
+  const weight = boostWeightFor(points, T);
+  const win = boostWindow(minutes);
+  if (other && other.is_enabled) await updatePlaylist(other.id, { is_enabled: false });
+  const r = await updatePlaylist(target.id, {
+    is_enabled: true,
+    weight,
+    description: `boost:${points}`,
+    schedule_items: [{
+      start_time: win.start_time, end_time: win.end_time,
+      start_date: win.start_date, end_date: win.end_date,
+      days: [], loop_once: false,
+    }],
+  });
+  if (!r.ok) return { ok: false, text: `❌ Échec de l'application du boost (${r.status}).` };
+  await purgeQueue();
+  const when = fmtHHMMLabel(win.end_time) + (win.endIsToday ? '' : ' (demain)');
+  return {
+    ok: true,
+    text: `✅ Boost ${boostLabel(points)} appliqué (poids ${weight} sur ${T + weight}) — actif jusqu'à ${when}.\n`
+        + `File AutoDJ purgée : ça devrait s'entendre au titre suivant.`,
+  };
+}
+
+async function stopBoost() {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { ok: false, text: '❌ Impossible de récupérer les playlists AzuraCast.' };
+  const boost = activeBoost(pl.list);
+  if (!boost) return { ok: true, text: 'Aucun boost actif.' };
+  const r = await updatePlaylist(boost.playlist.id, { is_enabled: false });
+  if (!r.ok) return { ok: false, text: `❌ Échec de l'arrêt du boost (${r.status}).` };
+  await purgeQueue();
+  return { ok: true, text: '⏹ Boost arrêté — retour à la rotation normale.' };
+}
+
 async function nowPlaying() {
   try {
     const r = await fetch(`${AZURACAST_BASE}/api/nowplaying/${STATION}`, {
@@ -689,7 +844,7 @@ async function nowPlaying() {
   } catch { return null; }
 }
 
-// Formulation unique des auditeurs pour /np, /stats et /audience.
+// Formulation unique des auditeurs pour /stats et /audience.
 // On annonce des PERSONNES (listeners.unique), pas des connexions
 // (listeners.total) : l'ecart entre les deux vient surtout des reconnexions
 // mobiles — quand un telephone bascule du Wi-Fi a la 4G, l'ancienne connexion
@@ -705,23 +860,15 @@ function listenersText(listeners) {
     + (total !== null && total !== uniq ? ` (${total} connexions ouvertes)` : '');
 }
 
-async function nowPlayingText() {
-  const d = await nowPlaying();
-  if (!d) return '❌ Impossible de joindre AzuraCast.';
-  const song = (d.now_playing && d.now_playing.song) || {};
-  const label = song.title ? `${song.artist || ''} — ${song.title}`.trim() : '(inconnu)';
-  return `▶️ En cours : ${label}\n🎧 ${listenersText(d.listeners)}`;
-}
-
 async function statsText() {
   const kv = kvClient();
-  const day = new Date(Date.now() - 4 * 3600 * 1000).toISOString().slice(0, 10);
+  const day = new Date().toISOString().slice(0, 10);
   const [d, msgJ] = await Promise.all([
     nowPlaying(),
     kv ? kv('get', `stats:msg:${day}`) : Promise.resolve({ result: null }),
   ]);
   const msgs = (msgJ && msgJ.result) || 0;
-  return `📊 Stats du ${day} (UTC-4)\n` +
+  return `📊 Stats du ${day} (UTC)\n` +
     `🎧 Maintenant : ${listenersText(d && d.listeners)}\n` +
     `💬 Messages du chat aujourd'hui : ${msgs}`;
 }
@@ -807,10 +954,9 @@ function peakOf(entries) {
   return peak;
 }
 
-// Jour "radio" en heure Martinique (UTC-4 fixe, pas de DST) — meme convention
-// que les annonces automatiques et le compteur stats:msg de api/chat.js.
-function mqDay(tsMs) {
-  return new Date(tsMs - 4 * 3600 * 1000).toISOString().slice(0, 10);
+// Jour "radio" en UTC — meme convention que le compteur stats:msg de api/chat.js.
+function utcDay(tsMs) {
+  return new Date(tsMs).toISOString().slice(0, 10);
 }
 
 async function audienceStats() {
@@ -825,7 +971,7 @@ async function audienceStats() {
   // mecaniquement.
   const byDay = new Map();
   for (const e of month) {
-    const d = mqDay((Number(e.played_at) || 0) * 1000);
+    const d = utcDay((Number(e.played_at) || 0) * 1000);
     if (!byDay.has(d)) byDay.set(d, []);
     byDay.get(d).push(e);
   }
@@ -921,57 +1067,6 @@ async function audienceText() {
   return out;
 }
 
-/* ---- Claude (brainstorm admin : /ask) ---- */
-const CLAUDE_SYSTEM_PROMPT =
-  "You help run KALBASSFM, a 100% electronic webradio. " +
-  "The admin messages you from Telegram for quick brainstorming — drafting a chat " +
-  "pin announcement, ideas to animate the live chat, small engagement ideas, or " +
-  "general help. When asked to draft a pin message, give exactly 3 short numbered " +
-  "options, each under 200 characters (they get pasted directly after \"/pin \"), " +
-  "in English, matching a light electronic-music tone. For anything else, " +
-  "give a few concise, actionable suggestions. Keep replies short and scannable — " +
-  "this is read on a phone inside Telegram, not a long essay.";
-
-// HTTP brut (pas de dependance @anthropic-ai/sdk, coherent avec le reste du
-// projet). Pas de "thinking" : reponses courtes/creatives, pas de raisonnement
-// complexe requis, et ca garde la latence basse dans le contexte d'un webhook.
-async function askClaude(prompt) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-8',
-        max_tokens: 1024,
-        system: CLAUDE_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt.slice(0, 2000) }],
-      }),
-      signal: controller.signal,
-    });
-    if (!r.ok) return null;
-    const data = await r.json();
-    const text = (data.content || [])
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
-      .trim();
-    // Marge de securite sous la limite Telegram (4096 caracteres/message).
-    return text ? text.slice(0, 3800) : null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 /* ---- Redis (memes cles que api/chat.js) ---- */
 function kvClient() {
   if (REDIS_PAUSED) return null;
@@ -1037,30 +1132,16 @@ async function takePendingReply(fromId) {
   try { return JSON.parse(j.result); } catch { return null; }
 }
 
-// Derniers messages encore visibles (deja-supprimes filtres), pour /recent.
-async function getRecentMessages(n) {
-  const kv = kvClient();
-  if (!kv) return [];
-  const [lj, dj] = await Promise.all([
-    kv('lrange', 'chat:messages', '0', String(n - 1)),
-    kv('hgetall', 'chat:deleted'),
-  ]);
-  const raw = lj.result || [];
-  const deletedFields = dj.result || [];
-  const deleted = new Set();
-  for (let i = 0; i < deletedFields.length; i += 2) deleted.add(deletedFields[i]);
-  return raw
-    .map((s) => { try { return JSON.parse(s); } catch { return null; } })
-    .filter((m) => m && !deleted.has(m.id));
-}
-
+// Suppression logique d'un message (bouton "🗑 Supprimer" sur sa notification
+// Telegram, cf. api/chat.js) : le hash chat:deleted est lu et filtre cote GET
+// de api/chat.js, jamais retire de chat:messages lui-meme.
 async function markDeleted(id) {
   const kv = kvClient();
   if (!kv || !id) return;
   await kv('hset', 'chat:deleted', id, '1');
 }
 
-// Meme convention que getRecentMessages/markDeleted, mais sur la liste
+// Meme convention que markDeleted, mais sur la liste
 // "supporters" (api/supporters.js) — suppression logique (hash "supporters:deleted"),
 // lue et filtree cote GET de api/supporters.js.
 async function getRecentSupporters(n) {
@@ -1297,6 +1378,17 @@ async function answerCallback(token, callbackId, text) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ callback_query_id: callbackId, text }),
+  }).catch(() => {});
+}
+
+async function editMessageText(token, chatId, messageId, text, replyMarkup) {
+  await fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId, message_id: messageId, text,
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    }),
   }).catch(() => {});
 }
 
