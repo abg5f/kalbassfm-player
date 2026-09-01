@@ -22,25 +22,26 @@ famille de genre (l'echelle d'energie est compressee, p95 global ~0.56, et
 depend de la bibliotheque — des valeurs absolues seraient a retoucher sans
 cesse). Les proportions SHARES restent valables quelle que soit la distribution.
 
-LIMITE CONNUE DE L'AXE D'ENERGIE (constatee a l'antenne le 2026-07-28) :
+LIMITE CONNUE DE L'AXE D'ENERGIE (constatee a l'antenne le 2026-07-28, quand
+1_chill ne passait qu'en creneau matinal — la limite reste valable main-
+tenant que le bac tourne 24h/24) :
 energy = 0.5*rms + 0.3*bpm + 0.2*party, or le RMS mesure le NIVEAU DE MASTERING
 autant que l'energie musicale. Une regle en percentile d'energie remplit donc
 son bac avec les titres MIXES BAS, pas avec les titres calmes. Consequence
 observee : 62 des 118 titres de 1_chill etaient a >=120 BPM (garage house a
-126 BPM diffuse a 7h du matin). Le bac du matin a donc deux garde-fous qui ne
-dependent PAS du RMS :
-  - house/genres inconnus : veto de tempo (MORNING_BPM_MAX) ;
+126 BPM). Le bac chill a donc deux garde-fous qui ne dependent PAS du RMS :
+  - house/genres inconnus : veto de tempo (CHILL_BPM_MAX) ;
   - jungle/DnB : percentile de mood.aggressive, pas d'energie — le BPM y est
     inutilisable (detecte en demi-tempo : 86 pour 172) et l'ancienne regle
     d'energie retenait la jungle old-school mixee bas (Source Direct, Dillinja)
     en laissant le vrai liquid DnB (Hybrid Minds, Monrroe, Whiney) en
-    ponctuation nocturne, alors que c'est exactement la matiere "matin/travail".
+    ponctuation nocturne, alors que c'est exactement la matiere "chill/travail".
 
 BAC 9_LIQUID (separe de 1_chill le 2026-08-31) : le liquid DnB choisi par
 mood.aggressive n'a plus sa place dans 1_chill. Mesure sur metadata.json :
 1_chill contenait 156 titres dont 79 de liquid (51%), melangeant deux musiques
 sans rapport — ambient/downtempo a 70-90 BPM et rouleaux liquid a ~170 BPM (le
-BPM median releve, 87, est l'artefact MORNING_BPM_ARTIFACT). Tolerable tant que
+BPM median releve, 87, est l'artefact CHILL_BPM_ARTIFACT). Tolerable tant que
 chill ne passait qu'en creneau matinal, intenable en rotation continue 24h/24.
 La SELECTION par mood.aggressive reste inchangee (cf. ci-dessus) ; seule la
 DESTINATION change : 9_liquid au lieu de 1_chill.
@@ -49,23 +50,23 @@ DESTINATION change : 9_liquid au lieu de 1_chill.
 NEW_BINS = ["1_chill", "2_groove", "3_house", "4_deep", "5_clubhouse", "6_techno", "7_nightdub", "8_jungle", "9_liquid"]
 ROTATION_BINS = [b for b in NEW_BINS if b != "8_jungle"]  # 8_jungle = ponctuation
 
-# Tempo plafond du bac du matin : au-dela, un titre est un titre de club quel
+# Tempo plafond du bac chill : au-dela, un titre est un titre de club quel
 # que soit son niveau de mastering (et quoi qu'en disent mood.relaxed/party,
 # qui decrivaient le garage house de 126 BPM comme "relaxed 0.85").
-MORNING_BPM_MAX = 120
+CHILL_BPM_MAX = 120
 # Au-dela, une valeur de BPM est presque toujours un artefact de detection
 # (tempo double sur un morceau lent, ou demi-tempo sur du DnB) : on ne l'oppose
 # donc PAS a un titre etiquete ambient/downtempo. Entre les deux, le tempo est
 # un vrai tempo de club et c'est l'etiquette de genre qui se trompe (verifie :
 # 2 faux "Ambient" a 130 BPM contre 2 vrais lents lus 163-164).
-MORNING_BPM_ARTIFACT = 145
+CHILL_BPM_ARTIFACT = 145
 
 SHARES = {
     "techno_nightdub":  0.45,  # techno : 45% les moins energiques -> 7_nightdub, le reste -> 6_techno
-    "house_chill":      0.15,  # house : 15% les plus calmes -> 1_chill (SI tempo < MORNING_BPM_MAX)
+    "house_chill":      0.15,  # house : 15% les plus calmes -> 1_chill (SI tempo < CHILL_BPM_MAX)
     "house_day":        0.60,  # house : jusqu'au 60e percentile -> 2_groove/3_house (selon mood)
     "house_deep":       0.85,  # house : jusqu'au 85e percentile -> 4_deep, au-dela -> 5_clubhouse
-    "jungle_liquid":    0.50,  # jungle : 50% les MOINS AGRESSIFS -> 1_chill (liquid DnB du matin)
+    "jungle_liquid":    0.50,  # jungle : 50% les MOINS AGRESSIFS -> 9_liquid
     "jungle_club":      0.80,  # jungle : au-dela du 80e percentile d'energie -> 6_techno ; sinon -> 8_jungle
     "garage_club":      0.60,  # garage : au-dela du 60e percentile (ou "speed") -> 5_clubhouse
     "fallback_chill":   0.20,  # genres inconnus : quantiles globaux
@@ -176,16 +177,16 @@ def compute_cutoffs(tracks, energies):
     return cut
 
 
-def _morning_tempo(bpm):
-    """Le bac du matin n'accepte pas un tempo de club. `bpm=None` (appelant qui
+def _chill_tempo_ok(bpm):
+    """Le bac chill n'accepte pas un tempo de club. `bpm=None` (appelant qui
     ne le fournit pas) = pas de veto, pour rester retrocompatible."""
-    return bpm is None or bpm < MORNING_BPM_MAX
+    return bpm is None or bpm < CHILL_BPM_MAX
 
 
 def classify_bin(subgenre, energy, mood, cut, bpm=None):
     """Regles genre-d'abord, energie-ensuite (seuils calibres par compute_cutoffs).
     Vetos structurels : techno et jungle agressive ne peuvent JAMAIS tomber en
-    1_chill/2_groove, et rien au-dessus de MORNING_BPM_MAX n'entre dans 1_chill
+    1_chill/2_groove, et rien au-dessus de CHILL_BPM_MAX n'entre dans 1_chill
     par la voie house/fallback (cf. LIMITE CONNUE DE L'AXE D'ENERGIE en tete de
     module)."""
     g = subgenre.lower()
@@ -194,8 +195,8 @@ def classify_bin(subgenre, energy, mood, cut, bpm=None):
 
     if fam == "chill":
         # Un "ambient" a tempo de club franc est une erreur d'etiquette, pas un
-        # morceau du matin (cas reel : deux titres a 130 BPM diffuses a 6h30).
-        if bpm is not None and MORNING_BPM_MAX <= bpm < MORNING_BPM_ARTIFACT:
+        # titre calme (cas reel : deux titres a 130 BPM).
+        if bpm is not None and CHILL_BPM_MAX <= bpm < CHILL_BPM_ARTIFACT:
             return "3_house"
         return "1_chill"
     if fam == "groove":
@@ -219,9 +220,10 @@ def classify_bin(subgenre, energy, mood, cut, bpm=None):
     if fam == "house":
         if energy < cut["house_chill"]:
             # Calme "au RMS" ne veut pas dire calme a l'oreille : un titre a
-            # tempo club recale ici part en house diurne (creneau 13-17h),
-            # jamais en 2_groove qui est lui aussi diffuse le matin.
-            return "1_chill" if _morning_tempo(bpm) else "3_house"
+            # tempo club recale ici part en 3_house plutot qu'en 1_chill —
+            # jamais en 2_groove, dont le profil (disco/funk energique) ne
+            # convient pas non plus a un tempo de club mal classe.
+            return "1_chill" if _chill_tempo_ok(bpm) else "3_house"
         if energy < cut["house_day"]:
             grooviness = (mood.get("happy", 0.0) + mood.get("party", 0.0)) / 2
             return "2_groove" if grooviness >= cut["house_grooviness"] else "3_house"
@@ -235,7 +237,7 @@ def classify_bin(subgenre, energy, mood, cut, bpm=None):
 
     # Fallback (synth-pop, latin, hip hop...) : quantiles globaux.
     if energy < cut["fallback_chill"]:
-        return "1_chill" if _morning_tempo(bpm) else "3_house"
+        return "1_chill" if _chill_tempo_ok(bpm) else "3_house"
     if energy < cut["fallback_house"]:
         return "3_house"
     if energy < cut["fallback_deep"]:

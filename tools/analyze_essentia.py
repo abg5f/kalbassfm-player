@@ -19,14 +19,14 @@ from essentia.standard import (
     RhythmExtractor2013, RMS, DynamicComplexity,
 )
 
+TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, TOOLS_DIR)
+from classify_bins import NEW_BINS  # noqa: E402  (source de verite unique de la grille)
+
 MODELS_DIR = os.path.expanduser("~/kalbassfm-analysis/models")
-ROOTS = [
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/1_morning",
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/2_afternoon",
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/3_evening",
-    "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog/4_night",
-]
-OUTPUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "metadata.json")
+NEW_PROG_WSL = "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog"
+ROOTS = [f"{NEW_PROG_WSL}/{b}" for b in NEW_BINS]
+OUTPUT = os.path.join(TOOLS_DIR, "metadata.json")
 
 LIMIT = None
 if "--limit" in sys.argv:
