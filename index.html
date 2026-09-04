@@ -144,21 +144,31 @@
         display: flex;
         flex-direction: column;
         border-left: 3px solid var(--border);
-        /* height:0 + min-height:100% : la colonne matche la hauteur de la
-           colonne principale (structurellement plus haute : artwork+
-           controles+historique). Contrairement a l'ancienne version, ce
-           n'est plus toute la colonne qui scrolle : c'est le Chat qui
-           s'etire pour absorber l'espace restant (regle #chatPanel[open]
-           ci-dessous), Supporters gardant sa hauteur naturelle plafonnee. */
-        height: 0;
+        /* min-height:100% (sans height:0) : la colonne matche AU MINIMUM la
+           hauteur de la colonne principale (structurellement plus haute :
+           artwork+controles+historique), et le Chat s'etire pour absorber
+           l'espace restant (regle #chatPanel[open] ci-dessous) plutot que de
+           laisser un vide. Ce n'est pas toute la colonne qui scrolle :
+           Supporters garde sa hauteur naturelle plafonnee.
+
+           height:0 FIGEAIT cette hauteur, et c'etait un bug : en ouvrant
+           "My tracks" ou "Mixtapes" il ne restait plus assez de place, le
+           navigateur comprimait la BOITE du chat (min-height:0) sans pouvoir
+           comprimer son CONTENU (plancher de .chat-list), et la liste de
+           messages + le champ de saisie se dessinaient PAR-DESSUS Supporters
+           et My tracks — 130px de debordement mesures a 1200px de large,
+           219px avec les deux panneaux ouverts. La colonne peut desormais
+           depasser la hauteur de la colonne principale : la carte grandit
+           (et laisse un vide sous l'historique a gauche), ce qui est visible
+           mais lisible, la ou la superposition ne l'etait pas. */
         min-height: 100%;
       }
       #chatPanel { border-bottom: none; }
       /* Chat = element flexible de la sidebar : occupe tout l'espace vertical
          restant sous Supporters au lieu de laisser un vide sous la colonne
-         principale, plus haute. .chat-list grandit avec lui (min-height en
-         filet de securite) ; le scroll reste interne (column-reverse ancre
-         sur les messages recents), jamais sur la colonne entiere. */
+         principale, plus haute. .chat-list grandit avec lui ; le scroll reste
+         interne (column-reverse ancre sur les messages recents), jamais sur
+         la colonne entiere. */
       #chatPanel[open] {
         display: flex;
         flex-direction: column;
@@ -182,10 +192,16 @@
         flex: 1;
         min-height: 0;
       }
+      /* flex-basis = la hauteur de base de .chat-list (260px), surtout PAS
+         height:auto : c'est cette base qui BORNE la hauteur naturelle de la
+         colonne. Avec height:auto, la taille max-content de la liste vaut les
+         50 messages charges — la colonne n'etant plus figee, la carte partait
+         a 3350px de haut (mesure). min-height:0 laisse la liste se comprimer
+         en meme temps que sa boite : un plancher ici (160px auparavant) est
+         exactement ce qui provoquait la superposition decrite plus haut. */
       #chatPanel[open] .chat-list {
-        flex: 1;
-        min-height: 160px;
-        height: auto;
+        flex: 1 1 auto;
+        min-height: 0;
       }
       /* Garde-fou : #supportersList n'a pas de plafond cote serveur (jusqu'a
          20 entrees, api/supporters.js). La colonne ne scrollant plus en bloc,
