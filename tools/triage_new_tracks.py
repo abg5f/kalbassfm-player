@@ -13,6 +13,11 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
    (rotation continue ponderee, cf. tools/apply_rotation.py). Seuls les
    nouveaux morceaux ont besoin d'etre uploades en SFTP.
 6. Ajoute le resultat a metadata.json
+7. Regenere api/bpm-table.json (jeu "devine le BPM" du chat live), qui doit
+   rester aligne sur metadata.json -- il l'etait mal quand ce script etait
+   lance directement en WSL au lieu de passer par triage.bat, et le jeu
+   devenait muet sur tous les morceaux recents (constate 2026-07-28 et
+   2026-09-04). La table ne part en ligne qu'une fois COMMITEE ET PUSHEE.
 
 Les fichiers illisibles/en erreur sont deplaces dans _incoming/_failed/ et
 n'interrompent pas le traitement des autres.
@@ -39,6 +44,7 @@ sys.path.insert(0, TOOLS_DIR)
 
 import analyze_essentia  # noqa: E402  (modeles Essentia charges a l'import)
 import clean_local_tracks as clt  # noqa: E402  (fonctions clean() / itunes_lookup())
+import export_bpm_table  # noqa: E402  (table du jeu BPM, regeneree en fin de run)
 from classify_bins import (  # noqa: E402  (source de verite unique de la grille)
     NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_bin,
 )
@@ -570,6 +576,29 @@ def main():
 
     save_pending_uploads(pending)
     report.render(finished=True)
+
+    # ── Phase 3 : table BPM du chat live ─────────────────────────────────────
+    # metadata.json vient de changer, donc api/bpm-table.json est perime : le
+    # bot "BPM GUESSER" repond UNIQUEMENT sur les morceaux qu'il y trouve, et
+    # reste silencieux sur les autres. Regenerer ici (et pas seulement dans
+    # triage.bat) garantit que les deux fichiers restent alignes quel que soit
+    # le point d'entree -- c'est le decalage entre les deux qui a fait tomber
+    # le jeu deux fois. Une erreur ici n'annule rien de ce qui precede : les
+    # morceaux sont deja classes et envoyes.
+    if ok_count:
+        print("\n=== Mise a jour de la table BPM (jeu chat live) ===")
+        try:
+            written = export_bpm_table.main()
+        except Exception as e:
+            written = False
+            print(f"[ERREUR] regeneration de la table BPM impossible : {e}")
+            print("  -> relancer a la main : python tools/export_bpm_table.py")
+        if written:
+            print(
+                "\n>>> A FAIRE : commit + push de api/bpm-table.json.\n"
+                "    Sans push, le jeu BPM reste muet en ligne sur ces "
+                f"{ok_count} nouveau(x) morceau(x)."
+            )
 
 
 if __name__ == "__main__":

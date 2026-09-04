@@ -16,10 +16,16 @@ echo.
 
 wsl -e bash -c "source ~/essentia-env/bin/activate && python3 '/mnt/c/Users/ph.dufourcq/Documents/0_Claude Code/3_Radiofm/tools/triage_new_tracks.py'"
 
-echo.
-echo === Phase 2 : Mise a jour de la table BPM (jeu chat live) ===
-python "%~dp0export_bpm_table.py"
+REM La table BPM du jeu chat live (api/bpm-table.json) est desormais regeneree
+REM par triage_new_tracks.py lui-meme, en fin de run : elle reste ainsi alignee
+REM sur metadata.json meme quand le triage est lance directement en WSL sans
+REM passer par ce .bat -- c'est ce decalage qui a rendu le jeu muet deux fois
+REM (2026-07-28 et 2026-09-04). Pour la regenerer seule :
+REM     python tools\export_bpm_table.py
 
 echo.
 echo === Termine ===
+echo.
+echo RAPPEL : si des morceaux ont ete ajoutes, commit + push de
+echo          api/bpm-table.json - sans push, le jeu BPM reste muet en ligne.
 pause
