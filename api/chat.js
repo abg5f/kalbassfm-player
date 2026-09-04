@@ -58,6 +58,33 @@ for (const t of bpmTable) {
   BPM_INDEX.set(normalizeKey(t.artist) + '|' + normalizeKey(t.title), t.bpm);
 }
 
+/* AzuraCast recolle les valeurs multiples d'une meme frame ID3 avec "; " :
+   un fichier dont TPE1/TIT2 contient deux valeurs ressort en
+   "Karizma,Kaytronik; Karizma" / "Good Morning - Kaytronik Remix; Good Morning
+   (Kaytronik Remix)". export_bpm_table.py, lui, ne retient que la PREMIERE
+   valeur de chaque frame (mutagen easy=True) -- le morceau restait donc
+   introuvable dans l'index et le jeu muet a chaque tentative, alors que son
+   BPM existe bel et bien. On retente donc la portion avant le premier ";".
+   Les copies locales et celles du VPS n'ayant pas toujours les memes tags,
+   corriger ici couvre tous les fichiers concernes sans les re-tagger. */
+function firstValue(s) {
+  const i = (s || '').indexOf(';');
+  return i === -1 ? (s || '') : s.slice(0, i);
+}
+
+// Retourne { bpm, artist, title } de la variante qui a matche (plus propre a
+// afficher que la chaine recollee), ou null si le morceau est absent de la
+// table.
+function lookupBpm(artist, title) {
+  for (const a of [artist, firstValue(artist)]) {
+    for (const t of [title, firstValue(title)]) {
+      const bpm = BPM_INDEX.get(normalizeKey(a) + '|' + normalizeKey(t));
+      if (bpm !== undefined) return { bpm, artist: (a || '').trim(), title: (t || '').trim() };
+    }
+  }
+  return null;
+}
+
 function parseBpmGuess(text) {
   const m = /^(\d{2,3})$/.exec(text);
   if (!m) return null;
@@ -77,9 +104,7 @@ async function getCurrentTrackBpm() {
     const d = await r.json();
     const song = (d.now_playing && d.now_playing.song) || {};
     if (!song.title) return null;
-    const bpm = BPM_INDEX.get(normalizeKey(song.artist) + '|' + normalizeKey(song.title));
-    if (bpm === undefined) return null;
-    return { bpm, artist: song.artist, title: song.title };
+    return lookupBpm(song.artist, song.title);
   } catch {
     return null;
   }
