@@ -76,6 +76,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -418,6 +419,11 @@ def remote_media(bin_name):
     return {r["path"].split("/", 1)[-1]: r["media"]["id"] for r in rows if r.get("type") == "media"}
 
 
+def loose_key(name):
+    """Cle de comparaison tolerante : casse, espaces et forme Unicode."""
+    return unicodedata.normalize("NFC", name).casefold().strip()
+
+
 def read_selection():
     if not os.path.exists(SELECTION_PATH):
         sys.exit(f"{SELECTION_PATH} introuvable — coche des morceaux dans le rapport "
@@ -438,28 +444,47 @@ def cmd_apply(args):
     if not wanted:
         sys.exit("Selection vide.")
 
-    # Un nom de fichier colle sans son bac reste utilisable : on le cherche
-    # dans les 9 bacs plutot que de demander a l'admin de le reecrire.
-    bins_needed = sorted({b for b, _ in wanted if b} or [])
-    if any(not b for b, _ in wanted):
-        bins_needed = NEW_BINS
-    catalog = {b: remote_media(b) for b in bins_needed}
+    # Le catalogue complet (9 appels) plutot que les seuls bacs cites : un
+    # morceau deplace cote serveur (UI AzuraCast, bouton "Deplacer" du bot)
+    # n'est plus dans le bac que metadata.json lui connait, et serait declare
+    # introuvable a tort — donc laisse a l'antenne alors qu'on vient de
+    # l'ecarter a l'ecoute.
+    catalog = {b: remote_media(b) for b in NEW_BINS}
+    # Index secondaire, insensible a la casse et normalise NFC/NFD : les noms
+    # de fichiers accentues ne s'ecrivent pas octet pour octet de la meme
+    # facon selon le systeme qui les a poses (constate sur les titres
+    # japonais/scandinaves de la bibliotheque).
+    loose = {}
+    for b, files in catalog.items():
+        for name, media_id in files.items():
+            loose.setdefault(loose_key(name), (b, name, media_id))
 
-    targets, missing = [], []
+    targets, moved, missing = [], [], []
     for bac, name in wanted:
-        found = None
-        for b in ([bac] if bac else NEW_BINS):
-            if name in catalog.get(b, {}):
-                found = (b, name, catalog[b][name])
-                break
-        (targets.append(found) if found else missing.append(f"{bac}/{name}" if bac else name))
+        if bac and name in catalog.get(bac, {}):
+            targets.append((bac, name, catalog[bac][name]))
+            continue
+        hit = next(((b, n, i) for b, files in catalog.items()
+                    for n, i in files.items() if n == name), None) or loose.get(loose_key(name))
+        if hit:
+            targets.append(hit)
+            if bac and hit[0] != bac:
+                moved.append((bac, hit[0], name))
+        else:
+            missing.append(f"{bac}/{name}" if bac else name)
 
     action = "SUPPRIMER" if args.delete else "sortir de l'antenne"
     print(f"{len(targets)} morceau(x) a {action} :")
     for b, name, media_id in targets:
         print(f"    [{b}] {name}  (media {media_id})")
+    for src, dst, name in moved:
+        print(f"    [DEPLACE cote serveur] {name} : {src} -> {dst}")
     for m in missing:
-        print(f"    [INTROUVABLE sur AzuraCast] {m}")
+        print(f"    [ABSENT d'AzuraCast] {m}")
+    if missing:
+        print(f"\n{len(missing)} morceau(x) sont dans metadata.json mais plus sur AzuraCast "
+              f"(deja supprimes depuis le bot, ou jamais montes).\n"
+              f"    python sync_library.py    remet les deux cotes iso et nettoie metadata.json.")
 
     if not args.apply:
         print("\nDRY-RUN — rien n'a ete modifie. Relance avec --apply.")

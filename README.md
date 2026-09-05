@@ -103,6 +103,7 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
   python review_energy.py list                    # top 60 en console
   python review_energy.py report                  # rapport HTML à cocher
   python review_energy.py m3u --bac 6_techno      # playlist d'écoute d'un bac
+  python review_energy.py select                  # écrit la sélection d'un coup (après écoute)
   python review_energy.py apply                   # dry-run de la sélection
   python review_energy.py apply --apply           # sortie d'antenne (réversible)
   python review_energy.py apply --apply --delete  # suppression + mp3 local rangé dans _ecartes/
