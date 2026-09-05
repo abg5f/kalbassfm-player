@@ -2,7 +2,22 @@
 
 > Dernière mise à jour : 2026-09-05
 
-## État actuel (2026-09-05 — recherche/file d'attente Telegram + revue des titres trop énergiques)
+## État actuel (2026-09-05, suite — séparation triage / analyse, et vérification d'iso local ↔ AzuraCast)
+
+**Session 2026-09-05 (suite)** — le filtre d'antenne, ajouté le matin même *dans* le triage, en a été extrait : classer et juger sont deux métiers.
+
+- ✅ **Ingestion en deux temps.** `triage_new_tracks.py` **classe** (tags, doublons, Essentia, le bon bac, `metadata.json`) et s'arrête ; `analyse_new_tracks.py` (+ `analyse.bat`) **juge puis envoie**. Le triage n'ouvre plus aucune connexion SFTP de tout le run.
+- 🔑 **L'envoi est délibérément DERRIÈRE le verdict** — c'est la seule raison d'être du découpage tel qu'il est fait. Un morceau posé sur le serveur peut passer à l'antenne dans les minutes qui suivent ; si le triage envoyait tout, un titre jugé trop dur le lendemain aurait déjà tourné. Trois options avaient été posées, celle-ci retenue.
+- ⚡ **Aucune re-analyse** : les descripteurs Essentia sont déjà dans `metadata.json`, la seconde passe relit des nombres. Pas de venv WSL, quelques secondes. Verdicts : `keep` → envoyé ; `review` → envoyé mais signalé (`--strict` l'écarte aussi) ; `reject` → `_a_revoir/` avec son motif, **retiré de `metadata.json`**, jamais envoyé. Dry-run par défaut.
+- 🚨 **`api/bpm-table.json` a changé de main.** La régénérer dès le triage embarquait des morceaux qu'un verdict retire ensuite, et invitait à pusher une table fausse. C'est désormais l'analyse, vraie fin de pipeline, qui la régénère — là où `metadata.json` atteint son état définitif.
+- 🚨 **`sync_library.py` devait apprendre la nouvelle file**, sinon un morceau classé mais pas encore jugé (local, absent du serveur) tombait en **cas A** et le script proposait de l'écarter. Deux attentes distinctes maintenant : **C** (verdict à rendre, `pending_review.json`) et **D** (envoi échoué, `pending_uploads.json`) ; anciens D et E → **E** et **F**.
+- ✅ **`azuracast_upload.py`** porte l'envoi SFTP et les deux files, partagés par les deux étapes. `sync_library.py` garde ses propres constantes de chemin : importer ce module forcerait `paramiko` au chargement et casserait son mode `--no-sftp`.
+- ✅ **Iso local ↔ AzuraCast vérifié** (`sync_library.py` dry-run, vue API + vue SFTP, bac par bac) : **1254 morceaux des deux côtés**, identique au nombre d'entrées de `metadata.json`. Hors périmètre par construction : `_ecartes/` (69 mp3 en quarantaine) et les dossiers de l'ancienne grille `1_morning`/`2_afternoon`/`3_evening`/`4_night` (110 mp3), absents de `NEW_BINS`.
+- 🎚️ **Seuils recalibrés** sur les 102 titres écartés à l'oreille qui existent encore : **review ≥ 0.658, reject ≥ 0.738**. Sur les 120 lignes d'`energy_review_selection.txt`, **18 ne correspondent plus à aucune entrée** — leurs fichiers ont quitté la bibliothèque, ils ne peuvent plus fournir de score. L'ancrage repose sur les 102 restants, sans que le script le signale.
+- ✅ **Jingle d'annonce du DJ set** (`mixtape_weekly.py`) : `mixtape_onair` étant en ordre **séquentiel**, le jingle est rattaché à la playlist AVANT le mix — les deux tombent dans la même fenêtre planifiée et s'enchaînent sans qu'aucun morceau puisse s'intercaler. Une playlist de jingle programmée à 17h58 ne le garantirait pas (fenêtre ratée dès qu'un morceau long déborde). Fichier dédié hors playlist Jingles ; jamais bloquant (absent ou en échec → le mix passe sans annonce).
+- 🧪 **Testé** : triage lancé sous WSL (imports résolus, sortie propre) ; `sync_library` dry-run (9 bacs iso) ; bout en bout en bac à sable — métadonnées, files, `_a_revoir/` et rapport redirigés vers un temp, SFTP neutralisé — simulation sans effet, mise de côté + retrait de `metadata.json`, et **titre valide CONSERVÉ en file quand le SFTP est indisponible**.
+
+## État antérieur (2026-09-05, plus tôt — recherche/file d'attente Telegram + revue des titres trop énergiques)
 
 **Session 2026-09-05** — deux demandes d'antenne, l'une côté pilotage (bot), l'autre côté programmation musicale (rétention d'audience).
 
@@ -185,6 +200,10 @@
 
 | Décision | Rationale |
 |----------|-----------|
+| **Séparer le triage (classer) de l'analyse (juger + envoyer), l'envoi passant derrière le verdict (2026-09-05)** | Un morceau posé sur AzuraCast peut passer à l'antenne dans les minutes qui suivent. Trois découpages étaient possibles : (a) l'analyse déclenche l'envoi — retenu, rien n'atteint la radio sans avoir été noté ; (b) le triage envoie tout et l'analyse rattrape — plus simple à écrire mais laisse une fenêtre d'antenne ; (c) séparer seulement les points d'entrée — ne cible pas les nouveaux arrivants et laisse le code du filtre dans le triage. La seconde passe ne coûte rien : les descripteurs Essentia sont déjà en base |
+| **`api/bpm-table.json` régénérée par l'analyse, plus par le triage (2026-09-05)** | La table doit rester alignée sur `metadata.json`, or un verdict `reject` peut encore en retirer un morceau après le classement. La régénérer au triage produisait une table contenant des titres écartés, avec un rappel de commit/push trompeur. Elle est maintenant produite là où `metadata.json` atteint son état définitif |
+| **Deux files d'attente distinctes plutôt qu'une (2026-09-05)** | `pending_review.json` (classé, jamais envoyé, attend un verdict) et `pending_uploads.json` (jugé bon, envoi échoué, sera retenté) ne disent pas la même chose. Les confondre reviendrait à envoyer à l'antenne des morceaux que personne n'a jugés — exactement ce que la séparation cherche à éviter. `sync_library.py` les distingue en cas C et D |
+| **Jingle DJ set rattaché à `mixtape_onair` plutôt que planifié comme playlist (2026-09-05)** | La playlist est en ordre **séquentiel** : attacher le jingle avant le mix les place dans la même fenêtre planifiée, rien ne peut s'intercaler. Une playlist de jingle programmée à 17h58 rate sa fenêtre dès qu'un morceau long déborde. Fichier dédié hors playlist Jingles, sinon il annoncerait un DJ set n'importe quel jour |
 | **Pas de portail d'upload direct pour les candidatures DJ, circuit lien+dépôt manuel conservé (2026-09-01)** | Trois pistes évaluées : SFTP direct au DJ écarté (portée = toute la médiathèque station, pas juste `Mixtapes/`) ; portail web avec upload chunked vers `POST /station/{id}/files/upload` (endpoint natif AzuraCast, vérifié dans `openapi.yml`) jugé sur-ingénierie vu le volume actuel (quelques candidatures/mois) ; stockage Telegram écarté (API Bot standard : 50 Mo upload / 20 Mo download, hors mixes réels de 100-300 Mo). Alternative plus légère identifiée si besoin futur : garder le lien (déjà collecté par `api/submit-mix.js`) et automatiser juste la récupération (téléchargement + push AzuraCast) au moment de la validation Telegram — à reconsidérer si le volume de candidatures augmente |
 | **Bacs de base avec planning explicite `00:00-23:59` plutôt qu'aucun `schedule_items` (2026-09-01)** | AzuraCast tire *exclusivement* parmi les playlists ayant un planning dès qu'au moins une est éligible, excluant totalement celles sans planning — même à poids nul. `schedule_items: []` ("aucun planning = 24h/24") rendait donc les 6 bacs de base muets toute la soirée. Un planning "toute la journée" les fait entrer dans le même pool de tirage que le reste |
 | **Champ Album (pas ISRC) pour stocker la date de diffusion d'une mixtape (2026-09-01)** | ISRC est explicitement réservé aux rapports de licence SACEM (TODO ouvert) — le détourner pour un usage interne polluerait de futures données de licensing. Album est un champ purement décoratif dans AzuraCast, sans conséquence |
@@ -245,6 +264,9 @@
 - [x] **Exécuter le brief agent en 4 lots** — fait le 2026-09-01 (bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`)
 - [x] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — fait le 2026-09-01, vérifié iso local/serveur
 - [x] **Remplir `tools/kv_config.py`** avec les vraies valeurs Upstash — fait le 2026-09-01, pin/annonce chat mixtape opérationnels
+- [ ] **Faire tourner le nouveau pipeline sur un vrai lot** — `triage.bat` puis `analyse.bat` n'ont jamais enchaîné sur de vrais fichiers depuis la séparation (testés séparément : triage à vide sous WSL, analyse en bac à sable)
+- [ ] **Écouter et trancher les 6 titres que les nouveaux seuils rejetteraient** (DJ Minx *Forget*, Selena (KR) *Green Light*, James Ruskin *Coda*, James Andrew *Stereomaster 3000*, **Aril Brikha *Groove La Chord*** — classique, faux positif probable —, Gesloten Cirkel *Zombiemachine Acid*) + les 116 en `review`. Le filtre agit à l'entrée, pas rétroactivement : c'est `review_energy.py` qui traite la bibliothèque en place
+- [ ] **Réparer les tags ID3 des 88 morceaux sans artiste/titre exploitable** (`clean_local_tracks.py`) — le jeu « devine le BPM » reste muet sur eux : 1166 entrées dans la table pour 1254 morceaux
 - [ ] **Surveiller la première exécution réelle de la tâche planifiée Windows** (dimanche 2026-09-06, premier cycle complet pin J-3 + diffusion) — jamais tournée en conditions réelles, seulement testée en dry-run/simulation de dates
 - [ ] **Reprendre le plan "emails candidature mix"** (notif admin à `theguybehindtheradio@pm.me` + confirmation DJ) — en pause, bloqué sur le choix/la vérification d'un domaine d'envoi Resend (plan détaillé écrit, implémentation non commencée)
 - [ ] **Nettoyer les tracks club/night à la main** puis lancer `python tools/prune_deleted_tracks.py 5_clubhouse 7_nightdub` pour répercuter sur AzuraCast — reporté par l'utilisateur, outil prêt
@@ -294,6 +316,11 @@
 
 | Problème | Sévérité | Notes |
 |----------|----------|-------|
+| `track_gate.py refresh --exclude` ne signale pas les lignes non appariées | INFO | Sur les 120 lignes d'`energy_review_selection.txt`, 18 ne correspondent à aucune entrée de `metadata.json` (fichiers sortis de la bibliothèque) : l'ancrage repose sur 102 décisions, sans que le log le dise. Une ligne « N titres de la liste ne sont plus dans la bibliothèque » lèverait l'ambiguïté |
+| Le log de `refresh` annonce « le plus doux d'entre eux » pour une valeur qui est le **p10** | INFO | `track_gate.py:208` affiche le minimum des écartés (0.722) alors que le seuil retenu est le p10 (0.738). Le comportement suit la docstring, c'est la phrase qui décrit autre chose que ce qu'elle calcule |
+| Le pipeline en deux temps n'a jamais tourné bout en bout sur de vrais fichiers | INFO | Triage vérifié à vide sous WSL, analyse vérifiée en bac à sable (SFTP neutralisé). L'enchaînement réel `triage.bat` → `analyse.bat` sur un lot de nouveaux morceaux reste à faire |
+| `export_bpm_table` lit/écrit ses **propres** chemins | INFO | Il ignore toute redirection de `METADATA_PATH` faite par un appelant : un simple test l'a fait régénérer le vrai `api/bpm-table.json` (constaté puis restauré le 2026-09-05). À stubber dans tout test qui touche au pipeline |
+| `graphify` n'est pas dans le PATH | INFO | La règle « lancer `graphify update .` après modification » de `CLAUDE.md` ne peut pas s'appliquer via le CLI ; le graphe est mis à jour manuellement via le skill `/graphify` |
 | Tâche planifiée Windows dépend du PC allumé/connecté | INFO | Créée sans compte spécifique — ne se déclenche que si la session Windows est ouverte à l'heure prévue (9h). Reconfigurable en `-RunLevel Highest` + identifiants stockés si besoin de tourner même déconnecté |
 | `mixtape_weekly.py` jamais exécuté en conditions réelles (tâche planifiée) | INFO | Toute la logique a été testée en dry-run / avec des dates simulées puis nettoyées ; le premier vrai cycle (pin J-3 + diffusion) aura lieu autour du 2026-09-06 selon ce qui est programmé via `/queue_mix` |
 | Plan emails candidature mix bloqué sur domaine Resend | INFO | Aucun provider transactionnel n'autorise l'envoi vers une adresse arbitraire sans domaine vérifié en DNS — `kalbassfm.duckdns.org` ne convient pas (DuckDNS ne donne pas la main sur DKIM/SPF). Décision : vérifier un petit domaine dédié (quelques €/an) avant de reprendre ce plan |
@@ -314,6 +341,10 @@
 
 | Fichier | Rôle | Statut |
 |---------|------|--------|
+| `tools/analyse_new_tracks.py`, `tools/analyse.bat` | **Nouveau (2026-09-05)** — étape 2/2 de l'ingestion : juge les morceaux en attente (grille `track_gate.py`) puis envoie sur AzuraCast ce qui passe. `reject` → `_a_revoir/` + retrait de `metadata.json` ; `--strict` écarte aussi les `review` ; `--requeue` renvoie un écarté dans `_incoming`. Dry-run par défaut, régénère la table BPM en fin de course | ✅ Créé et testé le 2026-09-05 (bac à sable), pas encore lancé sur un vrai lot |
+| `tools/azuracast_upload.py` | **Nouveau (2026-09-05)** — envoi SFTP + les deux files d'attente, partagés par le triage et l'analyse. Traduction de chemins Windows ↔ WSL. Non importé par `sync_library.py` (chargerait `paramiko` et casserait `--no-sftp`) | ✅ Créé le 2026-09-05 |
+| `tools/triage_new_tracks.py` | Étape 1/2 : **classe, ne juge pas**. Plus de filtre d'antenne, plus de SFTP, plus de régénération de la table BPM ; termine en écrivant `pending_review.json`. Les drapeaux `--no-gate`/`--gate-strict` ont disparu | ♻️ Refondu le 2026-09-05 (−313 lignes) |
+| `tools/sync_library.py` | Réconciliation PC ↔ AzuraCast, **six cas** depuis le 2026-09-05 : le cas **C** (en attente du verdict) a été ajouté, sans quoi un morceau classé mais pas jugé tombait en cas A et le script proposait de l'écarter | ♻️ Mis à jour le 2026-09-05, dry-run vérifié (9 bacs iso, 1254 morceaux) |
 | `tools/azuracast_snapshot_2026-08-31.json` | **Rollback de la bascule vers la rotation continue** : état complet des 16 playlists (is_enabled, weight, schedule_items) + timezone, capturé avant modification | ✅ Créé le 2026-08-31 |
 | `tools/apply_rotation.py` | Table déclarative = source de vérité unique de la rotation continue. Dry-run par défaut + diff, `--apply`. Réexécutable : c'est l'outil de réglage des dosages à l'oreille | ✅ Écrit, appliqué et corrigé le 2026-09-01 (bacs de base : planning `00:00-23:59` explicite, cf. Problèmes connus/Décisions) |
 | `tools/classify_bins.py` | **Source de vérité de la grille 9 bacs** (9ᵉ bac `9_liquid` ajouté le 2026-08-31/09-01) : familles, SHARES, seuils auto-calibrés, classify_bin(). Veto de tempo (`CHILL_BPM_MAX`, ex-`MORNING_BPM_MAX`) + sélection jungle par `mood.aggressive`, indépendants du RMS | ✅ Importé par migrate+triage+clean_clapcrate_full |
@@ -355,14 +386,15 @@
 - **Automatisation locale** : tâche planifiée Windows `KalbassFM Mixtape hebdo` (PowerShell `Register-ScheduledTask`, quotidienne 9h) — exécute `tools/mixtape_weekly.py --apply`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-09-01, deux fois (construction manuelle via /graphify, pas de CLI) — 96 nœuds, 192 relations
+> Mis à jour le 2026-09-05 (construction manuelle via /graphify, pas de CLI — la commande n'est pas dans le PATH) — 105 nœuds, 208 relations
 
 God nodes (concepts centraux) : `index.html` (hub front, degré 22), `api/telegram.js` (20), `AzuraCast` (17), `ChatFeature`/`api/chat.js` (13 chacun), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (10), `MixtapesFeature`/`BacLiquid`/`EnergyBoostTelegram` (7 chacun).
 Nouveaux nœuds 2026-09-01 (1ère passe) : `AzuraCastSchedulePriorityBug` (le bug critique — scheduled exclut unscheduled), `LogsTelegramCommand`, `MixtapeWeeklyAutomation`, `tools/mixtape_weekly.py`, `tools/kv_config.py`, `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py`, `VibeIndicator` (ajouté puis retiré), `JinglesPlaylistFix`.
 Nouveaux nœuds 2026-09-01 (2ème passe) : `api/submit-mix.js` (formulaire candidature DJ, code déjà en place mais absent du graphe jusqu'ici), `DjMixUploadPortalRejected` (décision : portail d'upload écarté, cf. Décisions).
 Nœuds 2026-08-31 : `RotationContinue`, `BacLiquid`, `StationTimezone`, `StockBibliotheque`, `AutoDJQueueDepth`, `BoostViaPlanningDate`, `EnergyBoostTelegram`, `tools/apply_rotation.py`, `tools/azuracast_snapshot_2026-08-31.json`, `tools/fix_artwork.py`.
 Nœuds 2026-08-08 : `MixtapesFeature`, `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication`, `PodcastAudioElement`.
-Communautés détectées : 9 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 9 bacs, Planning/Business, Contexte, Programmation/Rotation musicale).
+Nouveaux nœuds 2026-09-05 : `IngestionTwoStage` (la séparation classer/juger et sa raison d'être), `tools/analyse_new_tracks.py`, `tools/azuracast_upload.py`, `tools/analyse.bat`, `tools/triage.bat`, plus quatre outils qui manquaient au graphe : `tools/track_gate.py`, `tools/gate_reference.json`, `tools/review_energy.py`, `tools/sync_library.py`.
+Communautés détectées : 10 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 9 bacs, Planning/Business, Contexte, Programmation/Rotation musicale, **Ingestion en deux temps**).
 Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
 
 ---

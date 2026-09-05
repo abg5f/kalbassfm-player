@@ -158,6 +158,22 @@
     "tools/create_boost_playlists.py",
     "tools/sync_liquid_bin.py"
    ]
+  },
+  {
+   "id": "ingestion-deux-temps",
+   "label": "Ingestion en deux temps (classer / juger)",
+   "members": [
+    "IngestionTwoStage",
+    "tools/triage_new_tracks.py",
+    "tools/triage.bat",
+    "tools/analyse_new_tracks.py",
+    "tools/analyse.bat",
+    "tools/azuracast_upload.py",
+    "tools/track_gate.py",
+    "tools/gate_reference.json",
+    "tools/review_energy.py",
+    "tools/sync_library.py"
+   ]
   }
  ]
 }

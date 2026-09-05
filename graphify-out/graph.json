@@ -256,7 +256,7 @@
    "id": "tools/triage_new_tracks.py",
    "label": "triage_new_tracks.py",
    "type": "file",
-   "summary": "Pipeline d'ingestion _incoming : nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 8 bacs via classify_bins, depot sous nom propre. Rapport HTML live auto-refresh. File de retry (tools/pending_uploads.json) pour les envois SFTP echoues. Note : ne regenere PAS automatiquement api/bpm-table.json — tools/export_bpm_table.py doit etre relance separement apres chaque session de triage."
+   "summary": "ETAPE 1/2 de l'ingestion : CLASSE, ne juge pas. Nettoyage tags/covers, dedoublonnage (seuil 75%), analyse Essentia, classement dans un des 9 bacs via classify_bins, depot sous nom propre, ecriture dans metadata.json. N'ouvre PLUS aucune connexion SFTP depuis la separation du 2026-09-05 : le lot part dans pending_review.json et attend le verdict d'analyse_new_tracks.py. Ne regenere plus api/bpm-table.json non plus (un verdict peut encore retirer un morceau). Rapport HTML live auto-refresh. Les drapeaux --no-gate / --gate-strict ont disparu avec le filtre."
   },
   {
    "id": "api/telegram.js",
@@ -364,7 +364,7 @@
    "id": "tools/export_bpm_table.py",
    "label": "export_bpm_table.py",
    "type": "file",
-   "summary": "Script one-off reexecutable (2026-07-21) : lit tools/metadata.json (BPM Essentia), ouvre chaque fichier local avec mutagen (meme pattern que clean_local_tracks.py) pour recuperer les tags ID3 artist/title REELS -- les memes qu'AzuraCast affiche -- et exporte api/bpm-table.json (749/825 morceaux couverts). A relancer + commit/push apres chaque session de triage pour couvrir les nouveaux morceaux."
+   "summary": "Lit tools/metadata.json (BPM Essentia), ouvre chaque fichier local avec mutagen pour recuperer les tags ID3 artist/title REELS -- les memes qu'AzuraCast affiche -- et exporte api/bpm-table.json. Appele automatiquement en FIN de pipeline par analyse_new_tracks.py (et non plus par le triage) : c'est la que metadata.json atteint son etat definitif. Rien n'est en ligne tant que la table n'est pas commitee ET pushee."
   },
   {
    "id": "ChatNicknameFeature",
@@ -575,6 +575,60 @@
    "label": "Portail d'upload direct DJ - ecarte",
    "type": "decision",
    "summary": "2026-09-01 : discussion sur comment recevoir les mixes DJ sans depot manuel FileZilla. SFTP direct au DJ ecarte (portee = toute la mediatheque station, pas juste Mixtapes/). Portail web avec upload chunked vers l'API AzuraCast (/files/upload existe nativement, verifie via openapi.yml) juge sur-ingenierie vu le volume actuel (quelques candidatures/mois). Stockage Telegram ecarte : API Bot standard plafonne a 50 Mo upload / 20 Mo download, hors mixes reels de 100-300 Mo. Decision : garder le circuit actuel (lien dans submit-mix.js, depot manuel), a reconsiderer si le volume augmente."
+  },
+  {
+   "id": "IngestionTwoStage",
+   "label": "Ingestion en deux temps (classer / juger)",
+   "type": "concept",
+   "summary": "Separation du 2026-09-05. triage_new_tracks.py CLASSE (bac, metadata) et s'arrete ; analyse_new_tracks.py JUGE puis ENVOIE. L'envoi SFTP est volontairement derriere le verdict : un morceau pose sur le serveur peut passer a l'antenne dans les minutes qui suivent, donc si le triage envoyait tout, un titre juge trop dur le lendemain aurait deja tourne. Deux files distinctes : pending_review.json (classe, pas encore juge) et pending_uploads.json (juge bon, envoi echoue)."
+  },
+  {
+   "id": "tools/analyse_new_tracks.py",
+   "label": "analyse_new_tracks.py",
+   "type": "file",
+   "summary": "ETAPE 2/2 de l'ingestion : juge chaque morceau en attente avec la grille de track_gate.py, puis envoie sur AzuraCast ce qui passe. keep -> envoye ; review -> envoye mais signale (--strict l'ecarte aussi) ; reject -> New_prog/_a_revoir/ avec son motif journalise, retire de metadata.json, jamais envoye. AUCUNE re-analyse : les descripteurs Essentia sont deja en base, donc pas de venv WSL, quelques secondes. Dry-run par defaut. Regenere api/bpm-table.json en fin de course. --requeue renvoie un ecarte dans _incoming pour un second passage."
+  },
+  {
+   "id": "tools/azuracast_upload.py",
+   "label": "azuracast_upload.py",
+   "type": "file",
+   "summary": "Envoi SFTP et files d'attente, partages par les deux etapes de l'ingestion. Porte open_sftp/upload/retry_pending_uploads et la traduction de chemins Windows <-> WSL (le triage tourne dans le venv WSL, l'analyse en Python Windows). sync_library.py NE l'importe pas : ce module charge paramiko des l'import, ce qui casserait son mode --no-sftp."
+  },
+  {
+   "id": "tools/analyse.bat",
+   "label": "analyse.bat",
+   "type": "file",
+   "summary": "Point d'entree de l'etape 2 : affiche les verdicts en simulation, demande confirmation, puis applique et met en ligne. Pas de WSL (aucune re-analyse). A lancer apres triage.bat."
+  },
+  {
+   "id": "tools/triage.bat",
+   "label": "triage.bat",
+   "type": "file",
+   "summary": "Point d'entree de l'etape 1 : nettoyage clapcrate + triage sous WSL (venv Essentia). Ne met plus rien en ligne et ne regenere plus la table BPM ; termine en renvoyant vers analyse.bat."
+  },
+  {
+   "id": "tools/track_gate.py",
+   "label": "track_gate.py",
+   "type": "file",
+   "summary": "Filtre d'antenne : dit d'un morceau candidat s'il a sa place en rotation. Deux niveaux qui ne voient pas la meme chose : screen (avant telechargement, TEXTE seul -- genre annonce, BPM colle au nom, duree) et audit (apres, vraie analyse Essentia ; un extrait de 60-90 s suffit). Trois verdicts keep/review/reject, aucun n'efface quoi que ce soit. refresh fige la distribution de la bibliotheque dans gate_reference.json. SOURCE DE VERITE UNIQUE de la formule de score (WEIGHTS/BADGES/houseness)."
+  },
+  {
+   "id": "tools/gate_reference.json",
+   "label": "gate_reference.json",
+   "type": "config",
+   "summary": "Distribution FIGEE de la bibliotheque : quantiles d'energie, de dynamic_complexity et d'agressivite, bornes de normalisation, seuils de verdict. Sans elle le meme morceau obtiendrait une note differente selon ce qu'on analyse avec lui. Piege du CLIQUET : recalculer les seuils en percentile a chaque refresh les fait deriver vers le bas a chaque nettoyage -- d'ou --exclude, qui les cale sur les titres ecartes A L'OREILLE (p10). Etat au 2026-09-05 : 1152 morceaux, review >= 0.658, reject >= 0.738."
+  },
+  {
+   "id": "tools/review_energy.py",
+   "label": "review_energy.py",
+   "type": "file",
+   "summary": "Revue d'ecoute des titres deja en place : trop energiques, trop repetitifs, trop loin de la house. Meme formule que track_gate.py, importee et non redupliquee. Rapport HTML a cocher avec un lecteur audio par titre, export m3u, puis apply sort les coches de l'antenne (playlists vides, reversible) ou les supprime avec --delete. Rien n'est jamais decide automatiquement."
+  },
+  {
+   "id": "tools/sync_library.py",
+   "label": "sync_library.py",
+   "type": "file",
+   "summary": "Reconcilie le PC et AzuraCast DANS LES DEUX SENS. Six cas : A supprime cote radio / B present en SFTP mais pas indexe / C en attente du VERDICT (pending_review.json) / D en attente d'ENVOI (pending_uploads.json) / E supprime sur le PC / F entree metadata orpheline. La vue SFTP est ce qui rend le sens PC sur : sans elle le script refuse de toucher aux fichiers locaux. Le cas C a ete ajoute avec la separation triage/analyse -- sans lui, un morceau classe mais pas encore juge tombait en cas A et le script proposait de l'ecarter."
   }
  ],
  "edges": [
@@ -1728,6 +1782,102 @@
    "source": "JinglesPlaylistFix",
    "target": "api/telegram.js",
    "relation": "diagnostique-via-logs",
+   "weight": 1
+  },
+  {
+   "source": "IngestionTwoStage",
+   "target": "tools/triage_new_tracks.py",
+   "relation": "etape 1 : classer",
+   "weight": 1
+  },
+  {
+   "source": "IngestionTwoStage",
+   "target": "tools/analyse_new_tracks.py",
+   "relation": "etape 2 : juger puis envoyer",
+   "weight": 1
+  },
+  {
+   "source": "tools/triage.bat",
+   "target": "tools/triage_new_tracks.py",
+   "relation": "lance (venv WSL Essentia)",
+   "weight": 1
+  },
+  {
+   "source": "tools/analyse.bat",
+   "target": "tools/analyse_new_tracks.py",
+   "relation": "lance (simulation puis --apply)",
+   "weight": 1
+  },
+  {
+   "source": "tools/triage_new_tracks.py",
+   "target": "tools/azuracast_upload.py",
+   "relation": "inscrit le lot dans pending_review.json via",
+   "weight": 1
+  },
+  {
+   "source": "tools/analyse_new_tracks.py",
+   "target": "tools/azuracast_upload.py",
+   "relation": "envoie sur AzuraCast via",
+   "weight": 1
+  },
+  {
+   "source": "tools/analyse_new_tracks.py",
+   "target": "tools/track_gate.py",
+   "relation": "note chaque morceau avec",
+   "weight": 1
+  },
+  {
+   "source": "tools/analyse_new_tracks.py",
+   "target": "tools/export_bpm_table.py",
+   "relation": "regenere la table BPM en fin de pipeline via",
+   "weight": 1
+  },
+  {
+   "source": "tools/track_gate.py",
+   "target": "tools/gate_reference.json",
+   "relation": "fige la distribution de reference dans",
+   "weight": 1
+  },
+  {
+   "source": "tools/track_gate.py",
+   "target": "tools/classify_bins.py",
+   "relation": "importe la formule d'energie de",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_energy.py",
+   "target": "tools/track_gate.py",
+   "relation": "importe la formule de score de",
+   "weight": 1
+  },
+  {
+   "source": "tools/sync_library.py",
+   "target": "tools/azuracast_upload.py",
+   "relation": "distingue les deux files d'attente de",
+   "weight": 1
+  },
+  {
+   "source": "tools/sync_library.py",
+   "target": "AzuraCast",
+   "relation": "reconcilie le disque local avec",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_energy.py",
+   "target": "AzuraCast",
+   "relation": "sort les titres coches de l'antenne de",
+   "weight": 1
+  },
+  {
+   "source": "tools/analyse_new_tracks.py",
+   "target": "AzuraCast",
+   "relation": "envoie les morceaux valides sur",
+   "weight": 1
+  },
+  {
+   "source": "BpmGuesserFeature",
+   "target": "tools/analyse_new_tracks.py",
+   "relation": "sa table est regeneree par",
    "weight": 1
   }
  ]

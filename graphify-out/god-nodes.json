@@ -11,7 +11,7 @@
  },
  {
   "id": "AzuraCast",
-  "degree": 17,
+  "degree": 20,
   "label": "AzuraCast"
  },
  {
@@ -27,12 +27,17 @@
  {
   "id": "ProgrammeGrid",
   "degree": 12,
-  "label": "Horloge a bacs ponderes (8 bacs, supersede par RotationContinue)"
+  "label": "Horloge a bacs ponderes (8 bacs)"
  },
  {
   "id": "RotationContinue",
   "degree": 10,
   "label": "RotationContinue"
+ },
+ {
+  "id": "tools/triage_new_tracks.py",
+  "degree": 8,
+  "label": "triage_new_tracks.py"
  },
  {
   "id": "MixtapesFeature",
@@ -42,26 +47,6 @@
  {
   "id": "RekordboxPipeline",
   "degree": 7,
-  "label": "Pipeline Rekordbox -> radio"
- },
- {
-  "id": "api/supporters.js",
-  "degree": 7,
-  "label": "api/supporters.js"
- },
- {
-  "id": "RedisQuotaIncident",
-  "degree": 7,
-  "label": "Incident quota Upstash (2026-07-21)"
- },
- {
-  "id": "BacLiquid",
-  "degree": 7,
-  "label": "BacLiquid (9_liquid)"
- },
- {
-  "id": "EnergyBoostTelegram",
-  "degree": 7,
-  "label": "/energy (Telegram)"
+  "label": "Pipeline Rekordbox → radio"
  }
 ]
