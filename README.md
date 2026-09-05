@@ -71,7 +71,18 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
 
 ## Outils locaux (`tools/`)
 
-- `triage_new_tracks.py` (+ `triage.bat`) — pipeline d'ingestion : nettoyage tags/covers, dédoublonnage, analyse Essentia, **filtre d'antenne** (`track_gate.py` — un titre trop énergique/répétitif/loin de la house part dans `New_prog/_a_revoir/` avec le motif du verdict, sans être classé ni envoyé ; `--no-gate` pour couper, `--gate-strict` pour écarter aussi les « à écouter »), classement dans le bon bac
+L'ingestion se fait en **deux étapes distinctes**, dans cet ordre. Le triage classe, l'analyse juge et met en ligne. Rien n'atteint l'antenne sans être passé par la seconde.
+
+- `triage_new_tracks.py` (+ `triage.bat`) — **étape 1, classer** : nettoyage tags/covers, dédoublonnage, analyse Essentia, classement dans le bon bac, inscription dans `metadata.json` et dans la file d'attente `pending_review.json`. **N'ouvre aucune connexion SFTP** : ce qui sort d'ici est sur le disque, pas à la radio.
+- `analyse_new_tracks.py` (+ `analyse.bat`) — **étape 2, juger puis envoyer** : reprend la file, note chaque titre avec la grille de `track_gate.py` (trop énergique ? trop répétitif ? trop loin de la house ?) et envoie sur AzuraCast ce qui passe. Un `reject` part dans `New_prog/_a_revoir/` avec le motif du verdict et sort de `metadata.json` ; un `review` passe en ligne mais reste signalé (`--strict` l'écarte aussi). Aucune re-analyse — les descripteurs sont déjà en base, donc pas de WSL et quelques secondes. Dry-run par défaut. Régénère `api/bpm-table.json` en fin de course, une fois `metadata.json` dans son état définitif.
+  ```
+  python analyse_new_tracks.py                    # verdicts seuls, rien ne bouge
+  python analyse_new_tracks.py --apply            # applique et met en ligne
+  python analyse_new_tracks.py --apply --strict   # écarte aussi les « à écouter »
+  python analyse_new_tracks.py --requeue "titre.mp3"   # renvoie un écarté dans _incoming
+  ```
+  **Pourquoi l'envoi est de ce côté du verdict :** un morceau posé sur le serveur peut passer à l'antenne dans les minutes qui suivent. Si le triage envoyait tout, un titre jugé trop dur le lendemain aurait déjà tourné.
+- `azuracast_upload.py` — envoi SFTP et files d'attente, partagés par les deux étapes. `pending_review.json` (classé, pas encore jugé) et `pending_uploads.json` (jugé bon, envoi échoué) ne disent pas la même chose : `sync_library.py` les distingue pour ne jamais proposer d'écarter un morceau qui attend simplement son tour.
 - `classify_bins.py` — source de vérité de la grille : 8 bacs, classification genre-d'abord/énergie-ensuite, seuils auto-calibrés par percentiles
 - `analyze_essentia.py` — analyse BPM/énergie/genre/mood (WSL2, modèles TensorFlow)
 - `migrate_grid.py` / `resync_metadata.py` — migrations one-shot (grille 4→8 bacs, réparation metadata)
@@ -98,7 +109,7 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
   python track_gate.py screen --stdin < candidats.txt # un JSON par ligne, pour un outil d'acquisition
   python track_gate.py audit extrait.mp3
   ```
-  Le triage l'applique automatiquement (voir `triage_new_tracks.py`) ; un outil externe type yt2slskd l'appelle en `--stdin` ou importe `screen_text()` / `audit_descriptors()`.
+  C'est `analyse_new_tracks.py` (étape 2 de l'ingestion) qui l'applique aux nouveaux morceaux ; un outil externe type yt2slskd l'appelle en `--stdin` ou importe `screen_text()` / `audit_descriptors()`.
 - `sync_library.py` — **remet le PC et AzuraCast iso dans les deux sens** après une session de nettoyage : ce que tu as supprimé depuis le bot Telegram et qui traîne encore sur le PC, ce que tu as supprimé sur le PC et qui tourne encore à l'antenne, plus les entrées orphelines de `metadata.json`. Croise la vue API (médias indexés) et la vue SFTP (fichiers réels) pour ne jamais confondre une suppression volontaire avec un fichier simplement pas encore scanné par AzuraCast. Dry-run par défaut ; les mp3 retirés des bacs locaux sont rangés dans `New_prog/_ecartes/<bac>/`, pas effacés.
   ```
   python sync_library.py                        # rapport, rien n'est écrit

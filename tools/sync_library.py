@@ -16,17 +16,22 @@ propose une action pour chaque ecart :
         Action : AUCUNE suppression. Lance un "Rescan" de la bibliotheque
         (AzuraCast -> Files -> ⋮ -> Rescan) et relance ce script.
 
-  C. LOCAL SEUL et en attente d'envoi (pending_uploads.json)
-     -> triage_new_tracks.py n'a pas reussi son upload SFTP.
-        Action : AUCUNE. Le prochain run de triage le renverra tout seul.
+  C. LOCAL SEUL et en attente du VERDICT (pending_review.json)
+     -> triage_new_tracks.py l'a classe, analyse_new_tracks.py ne l'a pas
+        encore juge. Il n'a jamais ete envoye, et c'est normal.
+        Action : AUCUNE. Lance analyse.bat pour le juger et le mettre en ligne.
 
-  D. SERVEUR SEUL
+  D. LOCAL SEUL et en attente d'ENVOI (pending_uploads.json)
+     -> le verdict est passe, mais l'upload SFTP a echoue.
+        Action : AUCUNE. Le prochain run d'analyse le renverra tout seul.
+
+  E. SERVEUR SEUL
      -> supprime depuis le PC.
         Action : suppression sur AzuraCast (fichier + entree bibliotheque) et
         retrait de metadata.json. C'est ce que faisait deja
         prune_deleted_tracks.py, desormais couvert ici.
 
-  E. metadata.json orphelin (entree sans fichier local ni media serveur)
+  F. metadata.json orphelin (entree sans fichier local ni media serveur)
      -> nettoyage de l'index d'analyse.
 
 POURQUOI LA VUE SFTP EST INDISPENSABLE (cas B) : l'API ne liste que les medias
@@ -65,6 +70,10 @@ LOCAL_ROOT = os.getenv("KALBASS_NEW_PROG",
                        r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog")
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 PENDING_UPLOADS_PATH = os.path.join(TOOLS_DIR, "pending_uploads.json")
+# Chemins redefinis ici plutot qu'importes d'azuracast_upload : ce module
+# importe paramiko des le chargement, or sync_library doit rester lancable en
+# --no-sftp sur une machine sans paramiko.
+PENDING_REVIEW_PATH = os.path.join(TOOLS_DIR, "pending_review.json")
 QUARANTINE = "_ecartes"  # meme dossier que review_energy.py --delete
 
 BASE = os.getenv("AZURACAST_BASE_URL", "https://kalbassfm.duckdns.org") + "/api"
@@ -146,13 +155,18 @@ def local_files(bin_name):
     return {f for f in os.listdir(d) if os.path.isfile(os.path.join(d, f))}
 
 
-def pending_uploads():
-    """{(bac, nom de fichier)} des envois SFTP en echec, a ne jamais confondre
-    avec une suppression (triage_new_tracks.py les retente tout seul)."""
-    if not os.path.exists(PENDING_UPLOADS_PATH):
+def _queue(path_json):
+    """{(bac, nom de fichier)} lus dans une file d'attente du pipeline.
+
+    Les deux files disent la meme chose a ce script — "ce morceau est local,
+    absent du serveur, et c'est VOULU" — mais pour deux raisons differentes,
+    d'ou deux rubriques distinctes dans le rapport. Les confondre avec une
+    suppression ferait proposer d'ecarter un morceau parfaitement sain.
+    """
+    if not os.path.exists(path_json):
         return set()
     try:
-        with open(PENDING_UPLOADS_PATH, encoding="utf-8") as fh:
+        with open(path_json, encoding="utf-8") as fh:
             entries = json.load(fh)
     except (ValueError, OSError):
         return set()
@@ -163,6 +177,16 @@ def pending_uploads():
             out.add((e.get("slot") or os.path.basename(os.path.dirname(path)),
                      os.path.basename(path)))
     return out
+
+
+def pending_uploads():
+    """Envois SFTP en echec — analyse_new_tracks.py les retente tout seul."""
+    return _queue(PENDING_UPLOADS_PATH)
+
+
+def pending_review():
+    """Classes par le triage, pas encore juges — analyse.bat s'en occupe."""
+    return _queue(PENDING_REVIEW_PATH)
 
 
 def load_metadata():
@@ -184,11 +208,18 @@ def diagnose(bins, use_sftp):
     local = {b: local_files(b) for b in bins}
     on_server = sftp_view(bins) if use_sftp else None
     pending = pending_uploads()
+    awaiting_verdict = pending_review()
 
     deleted_on_radio, not_indexed, awaiting_upload, deleted_on_pc = [], [], [], []
+    awaiting_review = []
     for b in bins:
         for name in sorted(local[b] - set(remote[b])):
-            if (b, name) in pending:
+            # L'attente du verdict passe en premier : un morceau tout juste
+            # classe n'a jamais ete envoye, il n'a donc rien a faire dans la
+            # file des envois rates.
+            if (b, name) in awaiting_verdict:
+                awaiting_review.append((b, name))
+            elif (b, name) in pending:
                 awaiting_upload.append((b, name))
             elif on_server is not None and name in on_server.get(b, set()):
                 not_indexed.append((b, name))
@@ -209,6 +240,7 @@ def diagnose(bins, use_sftp):
     return {
         "bins": bins, "local": local, "remote": remote, "sftp": on_server,
         "deleted_on_radio": deleted_on_radio, "not_indexed": not_indexed,
+        "awaiting_review": awaiting_review,
         "awaiting_upload": awaiting_upload, "deleted_on_pc": deleted_on_pc,
         "orphans": orphans, "meta": meta,
     }
@@ -234,18 +266,24 @@ def report(d):
           "-> ranges dans _ecartes/<bac>/ (ou effaces avec --delete-local) + retires de metadata.json")
     block("B. Sur le serveur mais pas indexes par AzuraCast", d["not_indexed"],
           "-> AUCUNE suppression : lance un Rescan de la bibliotheque puis relance ce script")
-    block("C. En attente d'envoi SFTP (pending_uploads.json)", d["awaiting_upload"],
-          "-> AUCUNE action : le prochain triage_new_tracks.py les renverra")
-    block("D. Supprimes sur le PC, encore sur AzuraCast", d["deleted_on_pc"],
+    block("C. En attente du verdict d'analyse (pending_review.json)", d["awaiting_review"],
+          "-> AUCUNE action : lance analyse.bat pour les juger et les mettre en ligne")
+    block("D. En attente d'envoi SFTP (pending_uploads.json)", d["awaiting_upload"],
+          "-> AUCUNE action : le prochain run d'analyse les renverra")
+    block("E. Supprimes sur le PC, encore sur AzuraCast", d["deleted_on_pc"],
           "-> supprimes d'AzuraCast (fichier + entree bibliotheque) + retires de metadata.json")
-    block("E. Entrees metadata.json orphelines", d["orphans"],
+    block("F. Entrees metadata.json orphelines", d["orphans"],
           "-> retirees de metadata.json (l'analyse Essentia ne sert plus a rien)")
 
     if d["sftp"] is None and d["deleted_on_radio"]:
         print("\n⚠️  Vue SFTP absente : impossible de distinguer A (supprime cote radio) de B "
               "(pas encore indexe). Les fichiers locaux ne seront PAS touches.")
     total = (len(d["deleted_on_radio"]) + len(d["deleted_on_pc"]) + len(d["orphans"]))
-    if not total and not d["not_indexed"] and not d["awaiting_upload"]:
+    if d["awaiting_review"]:
+        print(f"\n{len(d['awaiting_review'])} morceau(x) classes attendent leur verdict "
+              f"-> analyse.bat (ils ne sont pas censes etre sur le serveur).")
+    if not total and not d["not_indexed"] and not d["awaiting_upload"] \
+            and not d["awaiting_review"]:
         print("\nBibliotheques iso — rien a faire.")
     return total
 
