@@ -19,6 +19,7 @@ Player web pour **KALBASSFM**, webradio 100% électronique diffusant électro, d
 - Minuteur de sommeil
 - Partage du titre en cours
 - Bandeau de financement (30 €/mois) — fermable, revient au bout de 30 jours
+- Bot Telegram admin : `/search <artiste ou titre>` cherche dans la bibliothèque et propose, pour le résultat choisi, l'ajout à la **file d'attente**, le déplacement de playlist, la sortie d'antenne ou la suppression ; `/queue` montre la file à venir et son avance (~25-30 min). L'ajout à la file emprunte le mécanisme de **demande de titre** d'AzuraCast (seule voie d'écriture dans la file) : « Autoriser les demandes de titres » doit être actif sur la station, et « Inclure dans les demandes » sur la playlist du morceau — sinon le bot relaie tel quel le refus d'AzuraCast
 - Candidature DJ « Submit a mix » (nom, email, lien du set en HQ, style, Instagram/SoundCloud optionnels) → notification Telegram admin + archive Redis, relue avec `/submissions`
 - Annonce d'une mixtape programmée dans le chat live avec les liens sociaux du DJ (bouton 📣 sous `/submissions`) — les liens ne sont cliquables que dans les messages admin
 - Grille de programme "horloge à bacs pondérés" (heure Martinique UTC-4) :
@@ -82,6 +83,15 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
   python fix_artwork.py fix --apply --fill-missing  # + morceaux sans aucune pochette
   python fix_artwork.py local-scan                  # disque : New_prog
   python fix_artwork.py local-fix --apply           # écrit dans les MP3 (re-upload SFTP ensuite)
+  ```
+- `review_energy.py` — **revue des morceaux trop énergiques / répétitifs / éloignés de la house** (ceux qui font partir un auditeur en cours d'écoute). Score en percentiles sur quatre axes — intensité, monotonie (`dynamic_complexity`), écart à la house (genres Discogs + tempo), agressivité — puis rapport HTML à cocher **avec un lecteur audio par titre pointant les mp3 locaux**, ou export `.m3u` pour VLC/foobar. La sélection cochée sort de l'antenne (retirée de toutes les playlists, fichier conservé) ou est supprimée pour de bon.
+  ```
+  python review_energy.py list                    # top 60 en console
+  python review_energy.py report                  # rapport HTML à cocher
+  python review_energy.py m3u --bac 6_techno      # playlist d'écoute d'un bac
+  python review_energy.py apply                   # dry-run de la sélection
+  python review_energy.py apply --apply           # sortie d'antenne (réversible)
+  python review_energy.py apply --apply --delete  # suppression + mp3 local rangé dans _ecartes/
   ```
 - `make_og_image.py` — génère `og-image.png`, la vignette de partage (Open Graph / annuaires type TuneIn)
 - `import-rekordbox.ps1` — matche les exports `.txt` Rekordbox aux fichiers audio
