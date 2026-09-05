@@ -124,11 +124,36 @@ def pct_of(value, table):
     return bisect.bisect_left(table, value) / (len(table) - 1)
 
 
+def read_exclusions(path):
+    """Lignes "bac/nom.mp3" (format des selections review_energy.py)."""
+    out = set()
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip().replace("\\", "/")
+            if line and not line.startswith("#"):
+                out.add(line.rpartition("/")[2])
+    return out
+
+
 def cmd_refresh(args):
     if not os.path.exists(METADATA_PATH):
         sys.exit("metadata.json introuvable — lance d'abord analyze_essentia.py.")
     with open(METADATA_PATH, encoding="utf-8") as fh:
         tracks = json.load(fh)
+    # Un morceau sorti de l'antenne est toujours dans metadata.json (le fichier
+    # existe encore, il n'est simplement dans aucune playlist) : sans cette
+    # exclusion, la reference continuerait de decrire une radio qui ne passe
+    # plus ces titres, et les seuils resteraient calibres sur eux.
+    excluded = []
+    if args.exclude:
+        names = read_exclusions(args.exclude)
+        keep, excluded = [], []
+        for t in tracks:
+            (excluded if os.path.basename((t.get("path") or "").replace("\\", "/")) in names
+             else keep).append(t)
+        tracks = keep
+        print(f"{len(excluded)} morceau(x) exclus ({os.path.basename(args.exclude)}) "
+              f"— hors antenne, ils ne decrivent plus la radio.")
     energies = compute_energies(tracks)
 
     rms = [t.get("rms", 0.0) for t in tracks]
@@ -147,18 +172,61 @@ def cmd_refresh(args):
         },
         "weights": WEIGHTS,
     }
-    scores = sorted(score_descriptors(t, ref)["score"] for t in tracks)
-    ref["verdict"] = {
-        "reject": scores[min(len(scores) - 1, int(REJECT_PCT * len(scores)))],
-        "review": scores[min(len(scores) - 1, int(REVIEW_PCT * len(scores)))],
-    }
+    ref["verdict"] = new_thresholds(ref, tracks, excluded, args)
     with open(REFERENCE_PATH, "w", encoding="utf-8") as fh:
         json.dump(ref, fh, ensure_ascii=False, indent=1)
     print(f"{len(tracks)} morceaux -> {REFERENCE_PATH}")
-    print(f"  seuils : review >= {ref['verdict']['review']:.3f}, "
-          f"reject >= {ref['verdict']['reject']:.3f} "
-          f"({sum(1 for s in scores if s >= ref['verdict']['reject'])} morceaux de la "
-          f"bibliotheque actuelle seraient rejetes)")
+    print(f"  seuils : review >= {ref['verdict']['review']}, reject >= {ref['verdict']['reject']}")
+
+
+def new_thresholds(ref, tracks, excluded, args):
+    """Ou placer les seuils de verdict — la question la plus piegeuse de l'outil.
+
+    Les recalculer en percentile de la bibliotheque a CHAQUE refresh installe
+    un CLIQUET : on nettoie, la distribution se resserre, le p97 descend, le
+    filtre rejette le nouveau haut du panier, et de proche en proche il finirait
+    par refuser de la house parfaitement normale. Mesure faite le 2026-09-05
+    apres la sortie de 120 titres : le p97 tombait de 0.823 a 0.698.
+
+    Trois regimes, du plus juste au plus grossier :
+    1. --exclude : les titres ecartes A L'OREILLE sont la meilleure definition
+       du "trop" — on cale le rejet sur le PLUS DOUX d'entre eux (p10, robuste
+       a un choix isole). Le seuil vient d'une decision humaine, pas d'un
+       quantile mouvant : il ne bouge plus tant qu'on ne rejuge pas.
+    2. reference existante : on conserve ses seuils (une refresh de routine ne
+       doit pas durcir le filtre en douce).
+    3. premiere calibration, ou --recalibrate : percentiles REJECT_PCT/REVIEW_PCT.
+    """
+    def scores_of(rows):
+        return sorted(score_descriptors(t, ref)["score"] for t in rows)
+
+    if excluded and not args.recalibrate:
+        ejected = scores_of(excluded)
+        reject = ejected[max(0, int(0.10 * len(ejected)) - 1)] if len(ejected) >= 10 else ejected[0]
+        out = {"reject": round(reject, 3), "review": round(max(0.0, reject - 0.08), 3),
+               "anchored_on": os.path.basename(args.exclude)}
+        kept = scores_of(tracks)
+        print(f"  seuils cales sur les {len(ejected)} titres que tu as ecartes "
+              f"(le plus doux d'entre eux : {ejected[0]:.3f})")
+        print(f"  -> {sum(1 for s in kept if s >= out['reject'])} titre(s) de la rotation "
+              f"actuelle seraient rejetes, {sum(1 for s in kept if out['review'] <= s < out['reject'])} "
+              f"a ecouter")
+        return out
+
+    previous = None
+    if os.path.exists(REFERENCE_PATH) and not args.recalibrate:
+        with open(REFERENCE_PATH, encoding="utf-8") as fh:
+            previous = json.load(fh).get("verdict")
+    if previous:
+        print(f"  seuils conserves : review >= {previous['review']}, reject >= {previous['reject']} "
+              f"(--recalibrate pour les recalculer)")
+        return previous
+
+    scores = scores_of(tracks)
+    return {
+        "reject": round(scores[min(len(scores) - 1, int(REJECT_PCT * len(scores)))], 3),
+        "review": round(scores[min(len(scores) - 1, int(REVIEW_PCT * len(scores)))], 3),
+    }
 
 
 def load_reference():
@@ -366,7 +434,13 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    sub.add_parser("refresh", help="figer la distribution de la bibliotheque dans gate_reference.json")
+    pr = sub.add_parser("refresh", help="figer la distribution de la bibliotheque dans gate_reference.json")
+    pr.add_argument("--recalibrate", action="store_true",
+                    help="recalculer les seuils en percentiles de la bibliotheque "
+                         "(attention au cliquet : voir new_thresholds)")
+    pr.add_argument("--exclude", metavar="FICHIER",
+                    help="liste 'bac/nom.mp3' a ne pas compter (ex: energy_review_selection.txt, "
+                         "les titres qu'on vient de sortir de l'antenne)")
 
     ps = sub.add_parser("screen", help="verdict avant telechargement (texte seul)")
     ps.add_argument("name", nargs="*", help="nom du fichier ou du resultat de recherche")

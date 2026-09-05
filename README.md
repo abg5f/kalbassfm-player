@@ -84,9 +84,16 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
   python fix_artwork.py local-scan                  # disque : New_prog
   python fix_artwork.py local-fix --apply           # écrit dans les MP3 (re-upload SFTP ensuite)
   ```
+  **Politique « dans le doute, on retire »** (une pochette par défaut prend le relais) : `--suspects` cible tout ce qui est douteux sans rien cocher — même image portée par plusieurs artistes, ou vignette plus petite que `--min-size` — et `--strip-only` retire au lieu de chercher un remplacement.
+  ```
+  python fix_artwork.py fix --suspects --strip-only            # dry-run station
+  python fix_artwork.py fix --suspects --strip-only --apply
+  python fix_artwork.py local-fix --suspects --strip-only --apply   # disque
+  ```
 - `track_gate.py` — **filtre d'entrée** : dit d'un morceau candidat s'il a sa place à l'antenne, avec la même grille que `review_energy.py` mais appliquée à un titre isolé. Deux niveaux : `screen` (avant téléchargement, texte seul — genre annoncé, BPM collé au nom, durée : attrape hardcore, psytrance, sets d'une heure, intros de 40 s) et `audit` (après téléchargement, vraie analyse Essentia — un extrait de 60-90 s suffit). Trois verdicts : `keep` / `review` / `reject`, aucun n'efface quoi que ce soit.
   ```
   python track_gate.py refresh                        # fige la distribution de la bibliothèque
+  python track_gate.py refresh --exclude tools/energy_review_selection.txt   # après un nettoyage : cale les seuils sur ce que tu as écarté
   python track_gate.py screen "Artist - Title 174" --duration 3600
   python track_gate.py screen --stdin < candidats.txt # un JSON par ligne, pour un outil d'acquisition
   python track_gate.py audit extrait.mp3

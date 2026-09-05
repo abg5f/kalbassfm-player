@@ -20,6 +20,12 @@ Station :
     python fix_artwork.py fix --apply          # ecrit sur la station
     python fix_artwork.py fix --apply --fill-missing   # + morceaux sans pochette
 
+Nettoyage sans rien cocher (politique "dans le doute, on retire" — une pochette
+par defaut prend le relais) :
+    python fix_artwork.py fix --suspects --strip-only            # dry-run
+    python fix_artwork.py fix --suspects --strip-only --apply    # station
+    python fix_artwork.py local-fix --suspects --strip-only --apply  # disque
+
 Disque (New_prog, avant upload SFTP) :
     python fix_artwork.py local-scan
     python fix_artwork.py local-fix --apply
@@ -268,8 +274,8 @@ def cmd_local_fix(args):
         sys.exit('%s absent : lancer `local-scan` d abord.' % LOCAL_SCAN_PATH)
     recs = json.load(open(LOCAL_SCAN_PATH, encoding='utf-8'))
     bad = load_blocklist()
-    targets = [r for r in recs if is_blocked(r.get('dhash'), bad)]
     print('Blocklist : %d empreinte(s)' % len(bad))
+    targets = pick_targets(recs, args, bad)
     print('Cibles    : %d fichier(s)' % len(targets))
     print('Mode      : %s\n' % ('APPLICATION REELLE' if args.apply
                                 else 'DRY-RUN (rien ne sera modifie)'))
@@ -325,6 +331,44 @@ def suspect_groups(recs, min_artists, min_files=1):
     out = [(h, g) for h, g in groups.items()
            if len(g) >= min_files and len({x['artist'].strip().lower() for x in g}) >= min_artists]
     return sorted(out, key=lambda kv: len(kv[1]), reverse=True)
+
+
+def doubtful(recs, min_artists, min_size=0):
+    """Pochettes sur lesquelles on a un DOUTE, sans attendre qu'un humain coche.
+
+    Politique demandee le 2026-09-05 : en cas de doute, on retire la pochette
+    plutot que de la garder (une image par defaut prend le relais cote station
+    et cote player). Deux signaux, aucun ne demande de jugement :
+      - la meme image portee par plusieurs ARTISTES differents (min_artists) :
+        c'est la signature d'une banniere de site ou d'un logo de label ;
+      - une vignette minuscule (min_size), qui ne sera jamais une vraie
+        pochette exploitable a l'ecran.
+    Les compilations sont le faux positif connu de la premiere regle — c'est
+    le prix a payer pour ne plus rien avoir a cocher, et la pochette par
+    defaut reste plus presentable qu'un logo de tracker."""
+    out = {}
+    for _, group in suspect_groups(recs, min_artists):
+        for r in group:
+            out[id(r)] = r
+    if min_size:
+        for r in recs:
+            if r.get('dhash') and min(r.get('w') or 0, r.get('h') or 0) < min_size:
+                out[id(r)] = r
+    return list(out.values())
+
+
+def pick_targets(recs, args, bad):
+    """Cibles d'un fix : la blocklist, plus les douteuses si --suspects."""
+    targets = [r for r in recs if is_blocked(r.get('dhash'), bad)]
+    if getattr(args, 'suspects', False):
+        known = {id(r) for r in targets}
+        extra = [r for r in doubtful(recs, args.min_artists, args.min_size)
+                 if id(r) not in known]
+        print('Douteuses : %d fichier(s) (meme image sur >=%d artistes%s)'
+              % (len(extra), args.min_artists,
+                 ', ou vignette < %dpx' % args.min_size if args.min_size else ''))
+        targets += extra
+    return targets
 
 
 def art_bytes(rec):
@@ -541,13 +585,15 @@ def cmd_fix(args):
         sys.exit('%s absent : lancer `python fix_artwork.py scan` d abord.' % SCAN_PATH)
     recs = json.load(open(SCAN_PATH, encoding='utf-8'))
     bad = load_blocklist()
-    if not bad:
-        sys.exit('%s vide : cocher les pochettes dans %s.' % (BLOCKLIST_PATH, REPORT_PATH))
+    if not bad and not args.suspects:
+        sys.exit('%s vide : cocher les pochettes dans %s, ou utiliser --suspects '
+                 '(retire tout ce qui est douteux, sans rien cocher).'
+                 % (BLOCKLIST_PATH, REPORT_PATH))
 
-    targets = [r for r in recs if is_blocked(r.get('dhash'), bad)]
-    missing = [r for r in recs if r.get('no_art') and (r['artist'] or r['title'])]
     print('Blocklist : %d empreinte(s)' % len(bad))
-    print('Bannieres : %d fichier(s)' % len(targets))
+    targets = pick_targets(recs, args, bad)
+    missing = [r for r in recs if r.get('no_art') and (r['artist'] or r['title'])]
+    print('Cibles    : %d fichier(s)' % len(targets))
     print('Sans pochette : %d fichier(s)%s'
           % (len(missing), '' if args.fill_missing else ' (--fill-missing pour les traiter)'))
     if args.fill_missing:
@@ -634,20 +680,36 @@ def main():
                    help='1 = toutes les pochettes distinctes (defaut)')
     s.set_defaults(func=cmd_local_scan)
 
-    s = sub.add_parser('local-fix', help='remplace les pochettes blocklistees sur le disque')
+    s = sub.add_parser('local-fix', help='remplace ou retire les pochettes douteuses sur le disque')
     s.add_argument('--apply', action='store_true', help='ecrit reellement dans les MP3')
     s.add_argument('--strip-only', action='store_true',
                    help='retire sans chercher de remplacement (rapide)')
     s.add_argument('--limit', type=int, help='ne traite que les N premiers (test)')
+    s.add_argument('--suspects', action='store_true',
+                   help='cibler aussi tout ce qui est DOUTEUX sans rien cocher : '
+                        'meme image sur plusieurs artistes (--min-artists), '
+                        'ou vignette plus petite que --min-size')
+    s.add_argument('--min-artists', type=int, default=MIN_ARTISTS,
+                   help='nombre d artistes partageant une image pour la juger douteuse (defaut : %d)' % MIN_ARTISTS)
+    s.add_argument('--min-size', type=int, default=0,
+                   help='sous ce cote en pixels, une pochette est jugee douteuse (0 = desactive)')
     s.set_defaults(func=cmd_local_fix)
 
-    s = sub.add_parser('fix', help='remplace les pochettes listees dans la blocklist')
+    s = sub.add_parser('fix', help='remplace ou retire les pochettes douteuses sur la station')
     s.add_argument('--apply', action='store_true', help='ecrit reellement sur la station')
     s.add_argument('--strip-only', action='store_true',
                    help='supprime sans chercher de remplacement (rapide)')
     s.add_argument('--limit', type=int, help='ne traite que les N premiers (test)')
     s.add_argument('--fill-missing', action='store_true',
                    help='traite aussi les morceaux sans aucune pochette')
+    s.add_argument('--suspects', action='store_true',
+                   help='cibler aussi tout ce qui est DOUTEUX sans rien cocher : '
+                        'meme image sur plusieurs artistes (--min-artists), '
+                        'ou vignette plus petite que --min-size')
+    s.add_argument('--min-artists', type=int, default=MIN_ARTISTS,
+                   help='nombre d artistes partageant une image pour la juger douteuse (defaut : %d)' % MIN_ARTISTS)
+    s.add_argument('--min-size', type=int, default=0,
+                   help='sous ce cote en pixels, une pochette est jugee douteuse (0 = desactive)')
     s.set_defaults(func=cmd_fix)
 
     args = ap.parse_args()
