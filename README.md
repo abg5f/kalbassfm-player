@@ -71,7 +71,7 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
 
 ## Outils locaux (`tools/`)
 
-- `triage_new_tracks.py` (+ `triage.bat`) — pipeline d'ingestion : nettoyage tags/covers, dédoublonnage, analyse Essentia, classement dans le bon bac
+- `triage_new_tracks.py` (+ `triage.bat`) — pipeline d'ingestion : nettoyage tags/covers, dédoublonnage, analyse Essentia, **filtre d'antenne** (`track_gate.py` — un titre trop énergique/répétitif/loin de la house part dans `New_prog/_a_revoir/` avec le motif du verdict, sans être classé ni envoyé ; `--no-gate` pour couper, `--gate-strict` pour écarter aussi les « à écouter »), classement dans le bon bac
 - `classify_bins.py` — source de vérité de la grille : 8 bacs, classification genre-d'abord/énergie-ensuite, seuils auto-calibrés par percentiles
 - `analyze_essentia.py` — analyse BPM/énergie/genre/mood (WSL2, modèles TensorFlow)
 - `migrate_grid.py` / `resync_metadata.py` — migrations one-shot (grille 4→8 bacs, réparation metadata)
@@ -84,6 +84,14 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
   python fix_artwork.py local-scan                  # disque : New_prog
   python fix_artwork.py local-fix --apply           # écrit dans les MP3 (re-upload SFTP ensuite)
   ```
+- `track_gate.py` — **filtre d'entrée** : dit d'un morceau candidat s'il a sa place à l'antenne, avec la même grille que `review_energy.py` mais appliquée à un titre isolé. Deux niveaux : `screen` (avant téléchargement, texte seul — genre annoncé, BPM collé au nom, durée : attrape hardcore, psytrance, sets d'une heure, intros de 40 s) et `audit` (après téléchargement, vraie analyse Essentia — un extrait de 60-90 s suffit). Trois verdicts : `keep` / `review` / `reject`, aucun n'efface quoi que ce soit.
+  ```
+  python track_gate.py refresh                        # fige la distribution de la bibliothèque
+  python track_gate.py screen "Artist - Title 174" --duration 3600
+  python track_gate.py screen --stdin < candidats.txt # un JSON par ligne, pour un outil d'acquisition
+  python track_gate.py audit extrait.mp3
+  ```
+  Le triage l'applique automatiquement (voir `triage_new_tracks.py`) ; un outil externe type yt2slskd l'appelle en `--stdin` ou importe `screen_text()` / `audit_descriptors()`.
 - `sync_library.py` — **remet le PC et AzuraCast iso dans les deux sens** après une session de nettoyage : ce que tu as supprimé depuis le bot Telegram et qui traîne encore sur le PC, ce que tu as supprimé sur le PC et qui tourne encore à l'antenne, plus les entrées orphelines de `metadata.json`. Croise la vue API (médias indexés) et la vue SFTP (fichiers réels) pour ne jamais confondre une suppression volontaire avec un fichier simplement pas encore scanné par AzuraCast. Dry-run par défaut ; les mp3 retirés des bacs locaux sont rangés dans `New_prog/_ecartes/<bac>/`, pas effacés.
   ```
   python sync_library.py                        # rapport, rien n'est écrit

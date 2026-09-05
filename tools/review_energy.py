@@ -19,6 +19,10 @@ Rien n'est decide automatiquement : le script classe et propose, tu coches.
 
 COMMENT LE SCORE EST CONSTRUIT
 ------------------------------
+La formule vit dans track_gate.py (WEIGHTS/BADGES/houseness), qui l'applique
+aussi a un morceau isole avant qu'il n'entre en rotation — ce script et le
+filtre du triage notent donc exactement de la meme facon.
+
 Meme philosophie que classify_bins.py : aucun seuil absolu, tout est en
 PERCENTILES de la bibliotheque reelle (l'echelle d'energie d'Essentia est
 compressee — p95 global ~0.29 — et depend du mastering des morceaux).
@@ -81,7 +85,10 @@ if hasattr(sys.stdout, "reconfigure"):
 
 TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS_DIR)
-from classify_bins import NEW_BINS, compute_energies, genre_family, top_genre  # noqa: E402
+from classify_bins import NEW_BINS, compute_energies, top_genre  # noqa: E402
+# Formule du score : definie une seule fois, dans track_gate.py, qui l'applique
+# aussi a un morceau isole (filtre d'entree du triage / yt2slskd).
+from track_gate import BADGES, WEIGHTS, houseness  # noqa: E402
 
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "energy_review.html")
@@ -93,20 +100,6 @@ QUARANTINE = "_ecartes"
 
 BASE = os.getenv("AZURACAST_BASE_URL", "https://kalbassfm.duckdns.org") + "/api"
 STATION = os.getenv("AZURACAST_STATION_ID", "1")
-
-WEIGHTS = {"intensite": 0.30, "monotonie": 0.25, "ecart_house": 0.25, "agressivite": 0.20}
-HOUSE_FAMILIES = ("house", "groove", "garage")
-HOUSE_BPM_LO, HOUSE_BPM_HI = 118, 132
-# Au-dela de cet ecart au coeur house, le tempo ne dit plus rien de plus :
-# 172 BPM (DnB) et 200 BPM (hardcore) sont deja "ailleurs" tous les deux.
-BPM_SPREAD = 30.0
-
-BADGES = [
-    ("intensite", 0.90, "🔥", "tres energique"),
-    ("monotonie", 0.75, "🔁", "repetitif / peu de dynamique"),
-    ("ecart_house", 0.65, "🧭", "s'ecarte de la house"),
-    ("agressivite", 0.90, "😠", "agressif"),
-]
 
 
 # ------------------------------- mesures -------------------------------
@@ -128,32 +121,6 @@ def ranks(values):
             out[order[k]] = r
         i = j + 1
     return out
-
-
-def houseness(track):
-    """0-1 : a quel point le morceau est de la house au sens large.
-
-    Prend le meilleur score Discogs parmi les genres de famille house/disco/
-    garage, puis penalise l'ecart au tempo house. Un morceau sans genre
-    identifie retombe a 0.5 (on ne l'accuse pas sur une absence de donnee)."""
-    genres = track.get("genres") or []
-    if not genres:
-        style = 0.5
-    else:
-        style = 0.0
-        for entry in genres:
-            label, score = (entry[0], entry[1]) if isinstance(entry, (list, tuple)) else (str(entry), 1.0)
-            if genre_family(label.split("---")[-1].strip()) in HOUSE_FAMILIES:
-                style = max(style, min(1.0, float(score)))
-    bpm = float(track.get("bpm") or 0.0)
-    if bpm <= 0:
-        tempo = 0.5
-    elif HOUSE_BPM_LO <= bpm <= HOUSE_BPM_HI:
-        tempo = 1.0
-    else:
-        gap = HOUSE_BPM_LO - bpm if bpm < HOUSE_BPM_LO else bpm - HOUSE_BPM_HI
-        tempo = max(0.0, 1.0 - gap / BPM_SPREAD)
-    return 0.7 * style + 0.3 * tempo
 
 
 def bin_of(track):
@@ -242,6 +209,25 @@ def cmd_list(args):
     print(f"Rapport a cocher : python {os.path.basename(__file__)} report")
 
 
+def cmd_select(args):
+    """Ecrit la selection sans passer par le rapport : apres une ecoute
+    complete, cocher 120 cases une par une n'apporte rien."""
+    rows = select(score_library(load_tracks()), args)
+    if not rows:
+        print("Aucun morceau ne passe les filtres — selection inchangee.")
+        return
+    lines = [f"{r['bac']}/{r['file']}" for r in rows]
+    mode = "a" if args.append else "w"
+    if args.append and os.path.exists(SELECTION_PATH):
+        with open(SELECTION_PATH, encoding="utf-8") as fh:
+            known = {l.strip() for l in fh}
+        lines = [l for l in lines if l not in known]
+    with open(SELECTION_PATH, mode, encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    print(f"{len(lines)} morceau(x) {'ajoutes a' if args.append else 'ecrits dans'} {SELECTION_PATH}")
+    print(f"Verifie avec : python {os.path.basename(__file__)} apply")
+
+
 def cmd_m3u(args):
     rows = select(score_library(load_tracks()), args)
     lines = ["#EXTM3U"]
@@ -321,6 +307,9 @@ document.getElementById('fbadge').addEventListener('change',filter);
 document.getElementById('copy').addEventListener('click',function(){
   navigator.clipboard.writeText(document.getElementById('out').value);
 });
+document.getElementById('all').addEventListener('click',function(){
+  rows().forEach(function(r){if(r.style.display!=='none')r.querySelector('input').checked=true});sync();
+});
 document.getElementById('clear').addEventListener('click',function(){
   rows().forEach(function(r){r.querySelector('input').checked=false});sync();
 });
@@ -374,10 +363,13 @@ def cmd_report(args):
         'Puis colle la liste du bas dans <code>tools/energy_review_selection.txt</code> et lance '
         '<code>python review_energy.py apply --apply</code> (les titres quittent l\'antenne sans etre '
         'supprimes ; ajoute <code>--delete</code> pour les effacer vraiment). '
-        'Tes coches sont memorisees dans ce navigateur.</p>'
+        'Tes coches sont memorisees dans ce navigateur. Apres une ecoute complete, '
+        '<code>python review_energy.py select</code> ecrit la liste entiere d\'un coup, '
+        'sans avoir a cocher.</p>'
         '<div class="bar">'
         '<label>bac <select id="fbac"><option value="">tous</option>%s</select></label>'
         '<label>signal <select id="fbadge"><option value="">tous</option>%s</select></label>'
+        '<button id="all">Tout cocher</button>'
         '<button id="clear">Tout decocher</button>'
         '<span class="count" id="count"></span></div>'
         '%s'
@@ -555,6 +547,10 @@ def main():
     common(sub.add_parser("list", help="lister en console"), 60)
     common(sub.add_parser("report", help="rapport HTML a cocher, avec lecteurs audio locaux"), 120)
     common(sub.add_parser("m3u", help="playlist .m3u pour ecouter dans VLC/foobar"), 60)
+    psel = sub.add_parser("select", help="ecrire directement la selection (sans cocher dans le rapport)")
+    common(psel, 120)
+    psel.add_argument("--append", action="store_true",
+                      help="completer la selection existante au lieu de la remplacer")
 
     pa = sub.add_parser("apply", help="appliquer la selection cochee")
     pa.add_argument("--apply", action="store_true", help="ecrire reellement (sinon dry-run)")
@@ -564,7 +560,8 @@ def main():
                     help="avec --delete : ne pas deplacer les mp3 locaux vers _ecartes/")
 
     args = ap.parse_args()
-    {"list": cmd_list, "report": cmd_report, "m3u": cmd_m3u, "apply": cmd_apply}[args.cmd](args)
+    {"list": cmd_list, "report": cmd_report, "m3u": cmd_m3u,
+     "select": cmd_select, "apply": cmd_apply}[args.cmd](args)
 
 
 if __name__ == "__main__":

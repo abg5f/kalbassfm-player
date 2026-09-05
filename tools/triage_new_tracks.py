@@ -6,14 +6,19 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
 2. Detecte les doublons (artiste+titre normalises) contre ce qui existe deja
    dans New_prog -> deplace vers _incoming/_duplicates/ et ignore
 3. Analyse Essentia (energie, bpm, genre, mood, danceability)
-4. Classe le morceau dans un des 9 BACS de la grille (classify_bins.py :
+4. FILTRE D'ANTENNE (track_gate.py) : un morceau trop energique, trop
+   repetitif ou trop loin de la house part dans New_prog/_a_revoir/ au lieu
+   d'entrer en rotation, avec le motif du verdict. Rien n'est supprime, rien
+   n'est envoye sur AzuraCast : le morceau attend une ecoute. Desactivable
+   (--no-gate) ; --gate-strict met aussi les "a ecouter" de cote.
+5. Classe le morceau dans un des 9 BACS de la grille (classify_bins.py :
    genre d'abord, energie ensuite, seuils auto-calibres)
-5. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
+6. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
    PAS de prefixe d'ordre : l'ordonnancement est le travail d'AzuraCast
    (rotation continue ponderee, cf. tools/apply_rotation.py). Seuls les
    nouveaux morceaux ont besoin d'etre uploades en SFTP.
-6. Ajoute le resultat a metadata.json
-7. Regenere api/bpm-table.json (jeu "devine le BPM" du chat live), qui doit
+7. Ajoute le resultat a metadata.json
+8. Regenere api/bpm-table.json (jeu "devine le BPM" du chat live), qui doit
    rester aligne sur metadata.json -- il l'etait mal quand ce script etait
    lance directement en WSL au lieu de passer par triage.bat, et le jeu
    devenait muet sur tous les morceaux recents (constate 2026-07-28 et
@@ -48,6 +53,7 @@ import export_bpm_table  # noqa: E402  (table du jeu BPM, regeneree en fin de ru
 from classify_bins import (  # noqa: E402  (source de verite unique de la grille)
     NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_bin,
 )
+import track_gate  # noqa: E402  (filtre d'antene, meme score que review_energy.py)
 import paramiko  # noqa: E402
 from sftp_config import (  # noqa: E402
     SFTP_HOST, SFTP_PORT, SFTP_USER, SFTP_PASS, SFTP_REMOTE_ROOT,
@@ -63,6 +69,17 @@ DUPLICATE_THRESHOLD = 0.75
 
 NEW_PROG_WSL = "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog"
 SLOT_FOLDERS = {b: f"{NEW_PROG_WSL}/{b}" for b in NEW_BINS}
+
+# Purgatoire du filtre d'antenne : ni un bac de rotation, ni la poubelle. Les
+# morceaux qui y atterrissent ne sont ni classes, ni envoyes sur AzuraCast, ni
+# ajoutes a metadata.json (ils fausseraient la calibration des percentiles, qui
+# doit decrire ce qui PASSE a l'antenne). Le motif de chaque verdict est
+# journalise a cote, pour pouvoir trancher sans relancer l'analyse.
+GATE_FOLDER = f"{NEW_PROG_WSL}/_a_revoir"
+GATE_LOG = f"{GATE_FOLDER}/_verdicts.txt"
+# process_file renvoie None pour un doublon : les morceaux ecartes par le
+# filtre ont leur propre sentinelle, sinon ils seraient comptes en doublons.
+GATED = "gated"
 
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "triage_report.html")
@@ -162,6 +179,7 @@ class Report:
         self.start = time_module.time()
         self.slots = {s: [] for s in SLOT_FOLDERS}
         self.duplicates = []
+        self.gated = []
         self.failures = []
         self.upload_failures = []
         self.uploaded = 0
@@ -174,6 +192,11 @@ class Report:
 
     def add_duplicate(self, filename, match):
         self.duplicates.append((filename, os.path.basename(match)))
+        self.done += 1
+        self.render()
+
+    def add_gated(self, filename, verdict):
+        self.gated.append((filename, verdict))
         self.done += 1
         self.render()
 
@@ -213,6 +236,11 @@ class Report:
         dup_rows = "".join(
             f"<tr><td>{html.escape(f)}</td><td>{html.escape(m)}</td></tr>" for f, m in self.duplicates
         )
+        gate_rows = "".join(
+            f"<tr><td>{html.escape(f)}</td><td>{v['verdict']}</td><td>{v['score']}</td>"
+            f"<td>{html.escape(', '.join(v['reasons']) or '-')}</td></tr>"
+            for f, v in self.gated
+        )
         fail_rows = "".join(
             f"<tr><td>{html.escape(f)}</td><td>{html.escape(e)}</td></tr>" for f, e in self.failures
         )
@@ -245,10 +273,12 @@ class Report:
 <h1>KALBASSFM - Triage des nouveaux morceaux</h1>
 <div class="status">{status_label} — {self.done}/{self.total} traites — {elapsed:.0f}s</div>
 <div class="progress"><div class="progress-fill"></div></div>
-<p>Doublons ignores : {len(self.duplicates)} | Echecs : {len(self.failures)} | Envoyes AzuraCast : {self.uploaded} | Echecs envoi : {len(self.upload_failures)}</p>
+<p>Doublons ignores : {len(self.duplicates)} | Ecartes par le filtre : {len(self.gated)} | Echecs : {len(self.failures)} | Envoyes AzuraCast : {self.uploaded} | Echecs envoi : {len(self.upload_failures)}</p>
 {slot_blocks}
 <h3>Doublons ignores ({len(self.duplicates)})</h3>
 <table><tr><th>Fichier</th><th>Correspond a</th></tr>{dup_rows}</table>
+<h3>Ecartes par le filtre d'antenne ({len(self.gated)}) &mdash; dans New_prog/_a_revoir/</h3>
+<table><tr><th>Fichier</th><th>Verdict</th><th>Score</th><th>Motif</th></tr>{gate_rows}</table>
 <h3>Echecs classement ({len(self.failures)})</h3>
 <table><tr><th>Fichier</th><th>Erreur</th></tr>{fail_rows}</table>
 <h3>Echecs envoi AzuraCast ({len(self.upload_failures)})</h3>
@@ -434,7 +464,33 @@ def find_duplicate(artist, title, index):
     return best_path if best_score >= DUPLICATE_THRESHOLD else None
 
 
-def process_file(path, existing_metadata, cutoffs, dup_index, report):
+def gate_reference(enabled):
+    """Reference du filtre d'antenne, ou None si le filtre est coupe/absent.
+
+    Une reference manquante ne doit JAMAIS interrompre une ingestion : le
+    triage continue sans filtre, en le disant."""
+    if not enabled:
+        return None
+    try:
+        return track_gate.load_reference()
+    except SystemExit as e:
+        print(f"[FILTRE] desactive : {e}")
+        return None
+
+
+def hold_for_review(cleaned_path, verdict):
+    """Range un morceau ecarte dans _a_revoir/ et journalise le motif."""
+    os.makedirs(GATE_FOLDER, exist_ok=True)
+    dest = unique_target(GATE_FOLDER, os.path.basename(cleaned_path))
+    shutil.move(cleaned_path, dest)
+    with open(GATE_LOG, "a", encoding="utf-8") as fh:
+        fh.write(f"{os.path.basename(dest)}\t{verdict['verdict']}\t{verdict['score']}\t"
+                 f"{verdict['bpm']} BPM\t{verdict.get('genre', '?')}\t"
+                 f"{', '.join(verdict['reasons']) or '-'}\n")
+    return dest
+
+
+def process_file(path, existing_metadata, cutoffs, dup_index, report, gate_ref=None, gate_strict=False):
     print(f"[TAGS] {os.path.basename(path)}")
     cleaned_path, artist, title = clean_tags_and_filename(path)
 
@@ -449,6 +505,21 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report):
 
     print(f"[ANALYSE] {os.path.basename(cleaned_path)}")
     result = analyze_essentia.analyze(cleaned_path)
+
+    # Filtre d'antenne : meme score que review_energy.py, applique ici a un
+    # morceau isole contre la distribution figee de la bibliotheque.
+    if gate_ref is not None:
+        verdict = track_gate.audit_descriptors(result, gate_ref)
+        held = verdict["verdict"] == "reject" or (gate_strict and verdict["verdict"] == "review")
+        if held:
+            dest = hold_for_review(cleaned_path, verdict)
+            print(f"[FILTRE] {verdict['verdict']} (score {verdict['score']}) "
+                  f"-> _a_revoir : {', '.join(verdict['reasons']) or 'score global'}")
+            report.add_gated(os.path.basename(dest), verdict)
+            return GATED
+        if verdict["verdict"] == "review":
+            print(f"[FILTRE] a ecouter (score {verdict['score']}) : "
+                  f"{', '.join(verdict['reasons']) or 'score global'}")
 
     (rms_lo, rms_hi), (bpm_lo, bpm_hi) = energy_bounds(existing_metadata)
     norm_rms = norm_clip(result["rms"], rms_lo, rms_hi)
@@ -481,6 +552,10 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report):
 
 
 def main():
+    # Pas d'argparse ici : ce script est lance par triage.bat sans argument, et
+    # les deux options du filtre se lisent tres bien en drapeaux simples.
+    gate_enabled = "--no-gate" not in sys.argv
+    gate_strict = "--gate-strict" in sys.argv
     os.makedirs(FAILED, exist_ok=True)
     files = [
         os.path.join(INCOMING, f)
@@ -516,11 +591,20 @@ def main():
     # AzuraCast n'intervient qu'en Phase 2, une fois TOUT le lot classe.
     ok_count = 0
     dup_count = 0
+    gate_count = 0
+    gate_ref = gate_reference(gate_enabled)
+    if gate_ref is not None:
+        print(f"Filtre d'antenne actif ({'strict' if gate_strict else 'normal'}) — "
+              f"les morceaux ecartes vont dans {GATE_FOLDER}/\n")
     newly_classified = []  # [(slot, dest_path), ...] a envoyer en Phase 2
 
     for path in files:
         try:
-            outcome = process_file(path, metadata, cutoffs, dup_index, report)
+            outcome = process_file(path, metadata, cutoffs, dup_index, report,
+                                   gate_ref=gate_ref, gate_strict=gate_strict)
+            if outcome is GATED:
+                gate_count += 1
+                continue
             if outcome is None:
                 dup_count += 1
                 continue
@@ -538,7 +622,9 @@ def main():
                 pass
 
     if files:
-        print(f"\n{ok_count}/{len(files)} morceaux classes localement, {dup_count} doublon(s) ignore(s).")
+        print(f"\n{ok_count}/{len(files)} morceaux classes localement, "
+              f"{dup_count} doublon(s) ignore(s), "
+              f"{gate_count} ecarte(s) par le filtre (voir {GATE_FOLDER}/).")
 
     # ── Phase 2 : un seul passage d'envoi SFTP, a la toute fin ───────────────
     print("\nConnexion SFTP AzuraCast...")
