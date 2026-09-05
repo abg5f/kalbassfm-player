@@ -329,6 +329,41 @@ async function handleMessage(token, message) {
       });
   }
 
+  // Recherche libre dans la bibliotheque (artiste ou titre), puis actions sur
+  // le morceau choisi : file d'attente, sortie d'antenne, suppression.
+  // Complete /delete et /move, qui ne savent agir que sur le titre EN COURS.
+  if (text.startsWith('/search') || text.startsWith('/find')) {
+    const query = text.replace(/^\/(search|find)(@\S+)?/, '').trim();
+    if (!query) {
+      return sendMessage(token, chatId,
+        'Usage : /search <artiste ou titre>\n'
+        + 'Ex : /search Kerri Chandler — puis choisis un résultat pour l\'ajouter à la file, '
+        + 'le sortir de l\'antenne ou le supprimer.');
+    }
+    const r = await searchLibrary(query);
+    if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
+    if (!r.list.length) return sendMessage(token, chatId, `Aucun morceau ne correspond à « ${query} ».`);
+
+    const found = r.list.slice(0, SEARCH_MAX_RESULTS);
+    const lines = found.map((f, i) => `${i + 1}. ${trackLabel(f)}\n   ${trackDetails(f)}`);
+    const buttons = found.map((f, i) => ({ text: String(i + 1), callback_data: 'f:' + f.id }));
+    const rows = [];
+    for (let i = 0; i < buttons.length; i += 4) rows.push(buttons.slice(i, i + 4));
+    return sendMessage(token, chatId,
+      `🔎 « ${query} » — ${r.list.length} résultat(s)`
+      + (r.list.length > found.length ? ` (${found.length} affichés)` : '') + '\n\n'
+      + lines.join('\n') + '\n\nChoisis un numéro pour agir dessus.',
+      { reply_markup: { inline_keyboard: rows } });
+  }
+
+  // File AutoDJ a venir : verifie qu'une demande /search est bien passee et
+  // rappelle de combien de temps la rotation a deja de l'avance.
+  if (text === '/queue') {
+    const q = await getQueue();
+    if (!q.ok) return sendMessage(token, chatId, `❌ File d'attente indisponible (${q.status}).`);
+    return sendMessage(token, chatId, queueText(q.list), { parse_mode: 'HTML' });
+  }
+
   if (text === '/energy') {
     const { text: msg, keyboard } = await energyStatus();
     return sendMessage(token, chatId, msg, keyboard ? { reply_markup: keyboard } : undefined);
@@ -349,6 +384,8 @@ async function handleMessage(token, message) {
     '/skip — passer au morceau suivant\n' +
     '/move — deplacer le morceau en cours vers une autre playlist\n' +
     '/delete — supprimer le morceau en cours et passer au suivant\n' +
+    '/search <artiste ou titre> — chercher dans la bibliotheque, puis ajouter a la file, sortir de l\'antenne ou supprimer\n' +
+    '/queue — voir la file d\'attente a venir et son avance\n' +
     '/energy — pousser ou calmer la rotation (boost temporaire, retour automatique)\n' +
     '/logs — historique de diffusion (dernier titre / 3 / 10, ou par duree)\n' +
     '/queue_mix — choisir la prochaine mixtape a diffuser un dimanche 18h\n\n' +
@@ -474,6 +511,97 @@ async function handleCallback(token, cb) {
     await sendMessage(token, cb.message.chat.id,
       `✅ Morceau déplacé : ${label}\n${summary}`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('fq:')) {
+    // File d'attente : AzuraCast n'expose pas d'endpoint "ajouter a la file",
+    // c'est la demande d'auditeur (request) qui joue ce role — elle exige
+    // l'unique_id du media, qu'on relit ici plutot que de le trimballer dans
+    // callback_data (limite a 64 octets).
+    const id = data.slice(3);
+    const info = await getTrack(id);
+    if (!info.ok || !info.data) {
+      await answerCallback(token, cb.id, `❌ Morceau introuvable (${info.status})`);
+      return;
+    }
+    const label = trackLabel(info.data);
+    const r = await queueTrack(info.data.unique_id);
+    await answerCallback(token, cb.id, r.ok ? '✅ Ajouté à la file' : '❌ Échec');
+    await sendMessage(token, cb.message.chat.id, r.ok
+      ? `▶️ Ajouté à la file d'attente : ${label}\n`
+        + `Il passe dès que les titres déjà en file sont écoulés (/queue pour voir l'avance).`
+      : `❌ Impossible d'ajouter « ${label} » à la file (${r.status}).\n`
+        + (r.message ? `AzuraCast répond : ${r.message}\n` : '')
+        + `À vérifier dans AzuraCast : Profil de la station → "Autoriser les demandes de titres", `
+        + `et la playlist du morceau → "Inclure dans les demandes".`);
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('fo:')) {
+    // "Hors antenne" = retire de toutes les playlists, le fichier reste dans la
+    // bibliotheque. Reversible d'un /move, contrairement a la suppression : c'est
+    // l'action a preferer pour ecarter un titre trop repetitif de la rotation.
+    const id = data.slice(3);
+    const info = await getTrack(id);
+    const label = info.ok && info.data ? trackLabel(info.data) : id;
+    const r = await setTrackPlaylists(id, []);
+    if (!r.ok) {
+      await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
+      await sendMessage(token, cb.message.chat.id, `❌ Impossible de sortir « ${label} » de l'antenne (${r.status}).`);
+      return;
+    }
+    await answerCallback(token, cb.id, '✅ Hors antenne');
+    await sendMessage(token, cb.message.chat.id,
+      `🚫 Sorti de l'antenne : ${label}\n`
+      + `Le fichier reste dans la bibliothèque (aucune playlist) — /search puis 📁 Déplacer pour le remettre en rotation.`);
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('fd:')) {
+    const id = data.slice(3);
+    const info = await getTrack(id);
+    const label = info.ok && info.data ? trackLabel(info.data) : id;
+    const r = await deleteTrack(id);
+    if (!r.ok) {
+      await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
+      await sendMessage(token, cb.message.chat.id,
+        `❌ Échec de la suppression de « ${label} » (${r.status}).${r.status === 403 ? ' La cle API manque peut-etre du droit "Manage Station Media".' : ''}`);
+      return;
+    }
+    await answerCallback(token, cb.id, '🗑 Supprimé');
+    await sendMessage(token, cb.message.chat.id, `✅ Piste supprimée d'AzuraCast : ${label}`);
+    await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+  } else if (data.startsWith('fm:')) {
+    // Deplacement d'un resultat de /search : meme clavier que /move, et meme
+    // callback movecur: (qui n'a jamais dependu du morceau en cours). C'est
+    // aussi le chemin de retour d'un titre sorti de l'antenne.
+    const id = data.slice(3);
+    const info = await getTrack(id);
+    const playlists = await getPlaylists();
+    if (!info.ok || !info.data || !playlists.ok || !playlists.list.length) {
+      await answerCallback(token, cb.id, '❌ Impossible de récupérer les playlists.');
+      return;
+    }
+    await answerCallback(token, cb.id, '');
+    const rows = [];
+    const buttons = playlists.list.map((p) => ({ text: p.name.slice(0, 12), callback_data: 'movecur:' + id + ':' + p.id }));
+    for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
+    await sendMessage(token, cb.message.chat.id,
+      `🎵 ${trackLabel(info.data)}\n${trackDetails(info.data)}\n\nVers quelle playlist ?`,
+      { reply_markup: { inline_keyboard: rows } });
+  } else if (data.startsWith('f:')) {
+    // Menu d'actions d'un resultat de /search, envoye en NOUVEAU message pour
+    // garder la liste de resultats lisible au-dessus (on ne l'edite pas).
+    const id = data.slice(2);
+    const info = await getTrack(id);
+    if (!info.ok || !info.data) {
+      await answerCallback(token, cb.id, `❌ Morceau introuvable (${info.status})`);
+      return;
+    }
+    await answerCallback(token, cb.id, '');
+    await sendMessage(token, cb.message.chat.id,
+      `🎵 ${trackLabel(info.data)}\n${trackDetails(info.data)}\n\nQue veux-tu en faire ?`, {
+        reply_markup: { inline_keyboard: [
+          [{ text: '▶️ Ajouter à la file', callback_data: 'fq:' + id },
+           { text: '📁 Déplacer', callback_data: 'fm:' + id }],
+          [{ text: '🚫 Hors antenne', callback_data: 'fo:' + id },
+           { text: '🗑 Supprimer', callback_data: 'fd:' + id }],
+        ] },
+      });
   } else if (data.startsWith('nrgd:')) {
     // Etape 2 : points deja choisis (embarques dans callback_data, pas besoin
     // d'etat serveur entre les deux etapes), l'admin vient de choisir la duree.
@@ -626,6 +754,89 @@ async function getPlaylists() {
 // tableau d'IDs), donc on passe par le meme endpoint que getTrack/deleteTrack
 // (PUT au lieu de GET/DELETE) avec { playlists: [playlistId] }.
 async function moveTrackToPlaylist(trackId, playlistId) {
+  return setTrackPlaylists(trackId, [playlistId]);
+}
+
+/* ---- Recherche libre + file d'attente (/search, /queue) ---- */
+
+// Au-dela, la liste de resultats devient illisible sur mobile et le clavier
+// inline deborde ; affiner la requete est plus rapide que de faire defiler.
+const SEARCH_MAX_RESULTS = 8;
+
+// searchPhrase compare la phrase entiere a UN champ a la fois (titre OU
+// artiste, cf. /delete) : "kerri chandler rain" ne matche donc jamais, meme
+// quand artiste et titre sont justes. On relance alors sur le mot le plus
+// distinctif (le plus long, celui qui ramene le moins de bruit) et on filtre
+// localement sur les autres mots — un ET logique sur artiste+titre+chemin.
+async function searchLibrary(query) {
+  const r = await searchTracks(query);
+  if (!r.ok || r.list.length) return r;
+  const words = query.split(/\s+/).filter((w) => w.length > 1);
+  if (words.length < 2) return r;
+  const pivot = words.slice().sort((a, b) => b.length - a.length)[0];
+  const wide = await searchTracks(pivot);
+  if (!wide.ok) return wide;
+  const rest = words.filter((w) => w !== pivot).map((w) => w.toLowerCase());
+  const list = wide.list.filter((f) => {
+    const hay = `${f.artist || ''} ${f.title || ''} ${f.album || ''} ${f.text || ''} ${f.path || ''}`.toLowerCase();
+    return rest.every((w) => hay.includes(w));
+  });
+  return { ok: true, list };
+}
+
+function trackLabel(f) {
+  return `${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`;
+}
+
+// Bac de rotation d'apres le chemin ("Progv2/5_clubhouse/xxx.mp3"), avec repli
+// sur le premier dossier pour les fichiers deposes hors de l'arborescence
+// (mixtapes, jingles).
+function binOfPath(path) {
+  const m = String(path || '').match(/Progv2\/([^/]+)\//);
+  if (m) return m[1];
+  const parts = String(path || '').split('/');
+  return parts.length > 1 ? parts[0] : '?';
+}
+
+function trackDetails(f) {
+  const pls = Array.isArray(f.playlists) && f.playlists.length
+    ? f.playlists.map((p) => p.name || p).join(', ')
+    : null;
+  return `📁 ${pls || binOfPath(f.path) || '?'}`
+    + (f.length_text ? ` · ${f.length_text}` : '')
+    + (pls ? '' : ' · hors antenne');
+}
+
+// Ajout a la file d'attente : AzuraCast n'a pas d'endpoint "queue add" (la
+// file est en lecture/suppression seule, cf. DELETE .../queue/{id} utilise par
+// le boost) — c'est la DEMANDE de titre qui joue ce role. Elle attend
+// l'unique_id du media, pas son id numerique, et suppose deux reglages cote
+// station : "Autoriser les demandes de titres" (profil de la station) et
+// "Inclure dans les demandes" (playlist du morceau). Le message d'erreur
+// d'AzuraCast est relaye tel quel pour que l'admin sache lequel manque.
+// Une demande envoyee avec la cle API est authentifiee : pas de delai
+// anti-abus applique.
+async function queueTrack(uniqueId) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  if (!uniqueId) return { ok: false, status: 'no-unique-id' };
+  try {
+    const r = await fetch(
+      `${AZURACAST_BASE}/api/station/${STATION}/request/${encodeURIComponent(uniqueId)}`,
+      { method: 'POST', headers: { 'X-API-Key': apiKey, 'User-Agent': BROWSER_UA } }
+    );
+    const body = await r.json().catch(() => null);
+    const ok = r.ok && (!body || body.success !== false);
+    return { ok, status: r.status, message: body && body.message };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Ecrit l'appartenance aux playlists d'un fichier (champ ecrivable de la
+// ressource file, cf. moveTrackToPlaylist). Un tableau vide sort le morceau de
+// l'antenne sans le supprimer.
+async function setTrackPlaylists(trackId, playlistIds) {
   const apiKey = process.env.AZURACAST_API_KEY;
   if (!apiKey) return { ok: false, status: 'no-api-key' };
   try {
@@ -634,13 +845,47 @@ async function moveTrackToPlaylist(trackId, playlistId) {
       {
         method: 'PUT',
         headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playlists: [Number(playlistId)] }),
+        body: JSON.stringify({ playlists: playlistIds.map(Number) }),
       }
     );
     return { ok: r.ok, status: r.status };
   } catch {
     return { ok: false, status: 'network-error' };
   }
+}
+
+async function getQueue() {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/queue`, {
+      headers: { 'X-API-Key': apiKey },
+    });
+    if (!r.ok) return { ok: false, status: r.status };
+    const body = await r.json();
+    return { ok: true, list: Array.isArray(body) ? body : (body.rows || []) };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+function queueText(list) {
+  if (!list.length) return '📻 File d\'attente vide — AzuraCast la reconstruira au prochain titre.';
+  const lines = list.map((item) => {
+    const ts = Number(item.played_at || item.cued_at || 0) * 1000;
+    const t = ts ? parisWallParts(new Date(ts)) : null;
+    const hhmm = t ? `${String(t.h).padStart(2, '0')}:${String(t.mi).padStart(2, '0')}` : '--:--';
+    const song = item.song || {};
+    const label = song.title ? `${song.artist || '?'} - ${song.title}` : (song.text || '(inconnu)');
+    return escapeHtml(`${hhmm} | ${(item.playlist || (item.is_request ? 'demande' : '?')).padEnd(14)} | `
+      + `${item.is_request ? '🙋 ' : ''}${label}`);
+  });
+  // L'avance de la file (~25-30 min en rotation continue) explique pourquoi un
+  // titre ajoute maintenant ne passe pas tout de suite.
+  const last = Number(list[list.length - 1].played_at || 0) * 1000;
+  const ahead = last ? Math.max(0, Math.round((last - Date.now()) / 60000)) : null;
+  return `📻 <b>File d'attente — ${list.length} titre(s)</b>\n<pre>${lines.join('\n')}</pre>`
+    + (ahead !== null ? `\nAvance de la file : ~${ahead} min.` : '');
 }
 
 /* ---- Boost d'energie (/energy) ----
