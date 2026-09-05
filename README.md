@@ -84,6 +84,12 @@ Domaine : kalbassfm.duckdns.org (DuckDNS + Let's Encrypt auto-renouvelé)
   python fix_artwork.py local-scan                  # disque : New_prog
   python fix_artwork.py local-fix --apply           # écrit dans les MP3 (re-upload SFTP ensuite)
   ```
+- `sync_library.py` — **remet le PC et AzuraCast iso dans les deux sens** après une session de nettoyage : ce que tu as supprimé depuis le bot Telegram et qui traîne encore sur le PC, ce que tu as supprimé sur le PC et qui tourne encore à l'antenne, plus les entrées orphelines de `metadata.json`. Croise la vue API (médias indexés) et la vue SFTP (fichiers réels) pour ne jamais confondre une suppression volontaire avec un fichier simplement pas encore scanné par AzuraCast. Dry-run par défaut ; les mp3 retirés des bacs locaux sont rangés dans `New_prog/_ecartes/<bac>/`, pas effacés.
+  ```
+  python sync_library.py                        # rapport, rien n'est écrit
+  python sync_library.py --apply                # applique les deux sens
+  python sync_library.py --apply --only-server  # ne touche qu'à AzuraCast
+  ```
 - `review_energy.py` — **revue des morceaux trop énergiques / répétitifs / éloignés de la house** (ceux qui font partir un auditeur en cours d'écoute). Score en percentiles sur quatre axes — intensité, monotonie (`dynamic_complexity`), écart à la house (genres Discogs + tempo), agressivité — puis rapport HTML à cocher **avec un lecteur audio par titre pointant les mp3 locaux**, ou export `.m3u` pour VLC/foobar. La sélection cochée sort de l'antenne (retirée de toutes les playlists, fichier conservé) ou est supprimée pour de bon.
   ```
   python review_energy.py list                    # top 60 en console

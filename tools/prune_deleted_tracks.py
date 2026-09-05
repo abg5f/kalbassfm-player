@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """Repercute sur AzuraCast les suppressions faites a la main en local.
 
+⚠️ COUVERT PAR tools/sync_library.py DEPUIS LE 2026-09-05 — celui-ci traite le
+meme sens (PC -> AzuraCast) PLUS le sens inverse (les titres supprimes depuis
+le bot Telegram qui trainent encore sur le PC), et distingue une vraie
+suppression d'un fichier simplement pas encore indexe par AzuraCast (vue SFTP).
+Ce script reste utilisable tel quel, mais sync_library.py est le point d'entree
+a preferer pour remettre les deux cotes iso.
+
 Cas d'usage : tu passes en revue un bac (ex. 5_clubhouse, 7_nightdub) dans
 l'explorateur Windows et supprimes quelques fichiers directement dans
 New_prog/<bac>/. Ce script compare chaque bac local a son pendant AzuraCast
