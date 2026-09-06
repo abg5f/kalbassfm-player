@@ -6,23 +6,25 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
 2. Detecte les doublons (artiste+titre normalises) contre ce qui existe deja
    dans New_prog -> deplace vers _incoming/_duplicates/ et ignore
 3. Analyse Essentia (energie, bpm, genre, mood, danceability)
-4. FILTRE D'ANTENNE (track_gate.py) : un morceau trop energique, trop
-   repetitif ou trop loin de la house part dans New_prog/_a_revoir/ au lieu
-   d'entrer en rotation, avec le motif du verdict. Rien n'est supprime, rien
-   n'est envoye sur AzuraCast : le morceau attend une ecoute. Desactivable
-   (--no-gate) ; --gate-strict met aussi les "a ecouter" de cote.
-5. Classe le morceau dans un des 9 BACS de la grille (classify_bins.py :
+4. Classe le morceau dans un des 9 BACS de la grille (classify_bins.py :
    genre d'abord, energie ensuite, seuils auto-calibres)
-6. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
+5. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
    PAS de prefixe d'ordre : l'ordonnancement est le travail d'AzuraCast
    (rotation continue ponderee, cf. tools/apply_rotation.py). Seuls les
-   nouveaux morceaux ont besoin d'etre uploades en SFTP.
-7. Ajoute le resultat a metadata.json
-8. Regenere api/bpm-table.json (jeu "devine le BPM" du chat live), qui doit
-   rester aligne sur metadata.json -- il l'etait mal quand ce script etait
-   lance directement en WSL au lieu de passer par triage.bat, et le jeu
-   devenait muet sur tous les morceaux recents (constate 2026-07-28 et
-   2026-09-04). La table ne part en ligne qu'une fois COMMITEE ET PUSHEE.
+   nouveaux morceaux ont besoin d'etre envoyes sur AzuraCast -- mais pas
+   par ce script (cf. etape 7).
+6. Ajoute le resultat a metadata.json
+7. Inscrit le lot dans pending_review.json -- ET S'ARRETE LA. Ce script
+   CLASSE, il ne juge pas : depuis la separation du 2026-09-05, c'est
+   analyse_new_tracks.py (analyse.bat) qui dit si un morceau est trop
+   energique / trop repetitif / trop loin de la house, puis envoie sur
+   AzuraCast ce qui passe. Tant qu'il n'a pas tourne, RIEN n'est en ligne.
+
+La table api/bpm-table.json (jeu "devine le BPM" du chat live) n'est PLUS
+regeneree ici : elle doit rester alignee sur metadata.json, or un verdict de
+l'analyse peut encore en retirer un morceau -- et le jeu repond UNIQUEMENT
+sur les morceaux qu'il y trouve. C'est donc analyse_new_tracks.py, en fin de
+pipeline, qui la regenere et rappelle de la commiter/pusher.
 
 Les fichiers illisibles/en erreur sont deplaces dans _incoming/_failed/ et
 n'interrompent pas le traitement des autres.
@@ -49,15 +51,10 @@ sys.path.insert(0, TOOLS_DIR)
 
 import analyze_essentia  # noqa: E402  (modeles Essentia charges a l'import)
 import clean_local_tracks as clt  # noqa: E402  (fonctions clean() / itunes_lookup())
-import export_bpm_table  # noqa: E402  (table du jeu BPM, regeneree en fin de run)
 from classify_bins import (  # noqa: E402  (source de verite unique de la grille)
     NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_bin,
 )
-import track_gate  # noqa: E402  (filtre d'antene, meme score que review_energy.py)
-import paramiko  # noqa: E402
-from sftp_config import (  # noqa: E402
-    SFTP_HOST, SFTP_PORT, SFTP_USER, SFTP_PASS, SFTP_REMOTE_ROOT,
-)
+import azuracast_upload  # noqa: E402  (files d'attente + envoi, partages avec l'analyse)
 
 INCOMING = r"C:\Users\ph.dufourcq\Music\00_AZURACAST\_incoming".replace("\\", "/").replace("C:", "/mnt/c")
 FAILED = os.path.join(INCOMING, "_failed")
@@ -70,103 +67,8 @@ DUPLICATE_THRESHOLD = 0.75
 NEW_PROG_WSL = "/mnt/c/Users/ph.dufourcq/Music/00_AZURACAST/New_prog"
 SLOT_FOLDERS = {b: f"{NEW_PROG_WSL}/{b}" for b in NEW_BINS}
 
-# Purgatoire du filtre d'antenne : ni un bac de rotation, ni la poubelle. Les
-# morceaux qui y atterrissent ne sont ni classes, ni envoyes sur AzuraCast, ni
-# ajoutes a metadata.json (ils fausseraient la calibration des percentiles, qui
-# doit decrire ce qui PASSE a l'antenne). Le motif de chaque verdict est
-# journalise a cote, pour pouvoir trancher sans relancer l'analyse.
-GATE_FOLDER = f"{NEW_PROG_WSL}/_a_revoir"
-GATE_LOG = f"{GATE_FOLDER}/_verdicts.txt"
-# process_file renvoie None pour un doublon : les morceaux ecartes par le
-# filtre ont leur propre sentinelle, sinon ils seraient comptes en doublons.
-GATED = "gated"
-
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "triage_report.html")
-# Morceaux deja classes localement (dans New_prog/<bac>) mais pas encore
-# envoyes sur AzuraCast (SFTP indisponible au moment du classement). Retentes
-# automatiquement au debut de chaque run suivant -> rien ne reste jamais
-# bloque, meme si le cron tourne sans surveillance.
-PENDING_UPLOADS_PATH = os.path.join(TOOLS_DIR, "pending_uploads.json")
-
-
-def load_pending_uploads():
-    if os.path.exists(PENDING_UPLOADS_PATH):
-        with open(PENDING_UPLOADS_PATH, encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-
-def save_pending_uploads(pending):
-    with open(PENDING_UPLOADS_PATH, "w", encoding="utf-8") as f:
-        json.dump(pending, f, ensure_ascii=False, indent=1)
-
-
-def retry_pending_uploads(sftp, report):
-    """Retente les envois SFTP restes en echec lors d'un run precedent.
-
-    Retourne la liste des entrees toujours en echec (ne sauvegarde pas
-    elle-meme : main() est seule proprietaire de l'ecriture du fichier,
-    pour fusionner proprement avec les echecs du run courant)."""
-    pending = load_pending_uploads()
-    if not pending:
-        return []
-    print(f"{len(pending)} envoi(s) AzuraCast en attente d'un run precedent...")
-    still_pending = []
-    for entry in pending:
-        slot, local_path = entry["slot"], entry["path"]
-        if not os.path.exists(local_path):
-            # Fichier deplace/supprime manuellement depuis -> on abandonne le suivi.
-            continue
-        try:
-            upload_to_azuracast(sftp, slot, local_path)
-            print(f"  [OK] {os.path.basename(local_path)} envoye (retry)")
-            report.add_upload_success()
-        except RemoteAlreadyExists:
-            # Deja present sur le serveur : l'envoi precedent avait en fait
-            # reussi malgre l'echec de sauvegarde de son statut. On considere
-            # ce morceau traite -> evite une boucle d'echec infinie.
-            print(f"  [OK] {os.path.basename(local_path)} deja sur le serveur (retry)")
-            report.add_upload_success()
-        except Exception as e:
-            print(f"  [ECHEC] {os.path.basename(local_path)}: {e}")
-            still_pending.append(entry)
-    return still_pending
-
-
-def open_sftp():
-    """Ouvre la connexion SFTP vers AzuraCast. Retourne (transport, sftp) ou (None, None)."""
-    try:
-        transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
-        transport.connect(username=SFTP_USER, password=SFTP_PASS)
-        sftp = paramiko.SFTPClient.from_transport(transport)
-        return transport, sftp
-    except Exception as e:
-        print(f"[SFTP] Connexion impossible ({e}) — classement local seul, sans envoi.")
-        return None, None
-
-
-class RemoteAlreadyExists(Exception):
-    """Un fichier du meme nom existe deja dans le bac distant."""
-
-
-def upload_to_azuracast(sftp, slot, local_path):
-    """Envoie local_path vers /<slot>/<nom> sur AzuraCast. Leve une exception en cas d'echec."""
-    remote_dir = SFTP_REMOTE_ROOT.rstrip("/") + "/" + slot
-    remote_path = remote_dir + "/" + os.path.basename(local_path)
-    try:
-        sftp.stat(remote_dir)
-    except FileNotFoundError:
-        sftp.mkdir(remote_dir)
-    # Garde-fou : ne jamais ecraser silencieusement un morceau deja en ligne.
-    try:
-        sftp.stat(remote_path)
-        raise RemoteAlreadyExists(remote_path)
-    except FileNotFoundError:
-        pass
-    sftp.put(local_path, remote_path)
-
-
 def wsl_to_windows(path):
     return path.replace("/mnt/c", "C:").replace("/", "\\")
 
@@ -179,10 +81,8 @@ class Report:
         self.start = time_module.time()
         self.slots = {s: [] for s in SLOT_FOLDERS}
         self.duplicates = []
-        self.gated = []
         self.failures = []
-        self.upload_failures = []
-        self.uploaded = 0
+        self.awaiting = 0
         self.done = 0
 
     def add_success(self, slot, artist, title, bpm, genre, energy):
@@ -195,22 +95,14 @@ class Report:
         self.done += 1
         self.render()
 
-    def add_gated(self, filename, verdict):
-        self.gated.append((filename, verdict))
-        self.done += 1
-        self.render()
-
     def add_failure(self, filename, error):
         self.failures.append((filename, str(error)))
         self.done += 1
         self.render()
 
-    def add_upload_success(self):
-        self.uploaded += 1
-        self.render()
-
-    def add_upload_failure(self, filename, error):
-        self.upload_failures.append((filename, str(error)))
+    def set_awaiting(self, count):
+        """Morceaux classes en attente du verdict d'analyse — pas encore en ligne."""
+        self.awaiting = count
         self.render()
 
     def render(self, finished=False):
@@ -236,16 +128,8 @@ class Report:
         dup_rows = "".join(
             f"<tr><td>{html.escape(f)}</td><td>{html.escape(m)}</td></tr>" for f, m in self.duplicates
         )
-        gate_rows = "".join(
-            f"<tr><td>{html.escape(f)}</td><td>{v['verdict']}</td><td>{v['score']}</td>"
-            f"<td>{html.escape(', '.join(v['reasons']) or '-')}</td></tr>"
-            for f, v in self.gated
-        )
         fail_rows = "".join(
             f"<tr><td>{html.escape(f)}</td><td>{html.escape(e)}</td></tr>" for f, e in self.failures
-        )
-        upload_fail_rows = "".join(
-            f"<tr><td>{html.escape(f)}</td><td>{html.escape(e)}</td></tr>" for f, e in self.upload_failures
         )
 
         status_label = "Termine" if finished else "En cours..."
@@ -273,16 +157,12 @@ class Report:
 <h1>KALBASSFM - Triage des nouveaux morceaux</h1>
 <div class="status">{status_label} — {self.done}/{self.total} traites — {elapsed:.0f}s</div>
 <div class="progress"><div class="progress-fill"></div></div>
-<p>Doublons ignores : {len(self.duplicates)} | Ecartes par le filtre : {len(self.gated)} | Echecs : {len(self.failures)} | Envoyes AzuraCast : {self.uploaded} | Echecs envoi : {len(self.upload_failures)}</p>
+<p>Doublons ignores : {len(self.duplicates)} | Echecs : {len(self.failures)} | En attente du verdict d'analyse : {self.awaiting}</p>
 {slot_blocks}
 <h3>Doublons ignores ({len(self.duplicates)})</h3>
 <table><tr><th>Fichier</th><th>Correspond a</th></tr>{dup_rows}</table>
-<h3>Ecartes par le filtre d'antenne ({len(self.gated)}) &mdash; dans New_prog/_a_revoir/</h3>
-<table><tr><th>Fichier</th><th>Verdict</th><th>Score</th><th>Motif</th></tr>{gate_rows}</table>
 <h3>Echecs classement ({len(self.failures)})</h3>
 <table><tr><th>Fichier</th><th>Erreur</th></tr>{fail_rows}</table>
-<h3>Echecs envoi AzuraCast ({len(self.upload_failures)})</h3>
-<table><tr><th>Fichier</th><th>Erreur</th></tr>{upload_fail_rows}</table>
 </body></html>"""
         with open(REPORT_PATH, "w", encoding="utf-8") as f:
             f.write(doc)
@@ -464,33 +344,7 @@ def find_duplicate(artist, title, index):
     return best_path if best_score >= DUPLICATE_THRESHOLD else None
 
 
-def gate_reference(enabled):
-    """Reference du filtre d'antenne, ou None si le filtre est coupe/absent.
-
-    Une reference manquante ne doit JAMAIS interrompre une ingestion : le
-    triage continue sans filtre, en le disant."""
-    if not enabled:
-        return None
-    try:
-        return track_gate.load_reference()
-    except SystemExit as e:
-        print(f"[FILTRE] desactive : {e}")
-        return None
-
-
-def hold_for_review(cleaned_path, verdict):
-    """Range un morceau ecarte dans _a_revoir/ et journalise le motif."""
-    os.makedirs(GATE_FOLDER, exist_ok=True)
-    dest = unique_target(GATE_FOLDER, os.path.basename(cleaned_path))
-    shutil.move(cleaned_path, dest)
-    with open(GATE_LOG, "a", encoding="utf-8") as fh:
-        fh.write(f"{os.path.basename(dest)}\t{verdict['verdict']}\t{verdict['score']}\t"
-                 f"{verdict['bpm']} BPM\t{verdict.get('genre', '?')}\t"
-                 f"{', '.join(verdict['reasons']) or '-'}\n")
-    return dest
-
-
-def process_file(path, existing_metadata, cutoffs, dup_index, report, gate_ref=None, gate_strict=False):
+def process_file(path, existing_metadata, cutoffs, dup_index, report):
     print(f"[TAGS] {os.path.basename(path)}")
     cleaned_path, artist, title = clean_tags_and_filename(path)
 
@@ -505,21 +359,6 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report, gate_ref=N
 
     print(f"[ANALYSE] {os.path.basename(cleaned_path)}")
     result = analyze_essentia.analyze(cleaned_path)
-
-    # Filtre d'antenne : meme score que review_energy.py, applique ici a un
-    # morceau isole contre la distribution figee de la bibliotheque.
-    if gate_ref is not None:
-        verdict = track_gate.audit_descriptors(result, gate_ref)
-        held = verdict["verdict"] == "reject" or (gate_strict and verdict["verdict"] == "review")
-        if held:
-            dest = hold_for_review(cleaned_path, verdict)
-            print(f"[FILTRE] {verdict['verdict']} (score {verdict['score']}) "
-                  f"-> _a_revoir : {', '.join(verdict['reasons']) or 'score global'}")
-            report.add_gated(os.path.basename(dest), verdict)
-            return GATED
-        if verdict["verdict"] == "review":
-            print(f"[FILTRE] a ecouter (score {verdict['score']}) : "
-                  f"{', '.join(verdict['reasons']) or 'score global'}")
 
     (rms_lo, rms_hi), (bpm_lo, bpm_hi) = energy_bounds(existing_metadata)
     norm_rms = norm_clip(result["rms"], rms_lo, rms_hi)
@@ -544,37 +383,33 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report, gate_ref=N
     dup_index.append((clt.tokens(artist), clt.tokens(title), dest_path))
     report.add_success(slot, artist, title, result["bpm"], result["genres"][0][0], energy)
 
-    # Pas d'envoi SFTP ici : le classement est fait morceau par morceau, mais
-    # l'envoi vers AzuraCast n'a lieu qu'une fois EN UNE SEULE PASSE a la toute
-    # fin de main(), une fois tous les fichiers de _incoming traites (cf. commentaire
-    # de main()) — permet d'ecouter les morceaux dans leur bac avant l'envoi.
+    # Aucun envoi SFTP dans ce script : le morceau est classe, il attend son
+    # verdict. C'est analyse_new_tracks.py qui l'enverra — ou le mettra de cote.
     return result, slot, dest_path
 
 
 def main():
-    # Pas d'argparse ici : ce script est lance par triage.bat sans argument, et
-    # les deux options du filtre se lisent tres bien en drapeaux simples.
-    gate_enabled = "--no-gate" not in sys.argv
-    gate_strict = "--gate-strict" in sys.argv
+    # Pas d'argparse : ce script est lance par triage.bat sans argument. Les
+    # anciens drapeaux --no-gate / --gate-strict n'ont plus cours ici, le
+    # verdict d'antenne ayant demenage dans analyse_new_tracks.py.
     os.makedirs(FAILED, exist_ok=True)
     files = [
         os.path.join(INCOMING, f)
         for f in sorted(os.listdir(INCOMING))
         if f.lower().endswith(".mp3") and os.path.isfile(os.path.join(INCOMING, f))
     ]
-    pending = load_pending_uploads()
-    if not files and not pending:
-        print("Aucun fichier a traiter dans _incoming, aucun envoi en attente.")
+    if not files:
+        print("Aucun fichier a traiter dans _incoming.")
+        waiting = azuracast_upload.load_pending_review()
+        if waiting:
+            print(f"{len(waiting)} morceau(x) attendent leur verdict "
+                  f"-> lance analyse.bat pour les juger et les mettre en ligne.")
         return
 
-    if files:
-        print(f"{len(files)} fichier(s) a traiter.\n")
-        print("Indexation de New_prog pour la detection de doublons...")
-        dup_index = build_duplicate_index()
-        print(f"  -> {len(dup_index)} morceaux existants indexes.\n")
-    else:
-        print("Aucun nouveau fichier dans _incoming — envoi des morceaux en attente uniquement.\n")
-        dup_index = []
+    print(f"{len(files)} fichier(s) a traiter.")
+    print("Indexation de New_prog pour la detection de doublons...")
+    dup_index = build_duplicate_index()
+    print(f"  -> {len(dup_index)} morceaux existants indexes.")
 
     metadata = load_metadata()
     # Seuils de classification auto-calibres sur la bibliotheque existante
@@ -582,37 +417,31 @@ def main():
     cutoffs = compute_cutoffs(metadata, compute_energies(metadata))
     report = Report(len(files))
     report.render()
-    if files:
-        report.open_in_browser()
+    report.open_in_browser()
 
-    # ── Phase 1 : classement local seul, aucun envoi SFTP ────────────────────
-    # Lancement toujours manuel (pas de cron) : l'utilisateur ecoute les
-    # morceaux bruts dans _incoming avant de declencher ce script. L'envoi
-    # AzuraCast n'intervient qu'en Phase 2, une fois TOUT le lot classe.
+    # -- Classement local, et rien d'autre -----------------------------------
+    # Lancement toujours manuel (pas de cron) : on ecoute les morceaux bruts
+    # dans _incoming avant de declencher ce script. Ce qui en sort est range
+    # dans le bon bac ET inscrit dans metadata.json, mais n'est PAS en ligne :
+    # aucune connexion SFTP n'est ouverte de tout le run.
     ok_count = 0
     dup_count = 0
-    gate_count = 0
-    gate_ref = gate_reference(gate_enabled)
-    if gate_ref is not None:
-        print(f"Filtre d'antenne actif ({'strict' if gate_strict else 'normal'}) — "
-              f"les morceaux ecartes vont dans {GATE_FOLDER}/\n")
-    newly_classified = []  # [(slot, dest_path), ...] a envoyer en Phase 2
+    newly_classified = []  # [{"slot":..., "path":...}] -> file d'attente du verdict
 
     for path in files:
         try:
-            outcome = process_file(path, metadata, cutoffs, dup_index, report,
-                                   gate_ref=gate_ref, gate_strict=gate_strict)
-            if outcome is GATED:
-                gate_count += 1
-                continue
+            outcome = process_file(path, metadata, cutoffs, dup_index, report)
             if outcome is None:
                 dup_count += 1
                 continue
             result, slot, dest_path = outcome
             metadata.append(result)
             save_metadata(metadata)
-            newly_classified.append((slot, dest_path))
+            newly_classified.append(
+                {"slot": slot, "path": azuracast_upload.to_windows(dest_path)}
+            )
             ok_count += 1
+            report.set_awaiting(len(newly_classified))
         except Exception as e:
             print(f"[ERREUR] {os.path.basename(path)}: {e}")
             report.add_failure(os.path.basename(path), e)
@@ -621,70 +450,27 @@ def main():
             except Exception:
                 pass
 
-    if files:
-        print(f"\n{ok_count}/{len(files)} morceaux classes localement, "
-              f"{dup_count} doublon(s) ignore(s), "
-              f"{gate_count} ecarte(s) par le filtre (voir {GATE_FOLDER}/).")
+    print(f"{ok_count}/{len(files)} morceaux classes localement, "
+          f"{dup_count} doublon(s) ignore(s).")
 
-    # ── Phase 2 : un seul passage d'envoi SFTP, a la toute fin ───────────────
-    print("\nConnexion SFTP AzuraCast...")
-    transport, sftp = open_sftp()
-    if sftp is not None:
-        print(f"  -> connecte a {SFTP_HOST}:{SFTP_PORT}\n")
-        try:
-            pending = retry_pending_uploads(sftp, report)
-            for slot, dest_path in newly_classified:
-                try:
-                    print(f"[SFTP] Envoi -> /{slot}/{os.path.basename(dest_path)}")
-                    upload_to_azuracast(sftp, slot, dest_path)
-                    report.add_upload_success()
-                except RemoteAlreadyExists as e:
-                    print(f"[SFTP] Deja sur le serveur, ignore : {e}")
-                    report.add_upload_success()
-                except Exception as e:
-                    print(f"[SFTP] Echec envoi {os.path.basename(dest_path)}: {e}")
-                    report.add_upload_failure(os.path.basename(dest_path), e)
-                    pending.append({"slot": slot, "path": dest_path})
-        finally:
-            sftp.close()
-            transport.close()
-        print(
-            f"\n{report.uploaded} morceau(x) envoye(s) sur AzuraCast, "
-            f"{len(pending)} en attente (echec ou serveur indisponible a nouveau)."
-        )
-    else:
-        # SFTP indisponible : tout le lot classe ce run rejoint la file d'attente.
-        pending.extend({"slot": s, "path": p} for s, p in newly_classified)
-        print(
-            f"SFTP indisponible : {len(pending)} morceau(x) en attente d'envoi "
-            "-> relance ce script une fois la connexion retablie."
-        )
-
-    save_pending_uploads(pending)
+    # -- Passage de relais a l'analyse ---------------------------------------
+    # On FUSIONNE avec la file existante au lieu de l'ecraser : deux triages
+    # d'affilee sans analyse entre les deux ne doivent pas faire disparaitre le
+    # premier lot. Il serait alors local, absent du serveur, et sync_library.py
+    # proposerait de l'ecarter (cas A) alors qu'il attend simplement son tour.
+    queue = azuracast_upload.load_pending_review()
+    known = {e["path"] for e in queue}
+    queue.extend(e for e in newly_classified if e["path"] not in known)
+    azuracast_upload.save_pending_review(queue)
     report.render(finished=True)
 
-    # ── Phase 3 : table BPM du chat live ─────────────────────────────────────
-    # metadata.json vient de changer, donc api/bpm-table.json est perime : le
-    # bot "BPM GUESSER" repond UNIQUEMENT sur les morceaux qu'il y trouve, et
-    # reste silencieux sur les autres. Regenerer ici (et pas seulement dans
-    # triage.bat) garantit que les deux fichiers restent alignes quel que soit
-    # le point d'entree -- c'est le decalage entre les deux qui a fait tomber
-    # le jeu deux fois. Une erreur ici n'annule rien de ce qui precede : les
-    # morceaux sont deja classes et envoyes.
-    if ok_count:
-        print("\n=== Mise a jour de la table BPM (jeu chat live) ===")
-        try:
-            written = export_bpm_table.main()
-        except Exception as e:
-            written = False
-            print(f"[ERREUR] regeneration de la table BPM impossible : {e}")
-            print("  -> relancer a la main : python tools/export_bpm_table.py")
-        if written:
-            print(
-                "\n>>> A FAIRE : commit + push de api/bpm-table.json.\n"
-                "    Sans push, le jeu BPM reste muet en ligne sur ces "
-                f"{ok_count} nouveau(x) morceau(x)."
-            )
+    if queue:
+        print(f"{len(queue)} morceau(x) en attente de verdict "
+              f"({os.path.basename(azuracast_upload.PENDING_REVIEW_PATH)}).")
+        print(">>> ETAPE SUIVANTE : analyse.bat — juge (trop energique ? trop")
+        print("    repetitif ? trop loin de la house ?), envoie sur AzuraCast ce")
+        print("    qui passe, regenere la table BPM du chat live.")
+        print("    Tant qu'il n'a pas tourne, ces morceaux ne sont PAS a l'antenne.")
 
 
 if __name__ == "__main__":

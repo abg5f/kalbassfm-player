@@ -22,6 +22,12 @@ partagent la meme playlist, il faut reduire mixtape_onair a CE SEUL morceau
 juste avant de poser le planning du jour -- meme geste que
 tools/publish_mixtape.py (fonctions reutilisees directement, pas dupliquees).
 
+Annonce du DJ set : mixtape_onair etant en ordre SEQUENTIEL, le jingle
+d'annonce (DJSET_JINGLE_PATH) est rattache a la playlist juste AVANT le mix.
+Les deux sont donc dans la meme fenetre planifiee et passent a la suite,
+sans qu'aucun morceau puisse s'intercaler -- ce qu'une playlist de jingle
+planifiee a 17h58 ne garantirait pas.
+
 Etat local (tools/mixtape_state.json, gitignore) : memorise quelles paires
 (morceau, date) ont deja recu leur pin / leur diffusion, pour ne rien
 reposter si le script tourne plusieurs fois le meme jour (le Planificateur
@@ -53,6 +59,12 @@ from azuracast_config import AZURACAST_API_KEY  # noqa: E402
 STATE_PATH = TOOLS_DIR / "mixtape_state.json"
 AIR_START = "18:00"
 PIN_DAYS_BEFORE = 3
+
+# Jingle d'annonce du DJ set, joue juste avant la mixtape. Fichier DEDIE :
+# il ne doit PAS appartenir a la playlist Jingles (rotation de la semaine),
+# sinon il annoncerait un DJ set n'importe quel jour -- et de toute facon
+# publish_one() reecrit ses appartenances a chaque diffusion.
+DJSET_JINGLE_PATH = "Jingles/kalbass_fm_djset_intro.mp3"
 
 
 # --------------------------------------------------------------------------- etat local
@@ -119,6 +131,24 @@ def load_candidates(playlist_id):
     return out
 
 
+def find_djset_jingle():
+    """Le jingle d'annonce du DJ set (DJSET_JINGLE_PATH), cherche par chemin.
+
+    Retourne None avec un avertissement s'il est absent : une annonce
+    manquante ne doit JAMAIS empecher la mixtape de passer a l'antenne.
+    """
+    st, files = call("GET", f"/files?searchPhrase={urllib.parse.quote(DJSET_JINGLE_PATH)}&rowCount=50")
+    if st != 200:
+        print(f"  [ATTENTION] recherche du jingle DJ set impossible (HTTP {st}) — le mix passera sans annonce.")
+        return None
+    rows = files.get("rows", files) if isinstance(files, dict) else files
+    for f in rows:
+        if f.get("path") == DJSET_JINGLE_PATH:
+            return f
+    print(f"  [ATTENTION] {DJSET_JINGLE_PATH} absent de la bibliotheque — le mix passera sans annonce.")
+    return None
+
+
 def parse_socials(lyrics):
     """Lignes "Soundcloud <url>" / "Instagram : <url>" dans le champ Paroles
     (AzuraCast ne prevoit pas de champs dedies aux reseaux sociaux)."""
@@ -144,14 +174,17 @@ def publish_one(candidate, air_date, playlist, podcast, apply_mode):
     title = candidate.get("title") or Path(candidate["path"]).stem
     artist = candidate.get("artist") or "a guest DJ"
 
+    jingle = find_djset_jingle()
+
     start_i = hhmm(AIR_START)
-    secs = int(candidate.get("length") or 0)
+    secs = int(candidate.get("length") or 0) + int((jingle or {}).get("length") or 0)
     end_dt = (datetime.combine(air_date, datetime.min.time())
               + timedelta(hours=start_i // 100, minutes=start_i % 100)
               + timedelta(seconds=secs) + timedelta(minutes=10))
     end_i = end_dt.hour * 100 + end_dt.minute
 
     print(f"  -> {title} ({artist}) le {air_date} de {AIR_START} a {end_i // 100:02d}:{end_i % 100:02d}")
+    print(f"     annonce : {'jingle DJ set en ouverture' if jingle else 'AUCUNE (jingle absent)'}")
     if not apply_mode:
         return
 
@@ -170,6 +203,18 @@ def publish_one(candidate, air_date, playlist, podcast, apply_mode):
     })
     if st != 200:
         die(f"Echec de la planification : {r}")
+
+    # mixtape_onair est en ordre SEQUENTIEL : les morceaux passent dans
+    # l'ordre ou ils ont ete rattaches. Le jingle est donc attache AVANT le
+    # mix, ce qui le place dans la MEME fenetre planifiee -- rien ne peut
+    # s'intercaler entre l'annonce et le set, contrairement a une playlist
+    # de jingle programmee juste avant 18:00 (fenetre ratee des qu'un
+    # morceau long deborde). Un echec ici n'est jamais bloquant : mieux vaut
+    # un mix sans annonce qu'un dimanche sans mix.
+    if jingle:
+        st, r = call("PUT", f"/file/{jingle['id']}", {"playlists": [playlist["id"]]})
+        if st != 200:
+            print(f"  [ATTENTION] jingle non rattache ({r}) — le mix passe sans annonce.")
 
     st, r = call("PUT", f"/file/{media_id}", {"playlists": [playlist["id"]]})
     if st != 200:

@@ -13,6 +13,8 @@ tools/azuracast_config.py
 tools/kv_config.py
 tools/mixtape_state.json
 tools/pending_uploads.json
+tools/pending_review.json
+tools/analyse_report.html
 tools/artwork_scan.json
 tools/artwork_review.html
 

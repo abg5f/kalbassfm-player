@@ -1,10 +1,18 @@
 @echo off
-REM Lance le pipeline complet : nettoyage clapcrate + nettoyage tags + analyse Essentia + classement
-REM par creneau + regeneration de New_prog, sur les fichiers deposes dans
+REM Premiere moitie du pipeline : nettoyage clapcrate + nettoyage tags + analyse
+REM Essentia + classement dans le bon bac, sur les fichiers deposes dans
 REM 00_AZURACAST\_incoming.
-REM Double-clique ce fichier pour tout lancer d'un coup.
+REM
+REM CE SCRIPT NE MET RIEN EN LIGNE. Depuis la separation du 2026-09-05, il
+REM classe et s'arrete : le verdict d'antenne (trop energique ? trop repetitif ?
+REM trop loin de la house ?) et l'envoi AzuraCast appartiennent a analyse.bat.
+REM Un morceau envoye peut passer a l'antenne dans les minutes qui suivent --
+REM garder l'envoi derriere le verdict est ce qui garantit que rien n'atteint
+REM la radio sans avoir ete note.
+REM
+REM Double-clique ce fichier, puis analyse.bat.
 
-echo === KALBASSFM - Pipeline complet ===
+echo === KALBASSFM - Pipeline, etape 1/2 : classement ===
 echo.
 
 echo === Phase 0 : Nettoyage CLAPCRATE.COM de la bibliotheque existante ===
@@ -16,16 +24,18 @@ echo.
 
 wsl -e bash -c "source ~/essentia-env/bin/activate && python3 '/mnt/c/Users/ph.dufourcq/Documents/0_Claude Code/3_Radiofm/tools/triage_new_tracks.py'"
 
-REM La table BPM du jeu chat live (api/bpm-table.json) est desormais regeneree
-REM par triage_new_tracks.py lui-meme, en fin de run : elle reste ainsi alignee
-REM sur metadata.json meme quand le triage est lance directement en WSL sans
-REM passer par ce .bat -- c'est ce decalage qui a rendu le jeu muet deux fois
-REM (2026-07-28 et 2026-09-04). Pour la regenerer seule :
+REM La table BPM du jeu chat live (api/bpm-table.json) n'est plus regeneree ici :
+REM elle doit rester alignee sur metadata.json, or un verdict d'analyse peut
+REM encore en retirer un morceau. C'est analyse_new_tracks.py, en fin de
+REM pipeline, qui la regenere -- c'est le decalage entre les deux fichiers qui a
+REM rendu le jeu muet deux fois (2026-07-28 et 2026-09-04). Pour la regenerer
+REM seule :
 REM     python tools\export_bpm_table.py
 
 echo.
-echo === Termine ===
+echo === Etape 1/2 terminee ===
 echo.
-echo RAPPEL : si des morceaux ont ete ajoutes, commit + push de
-echo          api/bpm-table.json - sans push, le jeu BPM reste muet en ligne.
+echo Les morceaux sont classes dans leur bac, mais PAS a l'antenne.
+echo ETAPE SUIVANTE : analyse.bat -- juge chaque titre, met en ligne ce qui
+echo passe, regenere la table BPM du chat live.
 pause
