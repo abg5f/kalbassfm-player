@@ -225,7 +225,10 @@ def publish_one(candidate, air_date, playlist, podcast, apply_mode):
     publish_at = int(datetime.combine(air_date, datetime.min.time()).timestamp()) \
         + (start_i // 100) * 3600 + (start_i % 100) * 60
     st, ep = call("POST", f"/podcast/{podcast['id']}/episodes", {
-        "title": title,
+        # "Artiste — Titre" dans le TITRE de l'episode : le podcast AzuraCast
+        # n'a pas de champ artiste, et le panneau Mixtapes du player n'affiche
+        # que ce titre. Sans ca, la liste ne dit pas de qui est le mix.
+        "title": f"{artist} — {title}",
         "description": f"KALBASSFM mixtape — {artist}.",
         "explicit": False, "season_number": 1, "episode_number": episode_no,
         "publish_at": publish_at,

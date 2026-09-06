@@ -2718,6 +2718,24 @@
   // Lancer le direct doit toujours gagner sur une mixtape en cours.
   btnPlay.addEventListener('click', () => { if (mixCurrentId) mixStop(); });
 
+  // "Artiste — Titre". Le podcast AzuraCast n'a pas de champ artiste : depuis
+  // le 2026-09-06 mixtape_weekly.py l'ecrit directement dans le titre, mais
+  // les episodes publies AVANT ne l'ont que dans leur description
+  // ("KALBASSFM mixtape — <artiste>."). On l'y recupere pour eux, sans jamais
+  // doubler l'artiste quand le titre le porte deja.
+  function mixLabel(ep) {
+    const title = (ep.title || '').trim();
+    const m = /KALBASSFM mixtape\s*[—-]\s*(.+?)\.?\s*$/i.exec(ep.description || '');
+    let artist = m && m[1].trim();
+    // publish_mixtape.py (publication manuelle) met un MOIS dans cette
+    // description faute d'artiste : "KALBASSFM mixtape — August 2026".
+    // Une annee dedans, ce n'est pas un nom d'artiste.
+    if (artist && /\b(19|20)\d{2}\b/.test(artist)) artist = null;
+    if (!title) return artist || '—';
+    if (!artist || title.toLowerCase().startsWith(artist.toLowerCase())) return title;
+    return artist + ' — ' + title;
+  }
+
   function mixRender(episodes, podcastId) {
     mixList.innerHTML = '';
     const published = episodes.filter((e) => e.is_published && e.has_media);
@@ -2743,7 +2761,7 @@
       const meta = document.createElement('div');
       meta.className = 'mix-meta';
       const t = document.createElement('div');
-      t.className = 'mix-title'; t.textContent = ep.title || '—';
+      t.className = 'mix-title'; t.textContent = mixLabel(ep);
       const sub = document.createElement('div');
       sub.className = 'mix-sub';
       sub.textContent = [mixDate(ep.publish_at), ep.media && ep.media.length_text]
