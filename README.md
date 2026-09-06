@@ -16,6 +16,7 @@ Player web pour **KALBASSFM**, webradio 100% électronique diffusant électro, d
 - Historique des titres joués
 - Recherche YouTube du morceau en cours
 - Réactions 🔥
+- Panneau Mixtapes : les DJ sets publiés en podcast, avec **mini-lecteur** (barre de progression déplaçable, −15 s / +30 s, pause qui garde la position)
 - Minuteur de sommeil
 - Partage du titre en cours
 - Bandeau de financement (30 €/mois) — fermable, revient au bout de 30 jours

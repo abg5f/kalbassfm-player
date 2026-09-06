@@ -647,6 +647,38 @@
     }
     .mix-play:hover { border-color: var(--accent); }
     .mix-item.is-playing .mix-play { border-color: var(--accent); color: var(--bg); background: var(--accent); }
+    /* Mini-lecteur : deplace DANS la ligne en cours de lecture, d'ou le
+       wrap (la ligne est un flex horizontal) et le flex-basis pleine largeur. */
+    .mix-item.is-playing { flex-wrap: wrap; }
+    .mix-transport {
+      flex: 0 0 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0 2px;
+    }
+    .mix-transport input[type="range"] { height: 4px; }
+    .mix-time {
+      font-family: 'Space Mono', monospace;
+      font-size: .58rem;
+      color: var(--muted);
+      letter-spacing: .04em;
+      flex-shrink: 0;
+      min-width: 38px;
+    }
+    .mix-time.end { text-align: right; }
+    .mix-jump {
+      font-family: 'Space Mono', monospace;
+      font-size: .56rem;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid #333;
+      padding: 3px 5px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .mix-jump:hover { color: var(--accent); border-color: var(--accent); }
+    .mix-jump[disabled] { opacity: .35; cursor: default; }
     .mix-meta { flex: 1; min-width: 0; }
     .mix-title {
       font-family: 'Space Mono', monospace;
@@ -2681,11 +2713,85 @@
     } catch { return ''; }
   }
 
+  function mixTime(sec) {
+    if (!isFinite(sec) || sec < 0) return '--:--';
+    const s = Math.floor(sec % 60), m = Math.floor(sec / 60) % 60, h = Math.floor(sec / 3600);
+    const mm = String(m).padStart(2, '0'), ss = String(s).padStart(2, '0');
+    return h ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+  }
+
+  /* Mini-lecteur : UN seul bloc, deplace dans la ligne en cours de lecture
+     (appendChild demenage l'element, il ne se duplique donc jamais). Un mix
+     dure une heure : sans barre de progression, impossible d'y revenir ou d'y
+     avancer. Le direct, lui, n'en a pas besoin — il n'est pas seekable. */
+  const mixTransport = document.createElement('div');
+  mixTransport.className = 'mix-transport';
+  const mixBack = document.createElement('button');
+  mixBack.type = 'button'; mixBack.className = 'mix-jump'; mixBack.textContent = '«15';
+  mixBack.setAttribute('aria-label', 'Back 15 seconds');
+  const mixElapsed = document.createElement('span');
+  mixElapsed.className = 'mix-time'; mixElapsed.textContent = '0:00';
+  const mixSeek = document.createElement('input');
+  mixSeek.type = 'range'; mixSeek.min = '0'; mixSeek.max = '1000'; mixSeek.value = '0'; mixSeek.step = '1';
+  mixSeek.setAttribute('aria-label', 'Seek in mixtape');
+  const mixLeft = document.createElement('span');
+  mixLeft.className = 'mix-time end'; mixLeft.textContent = '--:--';
+  const mixFwd = document.createElement('button');
+  mixFwd.type = 'button'; mixFwd.className = 'mix-jump'; mixFwd.textContent = '30»';
+  mixFwd.setAttribute('aria-label', 'Forward 30 seconds');
+  mixTransport.append(mixBack, mixElapsed, mixSeek, mixLeft, mixFwd);
+
+  // Vrai pendant un glissement du curseur : timeupdate ne doit pas reecrire
+  // la position sous les doigts de l'auditeur.
+  let mixSeeking = false;
+
+  function mixSeekable() {
+    // Une duree inconnue (metadonnees pas encore lues, ou flux sans duree)
+    // rend le deplacement impossible : on grise plutot que de mentir.
+    return isFinite(podcastAudio.duration) && podcastAudio.duration > 0;
+  }
+
+  function mixSyncTransport() {
+    const ok = mixSeekable();
+    mixSeek.disabled = !ok;
+    mixBack.disabled = !ok;
+    mixFwd.disabled = !ok;
+    mixElapsed.textContent = mixTime(podcastAudio.currentTime);
+    mixLeft.textContent = ok ? mixTime(podcastAudio.duration) : '--:--';
+    if (ok && !mixSeeking) {
+      mixSeek.value = String(Math.round(1000 * podcastAudio.currentTime / podcastAudio.duration));
+    }
+  }
+
+  function mixJump(delta) {
+    if (!mixSeekable()) return;
+    podcastAudio.currentTime = Math.min(podcastAudio.duration - 0.5,
+                                        Math.max(0, podcastAudio.currentTime + delta));
+    mixSyncTransport();
+  }
+  mixBack.addEventListener('click', () => mixJump(-15));
+  mixFwd.addEventListener('click', () => mixJump(30));
+  mixSeek.addEventListener('input', () => {
+    mixSeeking = true;
+    if (mixSeekable()) mixElapsed.textContent = mixTime(podcastAudio.duration * mixSeek.value / 1000);
+  });
+  mixSeek.addEventListener('change', () => {
+    if (mixSeekable()) podcastAudio.currentTime = podcastAudio.duration * mixSeek.value / 1000;
+    mixSeeking = false;
+    mixSyncTransport();
+  });
+  podcastAudio.addEventListener('timeupdate', mixSyncTransport);
+  podcastAudio.addEventListener('loadedmetadata', mixSyncTransport);
+  podcastAudio.addEventListener('durationchange', mixSyncTransport);
+  podcastAudio.addEventListener('play', mixMarkPlaying);
+  podcastAudio.addEventListener('pause', mixMarkPlaying);
+
   function mixStop() {
     podcastAudio.pause();
     podcastAudio.removeAttribute('src');
     podcastAudio.load();
     mixCurrentId = null;
+    mixTransport.remove();
     mixMarkPlaying();
   }
 
@@ -2695,20 +2801,33 @@
       row.classList.toggle('is-playing', on);
       const b = row.querySelector('.mix-play');
       if (b) {
-        b.textContent = on ? '❚❚' : '▶';
-        b.setAttribute('aria-label', (on ? 'Pause ' : 'Play ') + (row.dataset.title || 'mixtape'));
+        // ❚❚ seulement quand ca joue vraiment : en pause, le bouton doit
+        // proposer de RE-lancer, pas afficher un etat.
+        const playing = on && !podcastAudio.paused;
+        b.textContent = playing ? '❚❚' : '▶';
+        b.setAttribute('aria-label', (playing ? 'Pause ' : 'Play ') + (row.dataset.title || 'mixtape'));
       }
+      if (on) row.appendChild(mixTransport);
     });
   }
 
   function mixPlay(ep, url) {
-    if (mixCurrentId === ep.id) { mixStop(); return; }
+    // Re-clic sur la ligne en cours : PAUSE, pas arret. Avec une barre de
+    // progression, perdre sa position a chaque pause serait absurde.
+    if (mixCurrentId === ep.id) {
+      if (podcastAudio.paused) podcastAudio.play().catch(() => { mixStop(); });
+      else podcastAudio.pause();
+      mixMarkPlaying();
+      return;
+    }
     // Couper le direct AVANT de lancer la mixtape : stopStream() pose
     // userStopped = true, ce qui neutralise le watchdog de reconnexion.
     stopStream();
     podcastAudio.src = url;
     podcastAudio.volume = audio.volume;
     mixCurrentId = ep.id;
+    mixSeeking = false;
+    mixSyncTransport();
     mixMarkPlaying();
     podcastAudio.play().catch(() => { mixStop(); });
   }
