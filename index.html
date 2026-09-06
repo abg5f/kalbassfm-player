@@ -661,18 +661,6 @@
       letter-spacing: .06em;
       margin-top: 2px;
     }
-    .mix-feed {
-      display: inline-block;
-      margin-top: 10px;
-      font-family: 'Space Mono', monospace;
-      font-size: .54rem;
-      color: var(--muted);
-      letter-spacing: .06em;
-      text-decoration: none;
-      border-bottom: 1px solid #333;
-    }
-    .mix-feed:hover { color: var(--accent); border-color: var(--accent); }
-
     /* ── Supporters (Buy Me a Coffee) ── */
     .supporter-item {
       padding: 6px 0;
@@ -738,8 +726,11 @@
       font-size: .74rem;
       word-break: break-word;
     }
-    /* Messages admin (bot Telegram, flag serveur) : texte en gras, pseudo en orange */
-    .chat-item-admin .chat-text { font-weight: 700; }
+    /* Messages admin (bot Telegram, flag serveur) : texte en gras, pseudo en orange.
+       pre-line uniquement ici : les annonces admin (mixtape du dimanche) sont
+       multi-lignes, un lien social par ligne. En pre-line global, un auditeur
+       pourrait poster un pave de 10 lignes en passant des \n a l'API. */
+    .chat-item-admin .chat-text { font-weight: 700; white-space: pre-line; }
     .chat-item-admin .chat-nick { color: var(--accent-2); }
     /* BPM GUESSER (jeu "devine le BPM") : meme flag admin:true que Admin, mais
        pseudo distingue en vert fluo -- doit venir apres la regle .chat-item-admin
@@ -1441,7 +1432,6 @@
       </summary>
       <div class="panel-body">
         <div id="mixList"></div>
-        <a class="mix-feed" id="mixFeed" target="_blank" rel="noopener noreferrer" style="display:none">⧉ RSS feed — add it to your podcast app</a>
       </div>
     </details>
     </div>
@@ -1474,7 +1464,7 @@
         <span class="wn-ico" aria-hidden="true">🎧</span>
         <div class="wn-body">
           <div class="wn-name">Mixtapes</div>
-          <p class="wn-desc">Once a month, a full <b>DJ mixtape</b> goes on air — then stays here to replay any time. Open the <b>Mixtapes</b> panel to listen, or grab the <b>RSS feed</b> to follow it in your podcast app.</p>
+          <p class="wn-desc">Once a month, a full <b>DJ mixtape</b> goes on air — then stays here to replay any time. Open the <b>Mixtapes</b> panel to listen any time.</p>
         </div>
       </div>
 
@@ -2680,7 +2670,6 @@
   const mixPanel   = document.getElementById('mixPanel');
   const mixList    = document.getElementById('mixList');
   const mixPreview = document.getElementById('mixPreview');
-  const mixFeedLink = document.getElementById('mixFeed');
   const podcastAudio = document.getElementById('podcastAudio');
   let mixCurrentId = null;
 
@@ -2775,11 +2764,9 @@
       const pod = pods.find((p) => /mixtape/i.test(p.title || '')) || pods[0];
       const re = await fetch(`${MIX_API}/public/podcast/${pod.id}/episodes`, { cache: 'no-store' });
       const eps = await re.json();
+      // Le flux RSS existe toujours cote AzuraCast, il n'est simplement plus
+      // affiche (retire le 2026-09-06 : personne ne s'en servait).
       mixRender(Array.isArray(eps) ? eps : [], pod.id);
-      const feed = (pod.links && pod.links.public_feed)
-        || `https://kalbassfm.duckdns.org/public/kalbassfm/podcast/${pod.id}/feed`;
-      mixFeedLink.href = feed;
-      mixFeedLink.style.display = '';
     } catch {
       // Silencieux : le panneau reste simplement vide, comme les autres panneaux
       // qui dependent du reseau.

@@ -69,7 +69,6 @@ BASE_ALL_DAY = [(0, 2359)]  # planning "toute la journee" -> voir PIEGE AZURACAS
 BASE = {
     # id: (nom, poids)
     11: ("chill", 4),
-    27: ("liquid", 4),
     14: ("deep", 7),
     17: ("nightdub", 6),
     12: ("groove", 10),
@@ -82,13 +81,27 @@ EVENING = {
     16: ("techno", 8, [(2200, 100)]),
     22: ("clubhouse_guest", 6, [(1900, 2200), (100, 300)]),
     23: ("techno_guest", 5, [(1900, 2200), (100, 300)]),
-    28: ("liquid_guest", 3, [(1900, 300)]),
 }
 
-# jungle : ponctuation (once_per_x_songs, inchange), seul le planning bouge
-# (23h-06h -> 21h-03h pour accompagner la montee au lieu de vivre a part).
+# PONCTUATIONS : type once_per_x_songs (un titre tous les N), et non un poids.
+#
+# POURQUOI LE LIQUID A BASCULE ICI LE 2026-09-06 : en playlist a POIDS, chaque
+# titre est un tirage aleatoire independant — rien n'empeche deux liquid
+# d'affilee, et ca s'entendait a l'antenne sur une radio annoncee house.
+# once_per_x_songs garantit l'espacement par construction, exactement ce que
+# jungle faisait deja depuis le debut.
+#
+# Les deux fenetres liquid NE SE RECOUVRENT PAS (jour 03h-19h, soir 19h-03h) :
+# une seule playlist liquid est eligible a un instant donne, donc un seul
+# compteur. Deux compteurs simultanes pourraient retomber sur deux titres
+# consecutifs et ramener le probleme.
+#
+# id: (nom, poids, [(start, end), ...], un_titre_tous_les_N)
 PUNCTUATION = {
-    24: ("jungle", 3, [(2100, 300)]),
+    24: ("jungle", 3, [(2100, 300)], 18),        # 14 -> 18 : jungle + liquid faisaient
+                                                  # une track DnB toutes les ~6 le soir
+    27: ("liquid", 4, [(300, 1900)], 16),        # journee : ~6% de liquid
+    28: ("liquid_guest", 3, [(1900, 300)], 10),  # soir : ~10%, la montee voulue
 }
 
 # Miroirs devenus inutiles : chaque bac a desormais un poids unique 24h/24,
@@ -147,9 +160,22 @@ def fmt_pairs(pairs):
 
 # --------------------------------------------------------------------------- diff
 
-def diff_playlist(live, target_weight, target_enabled, target_pairs):
-    """Retourne (payload_a_envoyer, lignes_de_diff)."""
+def diff_playlist(live, target_weight, target_enabled, target_pairs,
+                  target_type=None, target_every=None):
+    """Retourne (payload_a_envoyer, lignes_de_diff).
+
+    target_type / target_every ne concernent que les ponctuations
+    (once_per_x_songs) : sans eux, la table decrirait une cible que ce script
+    n'ecrirait jamais."""
     payload, lines = {}, []
+
+    if target_type and live.get("type") != target_type:
+        lines.append(f"  type      : {live.get('type')} -> {target_type}")
+        payload["type"] = target_type
+
+    if target_every is not None and live.get("play_per_songs") != target_every:
+        lines.append(f"  espacement: 1 titre / {live.get('play_per_songs')} -> 1 / {target_every}")
+        payload["play_per_songs"] = target_every
 
     if live["weight"] != target_weight:
         lines.append(f"  poids     : {live['weight']} -> {target_weight}")
@@ -224,12 +250,13 @@ def main():
             print(f"[{name} #{pid}] deja a jour")
 
     # ---- ponctuation jungle
-    print("\n-- Ponctuation --")
-    for pid, (name, weight, pairs) in PUNCTUATION.items():
+    print("\n-- Ponctuations (once_per_x_songs) --")
+    for pid, (name, weight, pairs, every) in PUNCTUATION.items():
         live = by_id.get(pid)
         if not live:
             die(f"playlist id={pid} ({name}) introuvable sur le serveur")
-        payload, lines = diff_playlist(live, weight, True, pairs)
+        payload, lines = diff_playlist(live, weight, True, pairs,
+                                       target_type="once_per_x_songs", target_every=every)
         if lines:
             print(f"[{name} #{pid}]")
             print("\n".join(lines))

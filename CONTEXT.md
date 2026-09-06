@@ -1,8 +1,20 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-09-05
+> Dernière mise à jour : 2026-09-06
 
-## État actuel (2026-09-05 — recherche/file d'attente Telegram + revue des titres trop énergiques)
+## État actuel (2026-09-06 — annonce mixtape, dosage du liquid, panneau Mixtapes)
+
+**Session 2026-09-06** — trois corrections d'antenne, dont une qui touche à l'identité musicale de la station.
+
+- 🔥 **Le liquid DnB passe de POIDS à PONCTUATION** — c'est la correction de fond. En playlist à poids, chaque titre est un tirage aléatoire indépendant : rien n'empêche deux liquid d'affilée, et ça s'entendait sur une radio annoncée house. `once_per_x_songs` garantit l'espacement par construction — le mécanisme que `jungle` utilisait déjà depuis le début. Cible : `liquid` #27 → 1 titre / 16, fenêtre **03h-19h** ; `liquid_guest` #28 → 1 / 10, fenêtre **19h-03h** ; `jungle` #24 passe de 1/14 à **1/18**. Les deux fenêtres liquid **ne se recouvrent pas** : une seule playlist liquid éligible à un instant donné = un seul compteur ; deux compteurs simultanés pourraient retomber sur deux titres consécutifs et ramener le problème. Résultat visé : ~6 % de liquid en journée, ~10 % le soir, famille DnB ≈ 1 titre sur 7 le soir (contre ~1 sur 6, aléatoire) — la montée du soir est conservée, mais régulière. `liquid` sort donc de `BASE` : son poids ne veut plus rien dire, et les 4 points libérés se redistribuent mécaniquement vers house/groove/deep.
+- ✅ **`diff_playlist()` gère `type` et `play_per_songs`** (`tools/apply_rotation.py`) — sans ça la table déclarative aurait décrit une cible que le script n'écrit jamais. Diff vérifié contre un état serveur simulé à partir du snapshot réel.
+- ✅ **Annonce de la mixtape corrigée** — elle disait « This week's Sunday mix is **live** » alors que la tâche Windows tourne le matin (09:03) et que le mix passe à 18:00 : le message annonçait comme en cours quelque chose qui n'avait pas commencé. Devient `🎧 Today's mix airs at 18:00 (Paris): "titre" by artiste!` (heure lue depuis `AIR_START`, pas en dur), suivie d'**un réseau social par ligne** au lieu de deux URLs collées par des points médians.
+- ✅ **Sauts de ligne rendus dans le chat** — `.chat-text` n'avait pas de `white-space`, les `\n` étaient écrasés au rendu. Règle posée sur `.chat-item-admin .chat-text` **uniquement** : en `pre-line` global, un auditeur pourrait poster un pavé de 10 lignes en passant des `\n` à l'API. Plafond des messages admin porté de 200 à **400** caractères (`mixtape_weekly.py` + `postAdminMessage` de `api/telegram.js`) — 200 coupait le second lien en plein milieu ; le plafond des messages d'**auditeur** reste à 200 (`api/chat.js`).
+- ✅ **Lien « ⧉ RSS feed » retiré du panneau Mixtapes** (balise, JS, CSS, mention dans « What's new ») — personne ne s'en servait. Le flux existe toujours côté AzuraCast, il n'est plus affiché.
+- 🔍 **`mixtape_weekly.py --status`** (lecture seule) — le panneau Mixtapes n'affichait pas l'épisode du jour et il était impossible de trancher à l'aveugle : le player ne liste que les épisodes `is_published` **ET** `has_media`, et un manque vient soit d'un `publish_at` encore futur (il est posé à l'heure de diffusion, pas de création), soit d'un média non attaché (upload interrompu sur un fichier d'une heure), soit d'un doublon. La commande liste les épisodes avec ces deux drapeaux et dit lesquels sont invisibles. Diagnostic à faire tourner en local, correctif ensuite.
+- ⚠️ **`sw.js` bumpé `kfm-v27` → `kfm-v28`** : le player change, sans ça les PWA installées gardent l'ancien HTML.
+
+## État antérieur (2026-09-05 — recherche/file d'attente Telegram + revue des titres trop énergiques)
 
 **Session 2026-09-05** — deux demandes d'antenne, l'une côté pilotage (bot), l'autre côté programmation musicale (rétention d'audience).
 

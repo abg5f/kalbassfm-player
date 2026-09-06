@@ -1527,7 +1527,10 @@ async function postAdminMessage(text) {
   if (!kv) return null;
   // admin:true est pose UNIQUEMENT ici (cote serveur) — le front l'utilise pour
   // mettre le message en valeur, un client ne peut pas le forger.
-  const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: 'Admin', text: text.slice(0, 200), ts: Date.now(), admin: true };
+  // 400 et non 200 : les annonces admin tiennent sur plusieurs lignes (un lien
+  // par ligne) depuis 2026-09-06, et 200 coupait le dernier lien en plein
+  // milieu. Le plafond des messages d'AUDITEUR reste a 200 (api/chat.js).
+  const msg = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), nick: 'Admin', text: text.slice(0, 400), ts: Date.now(), admin: true };
   await kv('lpush', 'chat:messages', JSON.stringify(msg));
   await kv('ltrim', 'chat:messages', '0', '99');
   return msg.id;

@@ -30,6 +30,7 @@ de taches peut rattraper une execution manquee, ou etre relance a la main).
 Usage :
     python mixtape_weekly.py            # dry-run : affiche ce qui serait fait
     python mixtape_weekly.py --apply    # execute reellement
+    python mixtape_weekly.py --status   # etat des episodes podcast (lecture seule)
 """
 import json
 import re
@@ -84,7 +85,11 @@ def post_admin_message(text):
     import string
     import time
     msg_id = f"{int(time.time() * 1000):x}" + "".join(random.choices(string.ascii_lowercase + string.digits, k=6))
-    msg = {"id": msg_id, "nick": "Admin", "text": text[:200], "ts": int(time.time() * 1000), "admin": True}
+    # 400 et non 200 : l'annonce du mix tient sur plusieurs lignes (titre +
+    # un reseau social par ligne), et une troncature a 200 coupait le second
+    # lien en plein milieu. Le plafond des messages d'AUDITEUR reste a 200
+    # (api/chat.js) — seul le chemin admin, pose cote serveur, est elargi.
+    msg = {"id": msg_id, "nick": "Admin", "text": text[:400], "ts": int(time.time() * 1000), "admin": True}
     kv_call("lpush", "chat:messages", json.dumps(msg, ensure_ascii=False))
     kv_call("ltrim", "chat:messages", "0", "99")
 
@@ -198,14 +203,53 @@ def publish_one(candidate, air_date, playlist, podcast, apply_mode):
     # immediat -- meme endpoint que /energy et le LOT 2.
     call("PUT", f"{BASE}/api/admin/debug/station/1/clearqueue")
 
+    # "airs at HH:MM" et non "is live" : cette tache tourne le matin (planifiee
+    # une fois par jour), alors que le mix passe a AIR_START — l'annoncer comme
+    # deja en cours etait faux de plusieurs heures. Un reseau social par ligne :
+    # colles sur une seule ligne, les deux URLs etaient illisibles dans le chat.
     links = parse_socials(candidate.get("lyrics"))
-    tail = (" Follow: " + " · ".join(f"{label} — {url}" for label, url in links)) if links else ""
-    announce = f'🎧 This week\'s Sunday mix is live: "{title}" by {artist}!{tail}'
+    tail = ("\nFollow:\n" + "\n".join(f"{label} — {url}" for label, url in links)) if links else ""
+    announce = f'🎧 Today\'s mix airs at {AIR_START} (Paris): "{title}" by {artist}!{tail}'
     post_admin_message(announce)
 
     # Le rappel "arrive bientot" n'a plus lieu d'etre une fois le mix en
     # direct -- l'annonce chat ci-dessus prend le relais.
     set_pinned(None)
+
+
+# --------------------------------------------------------------------------- diagnostic
+
+def show_status(podcast):
+    """Etat des episodes du podcast, en lecture seule.
+
+    Le panneau Mixtapes du player n'affiche que les episodes a la fois
+    is_published ET has_media (index.html, mixRender). Un episode manquant a
+    l'ecran vient donc toujours de l'un des deux : publish_at encore dans le
+    futur (il est pose a l'heure de diffusion, pas a l'heure de creation), ou
+    media non attache (upload interrompu sur un fichier d'une heure). Cette
+    commande dit lequel, sans rien ecrire."""
+    st, eps = call("GET", f"/podcast/{podcast['id']}/episodes")
+    if st != 200:
+        die(f"lecture des episodes impossible : {st} {eps}")
+    if not eps:
+        print("Aucun episode dans ce podcast.")
+        return
+    print(f"{len(eps)} episode(s) dans « {podcast.get('title', '?')} » :\n")
+    print(f"  {'publie':<7} {'media':<6} {'date de publication':<28} titre")
+    now = datetime.now().timestamp()
+    for ep in sorted(eps, key=lambda e: e.get("publish_at") or 0, reverse=True):
+        ts = ep.get("publish_at") or 0
+        when = datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts else "(aucune)"
+        future = " (a venir)" if ts > now else ""
+        media = ep.get("media") or {}
+        print(f"  {'oui' if ep.get('is_published') else 'NON':<7} "
+              f"{'oui' if ep.get('has_media') else 'NON':<6} "
+              f"{when + future:<28} {ep.get('title') or '?'}"
+              + (f"  [{media.get('length_text')}]" if media.get("length_text") else ""))
+    hidden = [e for e in eps if not (e.get("is_published") and e.get("has_media"))]
+    if hidden:
+        print(f"\n{len(hidden)} episode(s) ne s'affichent PAS dans le panneau Mixtapes "
+              f"(il lui faut publie=oui ET media=oui).")
 
 
 # --------------------------------------------------------------------------- main
@@ -215,6 +259,10 @@ def main():
     today = date.today()  # heure de la machine (Windows, attendue Europe/Paris)
 
     playlist, podcast = resolve_targets()
+
+    if "--status" in sys.argv:
+        return show_status(podcast)
+
     candidates = load_candidates(playlist["id"])
     scheduled = [(c, c["album"]) for c in candidates if c.get("album")]
     print(f"{len(candidates)} morceau(x) dans {playlist['name']}, {len(scheduled)} programme(s).")
