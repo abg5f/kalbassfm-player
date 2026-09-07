@@ -16,6 +16,7 @@
 - 🔍 **Mystère du panneau résolu sans correctif** : l'épisode du jour est apparu de lui-même une fois 18:00 passé. C'était bien le cas `publish_at` encore futur (posé à l'heure de **diffusion**, pas de création) — l'épisode existait, le player ne montre que `is_published`. `--status` reste utile pour les deux autres cas (média non attaché, doublon).
 - ✅ **Mini-lecteur des mixtapes** — un mix dure une heure : sans barre de progression, impossible d'y revenir ou d'y avancer. **Un seul** bloc `.mix-transport`, déplacé dans la ligne en cours par `appendChild` (il déménage, il ne se duplique jamais — vérifié : 1 seul dans le DOM après changement de mix). Barre déplaçable + −15 s / +30 s + temps écoulé/durée. Trois pièges traités : le curseur est **grisé tant que la durée est inconnue** (métadonnées pas encore lues) plutôt que de mentir ; `timeupdate` **ne réécrit pas** la position pendant un glissement (drapeau `mixSeeking`) ; et un re-clic sur la ligne en cours **met en pause** au lieu d'arrêter — avec une barre de progression, perdre sa position à chaque pause serait absurde. Le direct n'en a pas besoin, il n'est pas seekable. Testé en navigateur avec un `FakeAudio` : play, métadonnées, glissement, relâchement, sauts, pause/reprise, changement de mix, fin.
 - ⚠️ **`sw.js` bumpé `kfm-v27` → `kfm-v30`** : le player change, sans ça les PWA installées gardent l'ancien HTML.
+- 🔁 **Fin de session : `git pull` → « Already up to date »** — `main` local et distant sont alignés sur `f5fe2fd`, arbre de travail propre. Le graphe, lui, était resté au 2026-09-05 : les quatre commits du jour n'y figuraient pas. Resynchronisé lors de ce `/save` (voir **Graphe de connaissances**).
 
 ## État antérieur (2026-09-05, suite — séparation triage / analyse, et vérification d'iso local ↔ AzuraCast)
 
@@ -387,7 +388,7 @@
 | `index.html` | Player complet EN, Top 5 retiré, Flappy Kalbass (fix mobile 2026-07-21), Vibe Streak, bandeau épinglé, Request, reconnexion durcie, **My tracks** (chip Save + panneau + export, 100% localStorage) et **popup What's new** (2026-07-24) | ✅ Live |
 | `manifest.webmanifest`, `sw.js` | PWA en anglais, cache bumpé `kfm-v18` (2026-07-24) | ✅ Live |
 | `tools/publish_mixtape.py` | **Nouveau (2026-08-08)** — geste mensuel de la mixtape : banque → playlist planifiée + épisode podcast + upload. Dry-run par défaut, `--apply` | ✅ Créé, `--apply` non rejoué de bout en bout |
-| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances (74 nœuds / 148 relations) | ✅ À jour 2026-08-08 |
+| `CONTEXT.md`, `graphify-out/` | Contexte + graphe de connaissances (110 nœuds / 228 relations, 10 communautés) | ✅ À jour 2026-09-06 |
 
 ## Infrastructure
 
@@ -401,16 +402,16 @@
 - **Automatisation locale** : tâche planifiée Windows `KalbassFM Mixtape hebdo` (PowerShell `Register-ScheduledTask`, quotidienne 9h) — exécute `tools/mixtape_weekly.py --apply`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-09-05 (construction manuelle via /graphify, pas de CLI — la commande n'est pas dans le PATH) — 105 nœuds, 208 relations
+> Mis à jour le 2026-09-06 (construction manuelle via le skill `/graphify`, pas de CLI — la commande n'est pas dans le PATH) — **110 nœuds, 228 relations, 10 communautés**
 
-God nodes (concepts centraux) : `index.html` (hub front, degré 22), `api/telegram.js` (20), `AzuraCast` (17), `ChatFeature`/`api/chat.js` (13 chacun), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (10), `MixtapesFeature`/`BacLiquid`/`EnergyBoostTelegram` (7 chacun).
-Nouveaux nœuds 2026-09-01 (1ère passe) : `AzuraCastSchedulePriorityBug` (le bug critique — scheduled exclut unscheduled), `LogsTelegramCommand`, `MixtapeWeeklyAutomation`, `tools/mixtape_weekly.py`, `tools/kv_config.py`, `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py`, `VibeIndicator` (ajouté puis retiré), `JinglesPlaylistFix`.
-Nouveaux nœuds 2026-09-01 (2ème passe) : `api/submit-mix.js` (formulaire candidature DJ, code déjà en place mais absent du graphe jusqu'ici), `DjMixUploadPortalRejected` (décision : portail d'upload écarté, cf. Décisions).
+God nodes (concepts centraux) : `index.html` (hub front, degré 25), `api/telegram.js` (21), `AzuraCast` (21), `ChatFeature` (14) / `api/chat.js` (13), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (11), **`MixtapesFeature` (10 — entrée dans le top : l'émission est devenue un vrai sous-produit du player)**, `BacLiquid` (8), `EnergyBoostTelegram` (7).
+Nouveaux nœuds 2026-09-06 : `LiquidPunctuation` (le liquid passe de poids à `once_per_x_songs` — la décision qui touche à l'identité musicale), `MixtapeAnnounceExact` (annonce à l'heure réelle de diffusion + `pre-line` sur les seuls messages admin), `MixtapeArtistTitle` (artiste devant le titre, en deux bouts pour couvrir les épisodes déjà publiés), `MixtapeTransport` (mini-lecteur : un seul `.mix-transport` déplacé par `appendChild`), `MixtapeRssRemoved`.
+Nouveaux nœuds 2026-09-05 : `IngestionTwoStage` (la séparation classer/juger et sa raison d'être), `tools/analyse_new_tracks.py`, `tools/azuracast_upload.py`, `tools/analyse.bat`, `tools/triage.bat`, plus `tools/track_gate.py`, `tools/gate_reference.json`, `tools/review_energy.py`, `tools/sync_library.py`.
+Nouveaux nœuds 2026-09-01 : `AzuraCastSchedulePriorityBug` (le bug critique — scheduled exclut unscheduled), `LogsTelegramCommand`, `MixtapeWeeklyAutomation`, `tools/mixtape_weekly.py`, `tools/kv_config.py`, `tools/create_liquid_playlists.py`, `tools/create_boost_playlists.py`, `tools/sync_liquid_bin.py`, `VibeIndicator` (ajouté puis retiré), `JinglesPlaylistFix`, `api/submit-mix.js`, `DjMixUploadPortalRejected`.
 Nœuds 2026-08-31 : `RotationContinue`, `BacLiquid`, `StationTimezone`, `StockBibliotheque`, `AutoDJQueueDepth`, `BoostViaPlanningDate`, `EnergyBoostTelegram`, `tools/apply_rotation.py`, `tools/azuracast_snapshot_2026-08-31.json`, `tools/fix_artwork.py`.
 Nœuds 2026-08-08 : `MixtapesFeature`, `tools/publish_mixtape.py`, `PodcastAzuraCast`, `MixtapeOnairPlaylist`, `PodcastMediaDuplication`, `PodcastAudioElement`.
-Nouveaux nœuds 2026-09-05 : `IngestionTwoStage` (la séparation classer/juger et sa raison d'être), `tools/analyse_new_tracks.py`, `tools/azuracast_upload.py`, `tools/analyse.bat`, `tools/triage.bat`, plus quatre outils qui manquaient au graphe : `tools/track_gate.py`, `tools/gate_reference.json`, `tools/review_energy.py`, `tools/sync_library.py`.
-Communautés détectées : 10 (Player/Frontend, Infra/Streaming, Serverless+bot Telegram, Intégrations externes, Outillage/Pipeline, Essentia/Grille 9 bacs, Planning/Business, Contexte, Programmation/Rotation musicale, **Ingestion en deux temps**).
-Pour explorer : `graphify query "<question>"` / `graphify explain "<concept>"`
+Communautés détectées : 10 (Player/Frontend — 23 membres, Infra/Streaming, Serverless+bot Telegram — 21, Intégrations externes, Outillage/Pipeline, Essentia/Grille 9 bacs, Planning/Business, Contexte, Programmation/Rotation musicale — 17, Ingestion en deux temps).
+Pour explorer : le graphe se lit dans `graphify-out/index.md` (résumé humain) ou `graph.json` — **il n'y a pas de CLI `graphify` installée**, les commandes `graphify query/explain` du CLAUDE.md ne fonctionnent pas en l'état.
 
 ---
 

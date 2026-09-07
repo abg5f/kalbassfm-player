@@ -23,7 +23,10 @@
     "WhatsNewModal",
     "MixtapesFeature",
     "PodcastAudioElement",
-    "VibeIndicator"
+    "VibeIndicator",
+    "MixtapeTransport",
+    "MixtapeArtistTitle",
+    "MixtapeRssRemoved"
    ]
   },
   {
@@ -70,7 +73,8 @@
     "AudienceStatsFeature",
     "LogsTelegramCommand",
     "api/submit-mix.js",
-    "DjMixUploadPortalRejected"
+    "DjMixUploadPortalRejected",
+    "MixtapeAnnounceExact"
    ]
   },
   {
@@ -156,7 +160,8 @@
     "AzuraCastSchedulePriorityBug",
     "tools/create_liquid_playlists.py",
     "tools/create_boost_playlists.py",
-    "tools/sync_liquid_bin.py"
+    "tools/sync_liquid_bin.py",
+    "LiquidPunctuation"
    ]
   },
   {

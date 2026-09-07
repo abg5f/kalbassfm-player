@@ -4,13 +4,13 @@
    "id": "index.html",
    "label": "index.html",
    "type": "file",
-   "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version). Fix mobile 2026-07-28 : les controles de lecture passent AVANT le chat (order 4-5 au lieu de 5 apres 4) et un bouton play est superpose a la pochette — il fallait scroller pour lancer la radio. Tout enfant de .card doit avoir un `order` explicite (sans lui il vaut 0 et passe avant l'en-tete). Ajout 2026-08-08 : panneau Mixtapes (podcast mensuel, endpoints publics AzuraCast) et second element <audio id=podcastAudio> separe de #audio - ce dernier est auto-reparant et ecraserait la mixtape. Le curseur de volume pilote les deux."
+   "summary": "Player web single-page (HTML/CSS/JS vanilla) : lecture stream, égaliseur Web Audio, now-playing polling, réactions, historique, partage, minuteur, programme. Interface passee en anglais. Messages admin (flag admin:true) affiches en gras. Ajouts 2026-07-20 : indicateur Vibe now/next (creneau horaire courant), Vibe Streak (fidelite locale localStorage, cumul tolerant aux micro-coupures), bandeau annonce epinglee, bouton Request (dedicaces -> Telegram), plafond visuel 10 votes/auditeur (shake+toast), panneau Supporters, reconnexion audio durcie (backoff exponentiel + cache-bust sur erreur). Layout desktop reorganise : Top 5 sous Historique (colonne principale), Supporters mis en avant en tete de colonne laterale (ouvert par defaut, juste sous Chat), puis Chat rendu flexible pour combler tout l'espace vertical restant de la colonne laterale (voir DesktopLayout). Ajouts 2026-07-24 : My tracks (chip Save + panneau + export Copy/.txt, 100% localStorage) et popup What's new (catalogue des features, une ouverture auto par version). Fix mobile 2026-07-28 : les controles de lecture passent AVANT le chat (order 4-5 au lieu de 5 apres 4) et un bouton play est superpose a la pochette — il fallait scroller pour lancer la radio. Tout enfant de .card doit avoir un `order` explicite (sans lui il vaut 0 et passe avant l'en-tete). Ajout 2026-08-08 : panneau Mixtapes (podcast mensuel, endpoints publics AzuraCast) et second element <audio id=podcastAudio> separe de #audio - ce dernier est auto-reparant et ecraserait la mixtape. Le curseur de volume pilote les deux. Ajouts 2026-09-06 : mini-lecteur des mixtapes (MixtapeTransport - un seul bloc .mix-transport deplace par appendChild dans la ligne qui joue), artiste reconstitue depuis la description de l'episode (MixtapeArtistTitle), lien RSS retire du panneau."
   },
   {
    "id": "sw.js",
    "label": "sw.js",
    "type": "file",
-   "summary": "Service worker minimal : cache uniquement la coquille PWA (shell + icônes), jamais le flux audio ni l'API now-playing."
+   "summary": "Service worker minimal : cache uniquement la coquille PWA (shell + icônes), jamais le flux audio ni l'API now-playing. Cache bumpe a kfm-v30 le 2026-09-06 (artiste devant le titre + mini-lecteur mixtapes) ; v28 puis v29 le meme jour."
   },
   {
    "id": "manifest.webmanifest",
@@ -262,7 +262,7 @@
    "id": "api/telegram.js",
    "label": "api/telegram.js",
    "type": "file",
-   "summary": "Bot Telegram admin. Perimetre resserre le 2026-09-01 : retires /jingle, /np, /recent, /ask, /delete_track (recherche libre) ; /delete_current_track renomme /delete. Ajouts : /energy (boost rotation), /logs (historique de diffusion), /queue_mix (choix hebdo de la mixtape du dimanche)."
+   "summary": "Bot Telegram admin. Perimetre resserre le 2026-09-01 : retires /jingle, /np, /recent, /ask, /delete_track (recherche libre) ; /delete_current_track renomme /delete. Ajouts : /energy (boost rotation), /logs (historique de diffusion), /queue_mix (choix hebdo de la mixtape du dimanche). 2026-09-06 : white-space pre-line pose sur les SEULS messages admin (un auditeur pourrait sinon poster un pave via l'API) et plafond admin porte de 200 a 400 caracteres - 200 coupait le second lien de l'annonce mixtape ; le plafond auditeur reste a 200."
   },
   {
    "id": "TelegramBotFeature",
@@ -412,7 +412,7 @@
    "id": "MixtapesFeature",
    "label": "Mixtapes (emission mensuelle)",
    "type": "feature",
-   "summary": "Rendez-vous editorial mensuel introduit le 2026-08-08 : une mixtape mixee est diffusee a date fixe a l'antenne, puis reste ecoutable a la demande dans le player et suivable via un flux RSS. Repond au vrai probleme du projet (0,46 auditeur/30j) : la technique est saine, c'est la diffusion et l'accroche qui manquent. Cote auditeur : panneau Mixtapes alimente par les endpoints PUBLICS d'AzuraCast (aucune cle, donc zero fichier api/, zero commande Redis, zero fonction Vercel) - meme principe que MyTracksFeature."
+   "summary": "Rendez-vous editorial mensuel introduit le 2026-08-08 : une mixtape mixee est diffusee a date fixe a l'antenne, puis reste ecoutable a la demande dans le player et suivable via un flux RSS. Repond au vrai probleme du projet (0,46 auditeur/30j) : la technique est saine, c'est la diffusion et l'accroche qui manquent. Cote auditeur : panneau Mixtapes alimente par les endpoints PUBLICS d'AzuraCast (aucune cle, donc zero fichier api/, zero commande Redis, zero fonction Vercel) - meme principe que MyTracksFeature. Evolutions 2026-09-06 : artiste devant le titre dans la liste, mini-lecteur (barre de progression + sauts) sur la ligne en cours, lien RSS retire."
   },
   {
    "id": "tools/publish_mixtape.py",
@@ -442,7 +442,7 @@
    "id": "PodcastAudioElement",
    "label": "<audio id=podcastAudio> (element separe)",
    "type": "concept",
-   "summary": "Second element audio, distinct de #audio. Indispensable : #audio est auto-reparant (listeners pause/error/visibilitychange + watchdog setInterval qui relancent le flux live). Le reutiliser pour une mixtape ferait ecraser celle-ci par le direct en pleine lecture. Lancer une mixtape appelle stopStream(), qui pose userStopped=true et neutralise le watchdog. Verifie empiriquement : direct coupe au lancement et toujours coupe 6 s plus tard."
+   "summary": "Second element audio, distinct de #audio. Indispensable : #audio est auto-reparant (listeners pause/error/visibilitychange + watchdog setInterval qui relancent le flux live). Le reutiliser pour une mixtape ferait ecraser celle-ci par le direct en pleine lecture. Lancer une mixtape appelle stopStream(), qui pose userStopped=true et neutralise le watchdog. Verifie empiriquement : direct coupe au lancement et toujours coupe 6 s plus tard. Depuis le 2026-09-06 il est pilote par le mini-lecteur (currentTime, timeupdate, loadedmetadata, durationchange, play/pause)."
   },
   {
    "id": "RotationContinue",
@@ -454,7 +454,7 @@
    "id": "BacLiquid",
    "label": "BacLiquid",
    "type": "planned-feature",
-   "summary": "Migre en prod le 2026-09-01 : 79 fichiers deplaces (local+SFTP), playlists liquid/liquid_guest creees et peuplees via tools/create_liquid_playlists.py."
+   "summary": "Migre en prod le 2026-09-01 : 79 fichiers deplaces (local+SFTP), playlists liquid/liquid_guest creees et peuplees via tools/create_liquid_playlists.py. Depuis le 2026-09-06 le liquid n'est plus un bac a poids mais une ponctuation espacee (once_per_x_songs) - voir LiquidPunctuation ; il sort donc de BASE."
   },
   {
    "id": "EnergyBoostTelegram",
@@ -490,7 +490,7 @@
    "id": "tools/apply_rotation.py",
    "label": "tools/apply_rotation.py",
    "type": "planned-feature",
-   "summary": "EXECUTE (etait planifie au 2026-08-31). Bascule timezone Europe/Paris, poids/plannings/activations de la rotation continue. Corrige le 2026-09-01 : les 6 bacs de base recoivent desormais un planning explicite 00:00-23:59 (au lieu d'aucun planning) pour contourner AzuraCastSchedulePriorityBug."
+   "summary": "EXECUTE (etait planifie au 2026-08-31). Bascule timezone Europe/Paris, poids/plannings/activations de la rotation continue. Corrige le 2026-09-01 : les 6 bacs de base recoivent desormais un planning explicite 00:00-23:59 (au lieu d'aucun planning) pour contourner AzuraCastSchedulePriorityBug. 2026-09-06 : diff_playlist() gere desormais type et play_per_songs - sans ca la table declarative decrivait une cible que le script n'ecrivait jamais (diff verifie contre un etat serveur simule depuis le snapshot reel). Applique le passage du liquid en once_per_x_songs."
   },
   {
    "id": "tools/fix_artwork.py",
@@ -526,7 +526,7 @@
    "id": "tools/mixtape_weekly.py",
    "label": "mixtape_weekly.py",
    "type": "file",
-   "summary": "Nouveau 2026-09-01. Tourne via tache planifiee Windows quotidienne. Lit le champ Album des candidats de mixtape_onair, poste le pin J-3 et execute la diffusion+podcast+annonce chat le jour J. Importe publish_mixtape.py (call/upload_media/hhmm/resolve_targets), etat local mixtape_state.json (gitignored)."
+   "summary": "Nouveau 2026-09-01. Tourne via tache planifiee Windows quotidienne. Lit le champ Album des candidats de mixtape_onair, poste le pin J-3 et execute la diffusion+podcast+annonce chat le jour J. Importe publish_mixtape.py (call/upload_media/hhmm/resolve_targets), etat local mixtape_state.json (gitignored). 2026-09-06 : ecrit Artiste - Titre dans le titre de l'episode, annonce l'heure reelle de diffusion lue depuis AIR_START (et non is LIVE alors que la tache tourne le matin), un reseau social par ligne, et gagne --status (lecture seule) qui dit pourquoi un episode n'apparait pas dans le player (is_published ET has_media)."
   },
   {
    "id": "tools/kv_config.py",
@@ -629,6 +629,36 @@
    "label": "sync_library.py",
    "type": "file",
    "summary": "Reconcilie le PC et AzuraCast DANS LES DEUX SENS. Six cas : A supprime cote radio / B present en SFTP mais pas indexe / C en attente du VERDICT (pending_review.json) / D en attente d'ENVOI (pending_uploads.json) / E supprime sur le PC / F entree metadata orpheline. La vue SFTP est ce qui rend le sens PC sur : sans elle le script refuse de toucher aux fichiers locaux. Le cas C a ete ajoute avec la separation triage/analyse -- sans lui, un morceau classe mais pas encore juge tombait en cas A et le script proposait de l'ecarter."
+  },
+  {
+   "id": "MixtapeTransport",
+   "label": "Mini-lecteur mixtapes (barre de progression)",
+   "type": "feature",
+   "summary": "Transport ajoute sous la ligne du mix en cours dans le panneau Mixtapes (2026-09-06, commit f5fe2fd) : barre deplacable, sauts -15 s / +30 s, temps ecoule et duree. Un mix dure une heure, sans barre impossible d'y revenir ou d'y avancer. UN SEUL bloc .mix-transport existe, deplace dans la ligne qui joue par appendChild : un element demenage, il ne se duplique jamais. Trois pieges traites : curseur GRISE tant que la duree est inconnue (metadonnees pas lues, ou flux sans duree) plutot qu'une position qui ne veut rien dire ; timeupdate ne reecrit PAS la position pendant un glissement (drapeau mixSeeking), sinon la barre se bat avec le doigt de l'auditeur ; un re-clic sur la ligne en cours met en PAUSE au lieu d'arreter (perdre sa position a chaque pause serait absurde ; le bouton affiche play en pause, pause seulement quand ca joue vraiment). Le direct n'a pas ce transport : il n'est pas seekable. Teste en navigateur avec un FakeAudio (play, metadonnees, glissement, relachement, sauts, pause/reprise, changement de mix, fin)."
+  },
+  {
+   "id": "MixtapeArtistTitle",
+   "label": "Artiste devant le titre dans le panneau Mixtapes",
+   "type": "feature",
+   "summary": "Le podcast AzuraCast n'a pas de champ artiste et le panneau n'affichait que le titre de l'episode : la liste ne disait pas de qui etait le mix (2026-09-06, commit 280c1f8). Deux bouts, parce que les episodes DEJA publies ne peuvent pas etre reecrits d'ici : mixtape_weekly.py ecrit desormais \"Artiste - Titre\" dans le titre de l'episode (source de verite pour les prochains), et le player reconstitue l'artiste depuis la description (\"KALBASSFM mixtape - <artiste>.\") pour les anciens. Jamais de doublon quand le titre porte deja l'artiste. Garde-fou : publish_mixtape.py (publication manuelle) met un MOIS dans cette description faute d'artiste (\"KALBASSFM mixtape - August 2026\") - une annee dans la chaine disqualifie le prefixe. Cas limites testes : titre vide, pas de description, tiret court, artiste deja present."
+  },
+  {
+   "id": "LiquidPunctuation",
+   "label": "Liquid DnB : de poids a ponctuation espacee",
+   "type": "decision",
+   "summary": "Correction de fond du 2026-09-06 (commit a900439). En playlist a POIDS, chaque titre est un tirage aleatoire independant : rien n'empeche deux liquid d'affilee, et ca s'entendait sur une radio annoncee house. once_per_x_songs garantit l'espacement par construction - le mecanisme que jungle utilisait deja depuis le debut. Cible : liquid #27 = 1 titre / 16, fenetre 03h-19h ; liquid_guest #28 = 1 / 10, fenetre 19h-03h ; jungle #24 passe de 1/14 a 1/18. Les deux fenetres liquid NE SE RECOUVRENT PAS : une seule playlist liquid eligible a un instant donne = un seul compteur ; deux compteurs simultanes pourraient retomber sur deux titres consecutifs et ramener le probleme. Vise ~6% de liquid en journee, ~10% le soir, famille DnB ~1 titre sur 7 le soir : la montee du soir est conservee, mais reguliere. liquid sort donc de BASE (son poids ne veut plus rien dire) et les 4 points liberes se redistribuent mecaniquement vers house/groove/deep."
+  },
+  {
+   "id": "MixtapeAnnounceExact",
+   "label": "Annonce mixtape a l'heure exacte de diffusion",
+   "type": "fix",
+   "summary": "L'annonce disait \"This week's Sunday mix is LIVE\" alors que la tache Windows tourne le matin et que le mix passe a 18:00 (2026-09-06, commit a900439). Devient \"Today's mix airs at 18:00 (Paris)\", l'heure etant lue depuis AIR_START, avec un reseau social PAR LIGNE. Le rendu multi-lignes exigeait white-space: pre-line, pose sur les SEULS messages admin : en global, un auditeur pourrait poster un pave de 10 lignes via l'API. Plafond admin porte de 200 a 400 caracteres (200 coupait le second lien) ; le plafond des messages d'auditeur reste a 200."
+  },
+  {
+   "id": "MixtapeRssRemoved",
+   "label": "Lien RSS retire du panneau Mixtapes",
+   "type": "decision",
+   "summary": "2026-09-06 (commit a900439) : le lien \"RSS feed\" est retire du panneau (balise, JS, CSS, mention dans What's new). Le flux existe TOUJOURS cote AzuraCast, il n'est simplement plus affiche. En contrepartie, mixtape_weekly.py --status (lecture seule) explique pourquoi un episode n'apparait pas : le player n'affiche que les episodes is_published ET has_media."
   }
  ],
  "edges": [
@@ -1878,6 +1908,126 @@
    "source": "BpmGuesserFeature",
    "target": "tools/analyse_new_tracks.py",
    "relation": "sa table est regeneree par",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeTransport",
+   "target": "index.html",
+   "relation": "implemente dans (.mix-transport, mixSeek, drapeau mixSeeking)",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeTransport",
+   "target": "MixtapesFeature",
+   "relation": "enrichit le panneau",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeTransport",
+   "target": "PodcastAudioElement",
+   "relation": "pilote (currentTime, timeupdate, loadedmetadata)",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeTransport",
+   "target": "sw.js",
+   "relation": "a impose le bump de cache kfm-v30",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeArtistTitle",
+   "target": "index.html",
+   "relation": "reconstitue l'artiste depuis la description (anciens episodes)",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeArtistTitle",
+   "target": "tools/mixtape_weekly.py",
+   "relation": "ecrit Artiste - Titre a la publication (source de verite)",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeArtistTitle",
+   "target": "tools/publish_mixtape.py",
+   "relation": "garde-fou : un MOIS dans la description ne doit pas passer pour un artiste",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeArtistTitle",
+   "target": "MixtapesFeature",
+   "relation": "enrichit le panneau",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeArtistTitle",
+   "target": "PodcastAzuraCast",
+   "relation": "contourne l'absence de champ artiste",
+   "weight": 1
+  },
+  {
+   "source": "LiquidPunctuation",
+   "target": "BacLiquid",
+   "relation": "change le mode de diffusion du bac",
+   "weight": 1
+  },
+  {
+   "source": "LiquidPunctuation",
+   "target": "tools/apply_rotation.py",
+   "relation": "applique (diff_playlist gere desormais type et play_per_songs)",
+   "weight": 1
+  },
+  {
+   "source": "LiquidPunctuation",
+   "target": "RotationContinue",
+   "relation": "corrige la rotation en place",
+   "weight": 1
+  },
+  {
+   "source": "LiquidPunctuation",
+   "target": "AzuraCast",
+   "relation": "repose sur once_per_x_songs (type de playlist)",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeAnnounceExact",
+   "target": "api/telegram.js",
+   "relation": "white-space pre-line et plafond admin 400 caracteres",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeAnnounceExact",
+   "target": "tools/mixtape_weekly.py",
+   "relation": "heure lue depuis AIR_START",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeAnnounceExact",
+   "target": "MixtapeWeeklyAutomation",
+   "relation": "corrige le message publie par la tache hebdo",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeAnnounceExact",
+   "target": "ChatFeature",
+   "relation": "s'affiche comme message admin",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeRssRemoved",
+   "target": "MixtapesFeature",
+   "relation": "retire un element du panneau",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeRssRemoved",
+   "target": "index.html",
+   "relation": "balise, JS et CSS supprimes",
+   "weight": 1
+  },
+  {
+   "source": "MixtapeRssRemoved",
+   "target": "tools/mixtape_weekly.py",
+   "relation": "compense par --status (is_published ET has_media)",
    "weight": 1
   }
  ]

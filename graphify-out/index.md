@@ -1,10 +1,10 @@
 # KALBASSFM — Graphe de connaissances
 
-> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois), le 2026-07-28, le 2026-08-08, le 2026-08-31 (conception rotation continue), le 2026-09-01 (exécution + bug critique + nouvelles features) et une seconde fois le 2026-09-01 (`kv_config.py` rempli, portail d'upload DJ discuté puis écarté) et le 2026-09-05 (separation triage/analyse, outils du filtre d'antenne) via `/graphify` (construction manuelle, pas de CLI).
+> Généré le 2026-07-09, mis à jour le 2026-07-16, 2026-07-17, le 2026-07-20 (3 fois), le 2026-07-21 (3 fois), le 2026-07-24 (2 fois), le 2026-07-28, le 2026-08-08, le 2026-08-31 (conception rotation continue), le 2026-09-01 (exécution + bug critique + nouvelles features) et une seconde fois le 2026-09-01 (`kv_config.py` rempli, portail d'upload DJ discuté puis écarté) le 2026-09-05 (separation triage/analyse, outils du filtre d'antenne) et le 2026-09-06 (liquid en ponctuation espacee, annonce mixtape a l'heure exacte, panneau Mixtapes : artiste + mini-lecteur) via `/graphify` (construction manuelle, pas de CLI).
 
 ## Vue d'ensemble
 
-- **105 nœuds**, **208 relations**, **10 communautés** détectées.
+- **110 nœuds**, **228 relations**, **10 communautés** détectées.
 - Le graphe couvre : le player web (`index.html`, layout desktop réorganisé, Top 5 retiré), les fonctions serverless (`api/chat.js`, `api/telegram.js`, `api/supporters.js`, `api/flappy.js` — chat live/bot admin/dons/mini-jeux, Upstash Redis), le **jeu "devine le BPM" intégré au chat** (`BpmGuesserFeature`, table `api/bpm-table.json` générée par `tools/export_bpm_table.py`), le **pseudo persistant choisi par l'auditeur** (`ChatNicknameFeature`, hash `chat:pseudos`), la **commande Telegram `/move`** pour migrer le morceau en cours entre les 8 bacs (`MoveTrackFeature`, 2026-07-24), la sauvegarde locale de titres likés (`MyTracksFeature`, 2026-07-24) et la popup de découverte des features (`WhatsNewModal`, 2026-07-24), l'**horloge à bacs pondérés** (8 bacs, `classify_bins.py`), le pipeline d'ingestion (avec file de retry SFTP), la playlist Jingles native AzuraCast, la PWA, l'infra (AzuraCast/Icecast/Liquidsoap/VPS/Vercel/DuckDNS), les intégrations externes (Buy Me a Coffee, API Claude), les documents `.planning/`, l'**incident de quota Upstash** du 2026-07-21 et sa résolution, le plan (non codé) du système de vote de playlist par genre, et l'**émission mensuelle Mixtapes** (`MixtapesFeature`, `tools/publish_mixtape.py`, podcast AzuraCast natif + playlist `mixtape_onair`, 2026-08-08).
 
 - **Ingestion en deux temps depuis le 2026-09-05** : `triage_new_tracks.py` classe (bac, `metadata.json`) et s'arrête, `analyse_new_tracks.py` juge puis envoie. L'envoi SFTP est délibérément derrière le verdict — un morceau posé sur le serveur peut passer à l'antenne dans les minutes qui suivent. Deux files distinctes : `pending_review.json` (classé, pas encore jugé) et `pending_uploads.json` (jugé bon, envoi échoué), que `sync_library.py` sait distinguer.
@@ -13,7 +13,7 @@
 
 | Communauté | Membres clés |
 |---|---|
-| Player / Frontend | index.html, layout desktop, sw.js, manifest, PWA, égaliseur, chat live, popup contact, now-playing, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, My tracks, popup What's new, **panneau Mixtapes + élément audio dédié** |
+| Player / Frontend | index.html, layout desktop, sw.js, manifest, PWA, égaliseur, chat live, popup contact, now-playing, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, My tracks, popup What's new, **panneau Mixtapes + élément audio dédié**, **mini-lecteur de mixtape (barre de progression, sauts)**, **artiste devant le titre**, **lien RSS retiré** |
 | Infra / Streaming | AzuraCast, Icecast, Liquidsoap, VPS, DuckDNS, GitHub, Vercel, Admin API, playlist Jingles, **podcast KALBASSFM Mixtapes, playlist mixtape_onair, duplication du média podcast** |
 | Serverless / API (chat + bot Telegram admin + Flappy + BPM) | api/chat.js, api/telegram.js, api/supporters.js, api/flappy.js, Upstash Redis, chat live, bot admin, réponse admin, badge supporter, renommage modérateur, pseudo choisi par l'auditeur, jeu BPM, commande /move (migration entre bacs), incident quota Upstash, vote playlist (planifié), **api/submit-mix.js (candidature DJ)**, **décision : portail d'upload DJ écarté** |
 | Intégrations externes (dons, IA) | Buy Me a Coffee, API Claude, api/supporters.js |
@@ -25,14 +25,15 @@
 
 ## God nodes (les plus connectés)
 
-1. **index.html** (degré 22) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, My tracks, popup What's new, panneau Mixtapes, PWA). L'indicateur Vibe (bac courant) y a été ajouté puis retiré le 2026-09-01.
-2. **api/telegram.js** (degré 20) — hub du bot admin. Périmètre resserré le 2026-09-01 (retire /jingle, /np, /recent, /ask, /delete_track), ajoute **/energy** (boost temporaire de rotation), **/logs** (historique de diffusion) et **/queue_mix** (sélection hebdo de la mixtape du dimanche). Reçoit aussi les notifications de `api/submit-mix.js` (candidature DJ).
-3. **AzuraCast** (degré 20) — cœur de l'infra streaming ET de la programmation. Comportement critique découvert le 2026-09-01 : voir `AzuraCastSchedulePriorityBug`. Son endpoint natif d'upload (`/files/upload`, vérifié via `openapi.yml`) a été considéré puis écarté pour la candidature DJ (sur-ingénierie vu le volume actuel).
-4. **ChatFeature** / **api/chat.js** (degré 13 chacun) — chat live, modération, jeu BPM, pseudo choisi par l'auditeur.
+1. **index.html** (degré 25) — hub de toutes les features front (now-playing, chat live, layout desktop, Supporters, Vibe Streak, bandeau épinglé, Request, Flappy Kalbass, pseudo persistant, My tracks, popup What's new, panneau Mixtapes, PWA). L'indicateur Vibe (bac courant) y a été ajouté puis retiré le 2026-09-01.
+2. **api/telegram.js** (degré 21) — hub du bot admin. Périmètre resserré le 2026-09-01 (retire /jingle, /np, /recent, /ask, /delete_track), ajoute **/energy** (boost temporaire de rotation), **/logs** (historique de diffusion) et **/queue_mix** (sélection hebdo de la mixtape du dimanche). Reçoit aussi les notifications de `api/submit-mix.js` (candidature DJ).
+3. **AzuraCast** (degré 21) — cœur de l'infra streaming ET de la programmation. Comportement critique découvert le 2026-09-01 : voir `AzuraCastSchedulePriorityBug`. Son endpoint natif d'upload (`/files/upload`, vérifié via `openapi.yml`) a été considéré puis écarté pour la candidature DJ (sur-ingénierie vu le volume actuel).
+4. **ChatFeature** (degré 14) / **api/chat.js** (degré 13) — chat live, modération, jeu BPM, pseudo choisi par l'auditeur.
 5. **ProgrammeGrid** (degré 12) — grille à créneaux d'origine (8 bacs), **supersédée par `RotationContinue`** depuis le 2026-08-31/09-01.
-6. **RotationContinue** (degré 10) — EN PROD depuis le 2026-09-01 : rotation continue façon Nova/Radio Meuh, exécutée par `tools/apply_rotation.py`, débuggée le jour même (`AzuraCastSchedulePriorityBug`).
-7. **BacLiquid** / **EnergyBoostTelegram** (degré 7 chacun) — 9ᵉ bac migré et `/energy` construit+testé le 2026-09-01.
-8. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles, désormais 9 bacs).
+6. **RotationContinue** (degré 11) — EN PROD depuis le 2026-09-01 : rotation continue façon Nova/Radio Meuh, exécutée par `tools/apply_rotation.py`, débuggée le jour même (`AzuraCastSchedulePriorityBug`).
+7. **MixtapesFeature** (degré 10) — l'émission mensuelle est devenue un vrai sous-produit du player : liste, artiste, mini-lecteur, publication hebdo automatisée.
+8. **BacLiquid** (degré 8) — 9ᵉ bac migré le 2026-09-01, **passé de poids à ponctuation espacée le 2026-09-06** (`LiquidPunctuation`). **EnergyBoostTelegram** (degré 7) : `/energy` construit+testé le 2026-09-01.
+9. **tools/classify_bins.py** — source de vérité unique de la classification (seuils auto-calibrés par percentiles, désormais 9 bacs).
 
 ## Note — 2026-07-21 : incident de quota Upstash et suppression du Top 5
 
@@ -85,6 +86,18 @@ c'est l'état de la station. La géographie mensuelle demandée est impossible :
 `analytics = 'no_ip'`, donc aucun enregistrement par auditeur n'est conservé et les rapports
 `by-country` / `charts` sont bloqués ou vides. Seuls les auditeurs connectés à l'instant sont
 localisables.
+
+## Note — 2026-09-06 : liquid en ponctuation, annonce à l'heure exacte, panneau Mixtapes jouable
+
+Trois corrections d'antenne, dont une qui touche à l'identité musicale de la station.
+
+- **`LiquidPunctuation`** — le fond du sujet. En playlist à **poids**, chaque titre est un tirage aléatoire indépendant : rien n'empêche deux liquid d'affilée, et ça s'entendait sur une radio annoncée house. `once_per_x_songs` garantit l'espacement **par construction** — le mécanisme que `jungle` utilisait déjà. `liquid` #27 → 1/16 sur 03h-19h, `liquid_guest` #28 → 1/10 sur 19h-03h, `jungle` #24 → 1/18. Les deux fenêtres liquid **ne se recouvrent pas** : une seule playlist éligible à un instant donné = un seul compteur ; deux compteurs simultanés pourraient retomber sur deux titres consécutifs. `liquid` sort de `BASE`. Appliqué par `tools/apply_rotation.py`, dont `diff_playlist()` gère désormais `type` et `play_per_songs`.
+- **`MixtapeAnnounceExact`** — l'annonce disait « is LIVE » alors que la tâche Windows tourne le matin et que le mix passe à 18:00 ; elle lit maintenant l'heure depuis `AIR_START`. Le rendu multi-lignes a imposé `white-space: pre-line` sur les **seuls** messages admin (sinon un auditeur poste un pavé via l'API) et un plafond admin porté à 400 caractères.
+- **`MixtapeArtistTitle`** — le podcast AzuraCast n'a pas de champ artiste. Deux bouts, les épisodes déjà publiés n'étant pas réinscriptibles d'ici : `mixtape_weekly.py` écrit « Artiste - Titre » pour les prochains, le player reconstitue l'artiste depuis la description pour les anciens. Garde-fou contre le **mois** que met `publish_mixtape.py`.
+- **`MixtapeTransport`** — un mix dure une heure : sans barre de progression, impossible d'y revenir. Un **seul** bloc `.mix-transport`, déplacé par `appendChild` dans la ligne qui joue (un élément déménage, il ne se duplique pas). Curseur grisé tant que la durée est inconnue, `timeupdate` neutralisé pendant un glissement (`mixSeeking`), re-clic = **pause** et non arrêt. Le direct n'a pas de transport : il n'est pas seekable.
+- **`MixtapeRssRemoved`** — lien RSS retiré du panneau ; le flux existe toujours côté AzuraCast. `mixtape_weekly.py --status` dit désormais pourquoi un épisode n'apparaît pas (`is_published` **ET** `has_media`).
+
+`sw.js` est passé de `kfm-v28` à `kfm-v30` dans la journée.
 
 ## Comment explorer
 
