@@ -58,7 +58,11 @@ from azuracast_config import AZURACAST_API_KEY  # noqa: E402
 
 STATE_PATH = TOOLS_DIR / "mixtape_state.json"
 AIR_START = "18:00"
-PIN_DAYS_BEFORE = 3
+# Le bandeau monte des que le mix est a moins de PIN_DAYS_BEFORE jours, et non
+# le jour J-N exactement : une egalite stricte rate le pin des qu'une execution
+# est manquee (machine eteinte), ou quand la valeur est augmentee alors qu'un
+# mix a deja franchi l'ancien seuil.
+PIN_DAYS_BEFORE = 7
 
 # Jingle d'annonce du DJ set, joue juste avant la mixtape. Fichier DEDIE :
 # il ne doit PAS appartenir a la playlist Jingles (rotation de la semaine),
@@ -324,7 +328,8 @@ def main():
             print(f"  [IGNORE] champ Album illisible comme date : {album!r} ({Path(c['path']).name})")
             continue
         key = f"{c['id']}:{album}"
-        if air_date == today + timedelta(days=PIN_DAYS_BEFORE) and key not in state["pinned"]:
+        if (air_date - timedelta(days=PIN_DAYS_BEFORE) <= today < air_date
+                and key not in state["pinned"]):
             to_pin.append((c, air_date, key))
         if air_date == today and key not in state["published"]:
             to_publish.append((c, air_date, key))
@@ -332,6 +337,18 @@ def main():
     if not to_pin and not to_publish:
         print("Rien a faire aujourd'hui.")
         return
+
+    # PUBLIER D'ABORD, EPINGLER ENSUITE. publish_one() termine par
+    # set_pinned(None) — le rappel "arrive bientot" n'a plus de sens une fois le
+    # mix a l'antenne. Dans l'ordre inverse, un bandeau tout juste pose pour le
+    # dimanche SUIVANT (possible depuis que la fenetre est a 7 jours : le mix
+    # d'apres est alors pile a J-7) serait efface dans la foulee, tout en etant
+    # marque comme deja fait — donc jamais repose.
+    for c, air_date, key in to_publish:
+        print(f"[PUBLISH] {Path(c['path']).name}")
+        publish_one(c, air_date, playlist, podcast, apply_mode)
+        if apply_mode:
+            state["published"].append(key)
 
     for c, air_date, key in to_pin:
         artist = c.get("artist") or "a guest DJ"
@@ -342,12 +359,6 @@ def main():
         if apply_mode:
             set_pinned(text)
             state["pinned"].append(key)
-
-    for c, air_date, key in to_publish:
-        print(f"[PUBLISH] {Path(c['path']).name}")
-        publish_one(c, air_date, playlist, podcast, apply_mode)
-        if apply_mode:
-            state["published"].append(key)
 
     if apply_mode:
         save_state(state)

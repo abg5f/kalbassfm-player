@@ -40,6 +40,12 @@ Usage :
     python analyse_new_tracks.py --apply         # applique et met en ligne
     python analyse_new_tracks.py --apply --strict  # ecarte aussi les "a ecouter"
     python analyse_new_tracks.py --requeue FICHIER.mp3   # remet un titre en file
+
+ARBITRAGE HUMAIN : `review_analyse.py` ouvre une interface d'ecoute qui permet
+de renverser un verdict (repecher un ecarte, ecarter un "a ecouter"). Les
+decisions atterrissent dans analyse_overrides.json et sont relues ici : elles
+priment sur le score, y compris sur --strict. A faire AVANT --apply, tant que
+les morceaux sont encore dans leur bac.
 """
 import argparse
 import html
@@ -56,10 +62,16 @@ TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS_DIR)
 
 import azuracast_upload  # noqa: E402  (files d'attente + envoi, partages avec le triage)
+import classify_bins  # noqa: E402  (liste des bacs — source de verite unique)
 import track_gate  # noqa: E402  (source de verite unique de la formule de score)
 
 METADATA_PATH = os.path.join(TOOLS_DIR, "metadata.json")
 REPORT_PATH = os.path.join(TOOLS_DIR, "analyse_report.html")
+# Arbitrages humains rendus depuis review_analyse.py. Une couche PAR-DESSUS le
+# score, jamais dedans : les seuils de track_gate.py restent ce qu'ils sont,
+# sinon un repechage ponctuel deplacerait la calibration de toute la
+# bibliotheque.
+OVERRIDES_PATH = os.path.join(TOOLS_DIR, "analyse_overrides.json")
 
 NEW_PROG = os.getenv("KALBASS_NEW_PROG",
                      r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog")
@@ -86,6 +98,33 @@ def save_metadata(rows):
         json.dump(rows, fh, ensure_ascii=False, indent=1)
 
 
+def load_overrides():
+    """{cle de fichier: {"decision": "ok"|"ecarte"|None, "bin": "3_house"|None}}.
+
+    Tolere l'ancienne forme plate ({cle: "ok"}) : le fichier est de l'etat de
+    travail, pas des donnees — le migrer silencieusement vaut mieux que de
+    perdre des arbitrages deja rendus a l'oreille.
+    """
+    if not os.path.exists(OVERRIDES_PATH):
+        return {}
+    try:
+        with open(OVERRIDES_PATH, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (json.JSONDecodeError, OSError):
+        return {}
+    out = {}
+    for k, v in (data or {}).items():
+        if isinstance(v, str):                      # ancienne forme
+            v = {"decision": v, "bin": None}
+        if not isinstance(v, dict):
+            continue
+        dec = v.get("decision") if v.get("decision") in ("ok", "ecarte") else None
+        slot = v.get("bin") if v.get("bin") in classify_bins.NEW_BINS else None
+        if dec or slot:
+            out[k] = {"decision": dec, "bin": slot}
+    return out
+
+
 def key_of(path):
     """Cle de rapprochement file d'attente <-> metadata.json.
 
@@ -99,13 +138,15 @@ def key_of(path):
 
 # --------------------------------------------------------------------------- verdicts
 
-def judge(queue, metadata, ref, strict):
+def judge(queue, metadata, ref, strict, overrides=None):
     """Note chaque morceau en attente. Retourne (rows, introuvables).
 
-    `rows` : [{slot, path, record, verdict, score, reasons, held}] dans
-    l'ordre de la file. `held` dit si le morceau est mis de cote (reject, ou
-    review en mode strict) plutot qu'envoye.
+    `rows` : [{slot, path, record, verdict, score, reasons, held, decision}]
+    dans l'ordre de la file. `held` dit si le morceau est mis de cote (reject,
+    ou review en mode strict) plutot qu'envoye ; `decision` porte l'arbitrage
+    humain qui a eventuellement renverse le verdict.
     """
+    overrides = load_overrides() if overrides is None else overrides
     by_key = {key_of(r.get("path")): r for r in metadata}
     rows, orphans = [], []
     for entry in queue:
@@ -116,14 +157,29 @@ def judge(queue, metadata, ref, strict):
             continue
         verdict = track_gate.audit_descriptors(record, ref)
         held = verdict["verdict"] == "reject" or (strict and verdict["verdict"] == "review")
+        # L'arbitrage humain gagne, y compris contre --strict : si quelqu'un a
+        # ecoute le morceau et tranche, c'est une meilleure information qu'un
+        # percentile.
+        ov = overrides.get(key_of(record.get("path") or entry.get("path"))) or {}
+        decision = ov.get("decision")
+        if decision == "ok":
+            held = False
+        elif decision == "ecarte":
+            held = True
+        # Bac choisi a la main : il pilote le dossier distant AzuraCast ET le
+        # dossier local, les deux devant rester le miroir l'un de l'autre.
+        new_bin = ov.get("bin")
         rows.append({
-            "slot": entry.get("slot"),
+            "slot": new_bin or entry.get("slot"),
+            "slot_auto": entry.get("slot"),
+            "bin_override": new_bin if new_bin and new_bin != entry.get("slot") else None,
             "path": record.get("path") or entry.get("path"),
             "record": record,
             "verdict": verdict["verdict"],
             "score": verdict["score"],
             "reasons": verdict["reasons"],
             "held": held,
+            "decision": decision,
         })
     return rows, orphans
 
@@ -151,6 +207,60 @@ def hold(row, metadata):
     return [r for r in metadata if key_of(r.get("path")) != wanted]
 
 
+def move_to_bin(row, metadata):
+    """Deplace un morceau dans le bac choisi a la main, AVANT l'envoi.
+
+    Le dossier local New_prog/<bac>/ et le dossier distant AzuraCast sont le
+    miroir l'un de l'autre : envoyer vers /3_house/ un fichier reste dans
+    New_prog/2_groove/ ferait mentir sync_library.py et
+    check_local_vs_server.py, et c'est le dossier qui decide de la playlist
+    donc de la rotation. Les deux bougent ensemble ou aucun ne bouge.
+    """
+    src = LOCAL(row["path"])
+    dest_dir = os.path.join(LOCAL(NEW_PROG), row["slot"])
+    dest = os.path.join(dest_dir, os.path.basename(src))
+    if os.path.abspath(src) == os.path.abspath(dest):
+        return metadata
+
+    def renonce(motif):
+        # On repart sur le bac d'origine plutot que d'envoyer vers un dossier
+        # distant qui ne correspondrait a rien en local.
+        print(f"  [ATTENTION] {os.path.basename(src)} : {motif} — reste dans {row['slot_auto']}")
+        row["slot"] = row["slot_auto"]
+        row["bin_override"] = None
+        return metadata
+
+    def adopte(dest_final):
+        """Le fichier est a destination : aligner row et metadata dessus."""
+        row["path"] = dest_final
+        # metadata.json porte le bac dans son champ `path` : il doit suivre,
+        # sinon le prochain outil cherchera le fichier au mauvais endroit.
+        wanted = key_of(dest_final)
+        for r in metadata:
+            if key_of(r.get("path")) == wanted:
+                r["path"] = dest_final
+        return metadata
+
+    src_la, dest_la = os.path.exists(src), os.path.exists(dest)
+
+    # DEJA DEPLACE — le cas qui a bloque 16 morceaux le 2026-09-08 : la source
+    # a disparu parce que le fichier est deja arrive. Ce n'est pas un echec,
+    # c'est un travail deja fait. Annuler le changement de bac ici renvoyait
+    # l'envoi vers un ancien chemin qui n'existait plus (WinError 2).
+    if dest_la and not src_la:
+        print(f"[BAC] {os.path.basename(src)} : deja dans {row['slot']}, rien a faire")
+        return adopte(dest)
+    if not src_la:
+        return renonce("fichier introuvable")
+    if dest_la:
+        # Les deux existent : c'est un vrai homonyme, pas un deplacement fait.
+        return renonce(f"un AUTRE fichier du meme nom est deja dans {row['slot']}")
+    os.makedirs(dest_dir, exist_ok=True)
+    shutil.move(src, dest)
+    print(f"[BAC] {os.path.basename(src)} : {row['slot_auto']} -> {row['slot']}")
+    return adopte(dest)
+
+
 # --------------------------------------------------------------------------- rapport
 
 def render_report(rows, orphans, applied, uploaded, failures):
@@ -159,10 +269,18 @@ def render_report(rows, orphans, applied, uploaded, failures):
     review = [r for r in passed if r["verdict"] == "review"]
 
     def table(items, extra=""):
+        def arb(r):
+            d = r.get("decision")
+            if not d:
+                return ""
+            return (' <b style="color:#5b9dd9">[garde a la main]</b>' if d == "ok"
+                    else ' <b style="color:#e0574c">[ecarte a la main]</b>')
         return "".join(
             f"<tr><td>{html.escape(os.path.basename(r['path']))}</td>"
-            f"<td>{html.escape(r['slot'] or '?')}</td>"
-            f"<td>{r['verdict']}</td><td>{r['score']}</td>"
+            f"<td>{html.escape(r['slot'] or '?')}"
+            + (f" <b style=\"color:#5b9dd9\">&larr; {html.escape(r['slot_auto'] or '?')}</b>"
+               if r.get("bin_override") else "") + "</td>"
+            f"<td>{r['verdict']}{arb(r)}</td><td>{r['score']}</td>"
             f"<td>{html.escape(', '.join(r['reasons']) or '-')}</td></tr>"
             for r in items
         ) or f'<tr><td colspan="5">aucun{extra}</td></tr>'
@@ -184,7 +302,8 @@ def render_report(rows, orphans, applied, uploaded, failures):
 <h1>KALBASSFM - Analyse des nouveaux morceaux</h1>
 <div class="status">{mode}</div>
 <p>Juges : {len(rows)} | Ecartes : {len(held)} | A ecouter : {len(review)} |
-   Envoyes : {uploaded} | Echecs envoi : {len(failures)} | Orphelins : {len(orphans)}</p>
+   Envoyes : {uploaded} | Echecs envoi : {len(failures)} | Orphelins : {len(orphans)} |
+   Arbitres a la main : {sum(1 for r in rows if r.get("decision"))}</p>
 
 <h3>Ecartes &mdash; New_prog/_a_revoir/ ({len(held)})</h3>
 <table><tr><th>Fichier</th><th>Bac</th><th>Verdict</th><th>Score</th><th>Motif</th></tr>{table(held)}</table>
@@ -215,6 +334,9 @@ def main():
                     help="deplacer et envoyer reellement (sinon simulation)")
     ap.add_argument("--strict", action="store_true",
                     help='mettre aussi de cote les "a ecouter" (review)')
+    ap.add_argument("--no-browser", action="store_true",
+                    help="ne pas ouvrir le rapport (appel depuis review_analyse.py, "
+                         "qui affiche deja la sortie en direct)")
     ap.add_argument("--requeue", metavar="FICHIER",
                     help="remet un morceau de _a_revoir/ dans la file d'attente")
     args = ap.parse_args()
@@ -233,7 +355,12 @@ def main():
           f"{ref['verdict']['review']}, reject >= {ref['verdict']['reject']}"
           f"{' (mode strict)' if args.strict else ''}\n")
 
-    rows, orphans = judge(queue, metadata, ref, args.strict)
+    overrides = load_overrides()
+    if overrides:
+        print(f"{len(overrides)} arbitrage(s) rendu(s) dans review_analyse.py "
+              "— ils priment sur le score (lignes marquees d'une *).")
+        print()
+    rows, orphans = judge(queue, metadata, ref, args.strict, overrides)
     for entry in orphans:
         print(f"[ORPHELIN] {os.path.basename(entry.get('path', '?'))} — plus dans "
               f"metadata.json, retire de la file.")
@@ -241,7 +368,10 @@ def main():
     for row in rows:
         motif = ", ".join(row["reasons"]) or "score global"
         marque = "ECARTE " if row["held"] else ("a ecouter" if row["verdict"] == "review" else "ok      ")
-        print(f"[{marque}] {row['score']:.3f}  {os.path.basename(row['path'])}  ({motif})")
+        if row.get("decision"):
+            marque = "ECARTE*" if row["held"] else "ok*     "
+        bac = f"  [bac -> {row['slot']}]" if row.get("bin_override") else ""
+        print(f"[{marque}] {row['score']:.3f}  {os.path.basename(row['path'])}  ({motif}){bac}")
 
     held = [r for r in rows if r["held"]]
     passed = [r for r in rows if not r["held"]]
@@ -251,7 +381,8 @@ def main():
         render_report(rows, orphans, False, 0, [])
         print(f"\nSIMULATION — rien n'a bouge. Rapport : {REPORT_PATH}")
         print("Relance avec --apply pour appliquer et mettre en ligne.")
-        open_in_browser()
+        if not args.no_browser:
+            open_in_browser()
         return
 
     # ── Mise de cote ─────────────────────────────────────────────────────────
@@ -259,6 +390,15 @@ def main():
         print(f"[ECARTE] -> _a_revoir : {os.path.basename(row['path'])}")
         metadata = hold(row, metadata)
     if held:
+        save_metadata(metadata)
+
+    # ── Changements de bac demandes a la main ────────────────────────────────
+    # Avant l'envoi : le slot decide du dossier distant, il doit etre definitif
+    # au moment ou le SFTP s'ouvre.
+    rebinned = [r for r in passed if r.get("bin_override")]
+    for row in rebinned:
+        metadata = move_to_bin(row, metadata)
+    if rebinned:
         save_metadata(metadata)
 
     # ── Envoi AzuraCast ──────────────────────────────────────────────────────

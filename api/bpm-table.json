@@ -345,11 +345,6 @@
   "bpm": 130.9
  },
  {
-  "artist": "B",
-  "title": "Key - Solaris (2022)",
-  "bpm": 88.6
- },
- {
   "artist": "m",
   "title": "jungle remaster Tim Reaper - Deep Within (Nebula Remix)",
   "bpm": 80.0
@@ -2745,11 +2740,6 @@
   "bpm": 113.2
  },
  {
-  "artist": "Christos Fourkis, Mike Ltrs",
-  "title": "Afro Sensations (Original Mix)",
-  "bpm": 122.0
- },
- {
   "artist": "Fatnotronic & In Flagranti",
   "title": "Botoque",
   "bpm": 108.0
@@ -2768,16 +2758,6 @@
   "artist": "Moritz von Oswald",
   "title": "Ole (Remix)",
   "bpm": 118.0
- },
- {
-  "artist": "Philip Budny",
-  "title": "Eclipses",
-  "bpm": 119.0
- },
- {
-  "artist": "Saliva Commandos",
-  "title": "You Have Done To Me (Original Mix)",
-  "bpm": 124.0
  },
  {
   "artist": "Craig Peyton",
@@ -2920,11 +2900,6 @@
   "bpm": 117.0
  },
  {
-  "artist": "Claptone",
-  "title": "Dear Life (feat. JAW) [Purple Disco Machine Remix]",
-  "bpm": 120.0
- },
- {
   "artist": "Cartoon",
   "title": "First to Break (Original Mix)",
   "bpm": 124.0
@@ -2950,11 +2925,6 @@
   "bpm": 127.0
  },
  {
-  "artist": "Dj Vas",
-  "title": "Cream",
-  "bpm": 113.2
- },
- {
   "artist": "Ed Wizard & Disco Double Dee",
   "title": "Talkin About",
   "bpm": 112.0
@@ -2978,11 +2948,6 @@
   "artist": "Ferry Ultra",
   "title": "Good Times (Late Nite Tuff Guy Remix) [feat. Boris G. Jennings]",
   "bpm": 116.0
- },
- {
-  "artist": "Fingerman",
-  "title": "Spunky Funk",
-  "bpm": 115.0
  },
  {
   "artist": "Fingerman",
@@ -3120,11 +3085,6 @@
   "bpm": 123.0
  },
  {
-  "artist": "Cheryl Lee & Soulful Session",
-  "title": "Thankful (Kenny Carpenter Spiritual Mix)",
-  "bpm": 123.0
- },
- {
   "artist": "Soulphusion Allstars",
   "title": "Its Only You (Hayes Meets Baines Remix)",
   "bpm": 125.0
@@ -3233,11 +3193,6 @@
   "artist": "Kadenza",
   "title": "Let's do it",
   "bpm": 105.1
- },
- {
-  "artist": "Belabouche",
-  "title": "Shes So Tight",
-  "bpm": 111.3
  },
  {
   "artist": "Carl Finlow",
@@ -4298,11 +4253,6 @@
   "artist": "Amplify & West Galaxy",
   "title": "Parallel World",
   "bpm": 144.7
- },
- {
-  "artist": "Amplify",
-  "title": "Carnival Night",
-  "bpm": 144.4
  },
  {
   "artist": "Anwius",
@@ -5828,5 +5778,1040 @@
   "artist": "Kerri Chandler,Arnold Jarvis",
   "title": "Inspiration",
   "bpm": 122.7
+ },
+ {
+  "artist": "007",
+  "title": "Do You Believe",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Skyy",
+  "title": "First Time Around",
+  "bpm": 107.3
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "All About Love",
+  "bpm": 123.5
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Love Will Find a Way - Players Mix",
+  "bpm": 125.3
+ },
+ {
+  "artist": "2 MAKES 1",
+  "title": "No One Loves You Like I Do",
+  "bpm": 126.9
+ },
+ {
+  "artist": "Stephanie Mills",
+  "title": "You Can Get Over",
+  "bpm": 135.0
+ },
+ {
+  "artist": "Aaron Carl",
+  "title": "Crucified - Quantec Remix",
+  "bpm": 119.0
+ },
+ {
+  "artist": "Afropeans",
+  "title": "Pianolick",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Agaric",
+  "title": "Shot By Light",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Agaric",
+  "title": "Who Made Up The Rules - Josh Wink Remix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Anja Schneider,AND.ID",
+  "title": "Imagination",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Azari & III",
+  "title": "Hungry for the Power",
+  "bpm": 117.0
+ },
+ {
+  "artist": "B.T. Express",
+  "title": "If It Don't Turn You On (You Oughta Leave It Alone)",
+  "bpm": 98.2
+ },
+ {
+  "artist": "Bah Samba",
+  "title": "Reach Inside - Restless Soul Peak Time Mix",
+  "bpm": 124.9
+ },
+ {
+  "artist": "Bassmental",
+  "title": "Here & Now",
+  "bpm": 124.7
+ },
+ {
+  "artist": "Beanfield,Ian Pooley",
+  "title": "Elektro-Kraut - Ian Pooley's Moody Remix",
+  "bpm": 127.3
+ },
+ {
+  "artist": "Black Sheep",
+  "title": "Strobelite Honey",
+  "bpm": 123.1
+ },
+ {
+  "artist": "Bombers",
+  "title": "Shake",
+  "bpm": 115.3
+ },
+ {
+  "artist": "Boz Scaggs",
+  "title": "Lowdown (2023 Remaster)",
+  "bpm": 117.0
+ },
+ {
+  "artist": "Brainstorm",
+  "title": "Hot For You",
+  "bpm": 135.0
+ },
+ {
+  "artist": "Brass Construction",
+  "title": "Now Is Tomorrow (Anticipation)",
+  "bpm": 111.6
+ },
+ {
+  "artist": "Brides Of Funkenstein",
+  "title": "Never Buy Texas from a Cowboy",
+  "bpm": 116.4
+ },
+ {
+  "artist": "Byron the Aquarius",
+  "title": "Aquarian Voyage",
+  "bpm": 123.5
+ },
+ {
+  "artist": "Cameo",
+  "title": "I Just Want To Be",
+  "bpm": 119.0
+ },
+ {
+  "artist": "Cheek",
+  "title": "Venus (Sunshine People) [DJ Gregory Remix]",
+  "bpm": 125.9
+ },
+ {
+  "artist": "Chico Mann",
+  "title": "Who You Runnin from?",
+  "bpm": 108.2
+ },
+ {
+  "artist": "Christopher McCray",
+  "title": "Get It Right - Mad Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Cookie Monsterz & DJ Roland Clark",
+  "title": "Spirits - Conan Liquid Dub Mix",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Cortex",
+  "title": "Oh! Lord",
+  "bpm": 139.9
+ },
+ {
+  "artist": "Cultural Vibe",
+  "title": "Ma Foom Bey - Rhythm Version",
+  "bpm": 114.8
+ },
+ {
+  "artist": "DJ Fudge",
+  "title": "Mechouga - Spen & Karizma Remix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "DJ Gregory",
+  "title": "Elle (Main Version)",
+  "bpm": 125.6
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Guess What - Original Mix",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Damn Sam The Miracle Man",
+  "title": "Give Me Another Joint",
+  "bpm": 112.8
+ },
+ {
+  "artist": "Danny Daze",
+  "title": "Fall Away From Love - Original Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Darren Emerson",
+  "title": "Daschine - Acid Tool",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Deep Space Orchestra",
+  "title": "Riding In My Imaginary Jeep - OOFT! Remix",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Dennis Ferrer",
+  "title": "Sinfonia Della Notte",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Deyampert",
+  "title": "It's You",
+  "bpm": 113.0
+ },
+ {
+  "artist": "Dj Steaw",
+  "title": "I Want - Original Mix",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Domu",
+  "title": "Unfazed",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Donald Byrd",
+  "title": "Wind Parade",
+  "bpm": 97.8
+ },
+ {
+  "artist": "Dred Stock",
+  "title": "Pump (Dress It) - Rah Freeze Mix",
+  "bpm": 122.9
+ },
+ {
+  "artist": "Dusky",
+  "title": "Skin Deep",
+  "bpm": 122.4
+ },
+ {
+  "artist": "Dynasty",
+  "title": "Adventures in the Land of Music",
+  "bpm": 116.5
+ },
+ {
+  "artist": "Eastbound Expressway",
+  "title": "Never Let Go",
+  "bpm": 112.5
+ },
+ {
+  "artist": "Eddie Amador",
+  "title": "House Music - Message Mix",
+  "bpm": 122.9
+ },
+ {
+  "artist": "Eddie Matos",
+  "title": "Thank You Baby",
+  "bpm": 125.9
+ },
+ {
+  "artist": "Eighties Ladies",
+  "title": "Tell Him",
+  "bpm": 130.4
+ },
+ {
+  "artist": "Emmanuel",
+  "title": "Nautilus",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Erykah Badu,Ron Trent",
+  "title": "Honey - Ron Trent's Honey Mix",
+  "bpm": 118.0
+ },
+ {
+  "artist": "Etienne de Crécy",
+  "title": "Prix Choc - Radio Edit - High Mix",
+  "bpm": 127.9
+ },
+ {
+  "artist": "Evelyn Champagne King",
+  "title": "I'm In Love",
+  "bpm": 112.9
+ },
+ {
+  "artist": "Fat Larry's Band",
+  "title": "Lookin' For Love",
+  "bpm": 132.4
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "I Feel It",
+  "bpm": 124.0
+ },
+ {
+  "artist": "First Choice",
+  "title": "Double Cross",
+  "bpm": 117.1
+ },
+ {
+  "artist": "First Choice",
+  "title": "The Player",
+  "bpm": 117.3
+ },
+ {
+  "artist": "Fred Wesley & The J.B.'s",
+  "title": "Blow Your Head",
+  "bpm": 122.4
+ },
+ {
+  "artist": "Galaxy 2 Galaxy",
+  "title": "Timeline",
+  "bpm": 125.2
+ },
+ {
+  "artist": "Gary Byrd",
+  "title": "Soul Travelin', Pt. I (The G.B.E.)",
+  "bpm": 97.7
+ },
+ {
+  "artist": "Groove Junkies,TC Moses",
+  "title": "Far Away (Richard Earnshaw Vocal Dub) [feat. TC Moses]",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Groove Theory",
+  "title": "10 Minute High",
+  "bpm": 98.0
+ },
+ {
+  "artist": "Hardrive: 2000",
+  "title": "Work This, Like This",
+  "bpm": 125.9
+ },
+ {
+  "artist": "Heartik,Kaiserdisco",
+  "title": "Mini Swing - Kaiserdisco Maxiswing Remix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Heller & Farley Project",
+  "title": "Ultra Flava - 2016 Version",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Herbie Hancock",
+  "title": "I Thought It Was You",
+  "bpm": 123.4
+ },
+ {
+  "artist": "Herbie Hancock",
+  "title": "Stars in Your Eyes - Special Disco Remix",
+  "bpm": 107.8
+ },
+ {
+  "artist": "Hollis P. Monroe,Laura Jones",
+  "title": "I'm Lonely - Laura Jones Remix",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Honey Dijon,Annette Bowen,Nikki-O",
+  "title": "Downtown (feat. Annette Bowen & Nikki-O)",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Inaya Day",
+  "title": "Feelin' Feelin'",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Isaac Hayes",
+  "title": "Zeke The Freak",
+  "bpm": 127.4
+ },
+ {
+  "artist": "James Brown",
+  "title": "If You Don't Give A Dogone About It",
+  "bpm": 115.2
+ },
+ {
+  "artist": "Jamie Lewis,Marc Evans",
+  "title": "Without You - Jamie Lewis House Mix",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Jamie Lewis,Nick Morris",
+  "title": "Spirit of Dance - Spirit of Dance",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Jay Lumen",
+  "title": "Here Comes That Sound - Original Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Jaydee",
+  "title": "Plastic Dreams - Original Mix",
+  "bpm": 128.8
+ },
+ {
+  "artist": "Jennifer Morrison",
+  "title": "Don't Hide Your Love from Me",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Jill Scott",
+  "title": "Slowly Surely",
+  "bpm": 99.7
+ },
+ {
+  "artist": "Jimpster",
+  "title": "Alsace & Lorraine - Josh Wink Interpretation (#1)",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Jimpster",
+  "title": "Can't Stop Loving",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Johnick",
+  "title": "Light",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Johnny Dangerous",
+  "title": "Stormy Weather (I Don't Mind)",
+  "bpm": 103.9
+ },
+ {
+  "artist": "Jon Rundell",
+  "title": "Knick Knack",
+  "bpm": 128.1
+ },
+ {
+  "artist": "Julio Bashmore",
+  "title": "Au Seve",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Junie Morrison",
+  "title": "Surrender",
+  "bpm": 111.8
+ },
+ {
+  "artist": "Kamar",
+  "title": "She's Crazy",
+  "bpm": 117.9
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "13 To 41",
+  "bpm": 122.5
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Cobal - Version 2",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Coro - The Colonial Mentality",
+  "bpm": 123.6
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Heal My Heart feat. Treasa Diva Fennie",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Into The Night",
+  "bpm": 123.7
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "My Moody Life",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "On My Way",
+  "bpm": 123.8
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Open Source",
+  "bpm": 123.8
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Peace Of My Mind",
+  "bpm": 125.1
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Rain - Dub",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Six Pianos",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "So Let The Wind Come - Original",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "The Calling [Club Qu]",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Time Is Destiny",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Turn Off The Lights (Who's Afraid Of The Dark) - Original Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "We Are Here - Kaoz Stressin' Me Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "We Can",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "What Is 6:23",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Yellow",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Kerri Chandler,Grampa",
+  "title": "I Loved You - Kerri Chandler Remaster",
+  "bpm": 120.1
+ },
+ {
+  "artist": "Kerri Chandler,Rev F. L. Brown",
+  "title": "Prayer - 623 Again Vocal Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Kerri Chandler,Treasa Diva Fennie",
+  "title": "Heal My Heart - Kaoz Original Concept Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler,Troy Denari",
+  "title": "The Way It Goes (Track 1)",
+  "bpm": 128.0
+ },
+ {
+  "artist": "Kevin Saunderson,Inner City,Kenny Larkin",
+  "title": "Future (feat. Inner City) - Kenny Larkin Tension Mix",
+  "bpm": 123.6
+ },
+ {
+  "artist": "Kim English,Mood II Swing",
+  "title": "Learn 2 Luv - Mood II Swing Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Kyodai",
+  "title": "Illusions",
+  "bpm": 124.0
+ },
+ {
+  "artist": "L.B. Dub Corp",
+  "title": "It's What You Feel",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Lara Saint Paul",
+  "title": "The Voodoo Lady",
+  "bpm": 128.2
+ },
+ {
+  "artist": "Logg",
+  "title": "Dancing into the Stars",
+  "bpm": 119.2
+ },
+ {
+  "artist": "Logic,Richy Ahmed",
+  "title": "The Warning - Richy Ahmed Remix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Losoul,Theo Parrish",
+  "title": "Open Door - Theo Parrish 'Behind Closed Doors' Remix",
+  "bpm": 118.1
+ },
+ {
+  "artist": "Louie Vega",
+  "title": "Mozalounge - Jazz N Groove Extended",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Marcos Valle,Theo Parrish",
+  "title": "1985 - SS Translation by Theo Parrish",
+  "bpm": 92.3
+ },
+ {
+  "artist": "Marlon D",
+  "title": "Jesus Creates Sound - Main Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Marvin Gaye",
+  "title": "A Funky Space Reincarnation",
+  "bpm": 96.6
+ },
+ {
+  "artist": "Max Cooper",
+  "title": "Darkroom (John Tejada remix)",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Maxx Traxx",
+  "title": "Don't Touch It!",
+  "bpm": 118.6
+ },
+ {
+  "artist": "Mike Sharon",
+  "title": "A Groove Livin",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Modjo,Mood II Swing",
+  "title": "What I Mean - Mood II Swing Vocal Club Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Montel",
+  "title": "Future - Original Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Mousse T.,Boris Jennings",
+  "title": "Brother On the Run",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Mr. Fingers",
+  "title": "Children At Play",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Mr. YT",
+  "title": "Afternoon",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Mutabaruka",
+  "title": "Dis Poem '99",
+  "bpm": 123.2
+ },
+ {
+  "artist": "Myron & E,Tom Noble",
+  "title": "Do It Do It Disco (Tom Noble Remix)",
+  "bpm": 111.9
+ },
+ {
+  "artist": "Namy,Josh Milan",
+  "title": "From Now On (DJ Spen & N'Dinga Gaba Remix)",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Nebraska",
+  "title": "Done My Best",
+  "bpm": 126.0
+ },
+ {
+  "artist": "New York Port Authority",
+  "title": "I Got It",
+  "bpm": 123.7
+ },
+ {
+  "artist": "Nina Simone,Masters At Work",
+  "title": "See-Line Woman - Masters At Work Remix",
+  "bpm": 119.6
+ },
+ {
+  "artist": "Osunlade",
+  "title": "Schavanna",
+  "bpm": 114.2
+ },
+ {
+  "artist": "P-Funk All Stars",
+  "title": "Hydraulic Pump",
+  "bpm": 105.2
+ },
+ {
+  "artist": "Parliament",
+  "title": "Mothership Connection Starchild (The Second Coming)",
+  "bpm": 93.4
+ },
+ {
+  "artist": "Parliament",
+  "title": "Supergroovalisticprosifunkstication (The Bumps Bump)",
+  "bpm": 90.4
+ },
+ {
+  "artist": "Patrice Rushen",
+  "title": "Forget Me Nots - Remastered",
+  "bpm": 113.0
+ },
+ {
+  "artist": "Paul Johnson",
+  "title": "Welcome to the Warehouse",
+  "bpm": 130.3
+ },
+ {
+  "artist": "Pete Rock & C.L. Smooth,Grap & Dida,Heavy D,Rob-O",
+  "title": "The Basement (feat. Heavy D, Rob-O, Grap & Dida)",
+  "bpm": 86.9
+ },
+ {
+  "artist": "Peven Everett",
+  "title": "Special",
+  "bpm": 126.7
+ },
+ {
+  "artist": "Phortune",
+  "title": "String Free",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Plastic Mode",
+  "title": "Baja Imperial",
+  "bpm": 118.7
+ },
+ {
+  "artist": "Pleasurekraft,Tiger Stripes",
+  "title": "Primed - Original Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Pure Energy",
+  "title": "Party On",
+  "bpm": 119.7
+ },
+ {
+  "artist": "Quincy Jones,Nickolas Ashford,Valerie Simpson,Chaka Khan",
+  "title": "Stuff Like That",
+  "bpm": 120.6
+ },
+ {
+  "artist": "R.B.M",
+  "title": "The Boy - Ralph's Hard House Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Ray Barretto",
+  "title": "Arallue",
+  "bpm": 105.6
+ },
+ {
+  "artist": "Ribn",
+  "title": "Cottbus",
+  "bpm": 122.4
+ },
+ {
+  "artist": "Riva Starr,Dajae",
+  "title": "The Loft",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Roger",
+  "title": "A Chunk of Sugar",
+  "bpm": 118.6
+ },
+ {
+  "artist": "Romanthony,Roman",
+  "title": "What $ Love - Roman's Remix",
+  "bpm": 120.6
+ },
+ {
+  "artist": "Ron Trent",
+  "title": "Morning Feve",
+  "bpm": 115.0
+ },
+ {
+  "artist": "Roy Ayers",
+  "title": "Get On Up Get On Down",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Rufus & Chaka Khan",
+  "title": "Do You Love What You Feel",
+  "bpm": 116.9
+ },
+ {
+  "artist": "September",
+  "title": "Are You Free Tonight - Ghosts of Venice Remix",
+  "bpm": 116.3
+ },
+ {
+  "artist": "Shane Linehan",
+  "title": "Do You Know Who You Are - Original Mix",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Shaun Escoffery",
+  "title": "Days Like This (Spinna & Ticklah Mix)",
+  "bpm": 119.9
+ },
+ {
+  "artist": "Shokazulu",
+  "title": "Part 4",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Sisters Love",
+  "title": "Give Me Your Love",
+  "bpm": 91.5
+ },
+ {
+  "artist": "Skip Jackson & The Natural Experience",
+  "title": "Micro Wave Boogie",
+  "bpm": 126.6
+ },
+ {
+  "artist": "Smash TV",
+  "title": "Rise",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Spirit Of Atlanta",
+  "title": "Messin' Around",
+  "bpm": 128.1
+ },
+ {
+  "artist": "Stefano Noferini,Hollen",
+  "title": "Rediscovered",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Stephanie Mills",
+  "title": "What Cha Gonna Do With My Lovin'",
+  "bpm": 137.5
+ },
+ {
+  "artist": "Steve Bug,Mr. V",
+  "title": "The Long Run - Steve Bug's Vocal Mix",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Stones & Bones",
+  "title": "Wrong U - Manoo Deep Mix",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Stratosphere",
+  "title": "Track 3",
+  "bpm": 123.7
+ },
+ {
+  "artist": "Switch",
+  "title": "You Pulled A Switch",
+  "bpm": 115.4
+ },
+ {
+  "artist": "Sylvester",
+  "title": "I Need You",
+  "bpm": 120.8
+ },
+ {
+  "artist": "Tata Vega",
+  "title": "(I've Got My) Second Wind",
+  "bpm": 115.7
+ },
+ {
+  "artist": "Tears Of Velva",
+  "title": "The Way I Feel - 4 Daye Club",
+  "bpm": 126.2
+ },
+ {
+  "artist": "Ten City",
+  "title": "That's The Way Love Is - Underground Mix-Extended Version",
+  "bpm": 120.7
+ },
+ {
+  "artist": "The Believers",
+  "title": "Who Dares To Believe In Me?",
+  "bpm": 125.0
+ },
+ {
+  "artist": "The Jacksons,Dimitri From Paris",
+  "title": "Living Together - A Dimitri From Paris Disco Re-Edit",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Theo Parrish",
+  "title": "Capritarious",
+  "bpm": 114.9
+ },
+ {
+  "artist": "Theo Parrish",
+  "title": "Leave the Funk to Us",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Theo Parrish",
+  "title": "Love Triumphant",
+  "bpm": 106.0
+ },
+ {
+  "artist": "Theo Parrish",
+  "title": "Music, Pt. 1",
+  "bpm": 108.9
+ },
+ {
+  "artist": "Tim Deluxe",
+  "title": "Transformation",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Todd Terry",
+  "title": "A Day in the Life - Street Mix",
+  "bpm": 125.9
+ },
+ {
+  "artist": "Tony Aiken and Future 2000",
+  "title": "Unity Sing It Shout It",
+  "bpm": 121.9
+ },
+ {
+  "artist": "Tony Allen",
+  "title": "Asiko - Commodore Ballroom Vancouver",
+  "bpm": 107.4
+ },
+ {
+  "artist": "Tony Lionni,Rachel Fraser",
+  "title": "Take Me with You",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Torre Bros",
+  "title": "Melted Faces - Borrowed Identity Remix",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Touchdown",
+  "title": "Ease Your Mind",
+  "bpm": 126.2
+ },
+ {
+  "artist": "Trus'me",
+  "title": "Good God",
+  "bpm": 122.1
+ },
+ {
+  "artist": "Trus'me",
+  "title": "Working Nights",
+  "bpm": 122.2
+ },
+ {
+  "artist": "Underground Ministries,Kenny Bobien,DJ Meme",
+  "title": "I Shall Not Be Moved - DJ Meme Classic Vocal Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Urban Blues Project,Michael Procter",
+  "title": "Deliver Me - Urban Blues Project present Michael Procter; UBP Vocal Mix",
+  "bpm": 123.1
+ },
+ {
+  "artist": "Vicky D",
+  "title": "This Beat Is Mine - Original Mix",
+  "bpm": 112.0
+ },
+ {
+  "artist": "Voyeur,Kerri Chandler",
+  "title": "Blame It on the Youth - Kerri Chandler Club Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "We Are Shining",
+  "title": "Hey You",
+  "bpm": 109.6
+ },
+ {
+  "artist": "Willie Colón,Héctor Lavoe",
+  "title": "Ché Ché Colé",
+  "bpm": 101.6
+ },
+ {
+  "artist": "Yousef,Kieran Fowkes",
+  "title": "Let Go - Christian Nielsen Remix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Yusef Lateef",
+  "title": "Eastern Market",
+  "bpm": 112.8
+ },
+ {
+  "artist": "wAFF",
+  "title": "Connected - Original Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Belabouche",
+  "title": "Shes So Tight",
+  "bpm": 111.3
+ },
+ {
+  "artist": "Christos Fourkis, Mike Ltrs",
+  "title": "Afro Sensations (Original Mix)",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Claptone",
+  "title": "Dear Life (feat. JAW) [Purple Disco Machine Remix]",
+  "bpm": 120.0
+ },
+ {
+  "artist": "Dj Vas",
+  "title": "Cream",
+  "bpm": 113.2
+ },
+ {
+  "artist": "Fingerman",
+  "title": "Spunky Funk",
+  "bpm": 115.0
+ },
+ {
+  "artist": "Philip Budny",
+  "title": "Eclipses",
+  "bpm": 119.0
+ },
+ {
+  "artist": "Saliva Commandos",
+  "title": "You Have Done To Me (Original Mix)",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Cheryl Lee & Soulful Session",
+  "title": "Thankful (Kenny Carpenter Spiritual Mix)",
+  "bpm": 123.0
  }
 ]

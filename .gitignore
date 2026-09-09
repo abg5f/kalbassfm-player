@@ -1,6 +1,7 @@
 .claude/
 .planning/
-Jingles/
+Jingles/*
+!Jingles/*.md
 tools/__pycache__/
 tools/triage_report.html
 tools/migration_report.csv
@@ -25,3 +26,5 @@ tools/energy_review.html
 tools/energy_review.m3u
 tools/energy_review_selection.txt
 tools/energy_review_liste.txt
+tools/analyse_overrides.json
+tools/simulation_bins.json

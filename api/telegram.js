@@ -13,6 +13,17 @@
 const AZURACAST_BASE = 'https://kalbassfm.duckdns.org';
 const STATION = 'kalbassfm';
 
+// Heure de diffusion des mixtapes. DOIT rester alignee sur AIR_START dans
+// tools/mixtape_weekly.py : le bandeau epingle a la main depuis /submissions et
+// celui pose automatiquement a J-3 par la tache Windows annoncent la meme
+// chose — s'ils divergeaient, l'auditeur verrait deux heures differentes.
+const MIX_AIR_START = '18:00';
+const PLAYER_URL = 'https://kalbassfm-player.vercel.app';
+const SUPPORT_URL = 'https://buymeacoffee.com/kalbassfm';
+// Coût mensuel réel annoncé aux DJs et aux auditeurs : stockage VPS, SACEM,
+// développement. À corriger ici si le budget bouge — c'est le seul endroit.
+const MONTHLY_COST = '€30';
+
 // Reactive le 2026-07-21 : Upstash passe en Pay As You Go + Top 5 retire
 // (gros consommateur), donc quota nettement moins a risque.
 const REDIS_PAUSED = false;
@@ -233,14 +244,22 @@ async function handleMessage(token, message) {
         + `   ${s.url || '?'}`
         + (socials ? `\n   ${socials}` : '');
     });
-    // Un bouton "📣 N" par candidature : une fois la mixtape planifiee, un tap
-    // publie l'annonce dans le chat live avec les liens sociaux du DJ.
-    const buttons = list.map((s, i) => ({ text: '📣 ' + (i + 1), callback_data: 'annmix:' + s.id }));
-    const rows = [];
-    for (let i = 0; i < buttons.length; i += 3) rows.push(buttons.slice(i, i + 3));
+    // Deux actions par candidature : 📣 publie l'annonce dans le chat live avec
+    // les liens sociaux du DJ ; 📅 relie la candidature a une mixtape deja
+    // programmee, epingle la date et sort le mail type.
+    //
+    // La liaison est MANUELLE parce que rien ne relie une candidature (Redis :
+    // DJ, mail, liens) au fichier AzuraCast (titre, date en champ Album). Un
+    // rapprochement par nom d'artiste echouerait des que le champ Artiste ne
+    // reprend pas exactement le pseudo saisi dans le formulaire.
+    const rows = list.map((s, i) => ([
+      { text: '📣 ' + (i + 1), callback_data: 'annmix:' + s.id },
+      { text: '📅 ' + (i + 1), callback_data: 'pinsel:' + s.id },
+    ]));
     return sendMessage(token, chatId,
       '🎛 Dernières candidatures mix :\n' + lines.join('\n')
-      + '\n\n📣 = annoncer dans le chat live (à faire une fois la programmation calée).', {
+      + '\n\n📣 = annoncer dans le chat live.'
+      + '\n📅 = épingler la date + générer le mail au DJ.', {
         disable_web_page_preview: true,
         reply_markup: { inline_keyboard: rows },
       });
@@ -402,6 +421,7 @@ async function handleMessage(token, message) {
     '/recent_supporters — lister les 10 derniers supporters avec un bouton pour les supprimer\n\n' +
     '🎛 Candidatures DJ\n' +
     '/submissions — lister les 10 dernières candidatures mix (nom, style, mail, lien du set, réseaux)\n' +
+    '     📣 annonce dans le chat live · 📅 épingle la date + génère le mail au DJ\n' +
     '   bouton 📣 sous la liste — annoncer le DJ dans le chat live avec ses liens Insta/SoundCloud\n\n' +
     '📊 Stats\n' +
     '/stats — auditeurs et messages du jour\n' +
@@ -470,6 +490,50 @@ async function handleCallback(token, cb) {
     // aux suppressions : annoncer n'est pas destructif, et il arrive de vouloir
     // re-annoncer (nouvelle diffusion du meme mix, message noye dans le fil).
     return confirmWithDelete(token, cb.message.chat.id, '📣 Annonce publiée dans le chat live.', id);
+  } else if (data.startsWith('pinsel:')) {
+    // Premier tap : on ne sait pas encore a quelle mixtape programmee cette
+    // candidature correspond, on laisse choisir.
+    const subId = data.slice(7);
+    const sub = await getSubmissionById(subId);
+    if (!sub) return answerCallback(token, cb.id, 'Candidature introuvable (trop ancienne).');
+    const sched = await scheduledMixes();
+    if (!sched.ok) {
+      await answerCallback(token, cb.id, '❌ AzuraCast injoignable');
+      return sendMessage(token, cb.message.chat.id, `❌ ${sched.text}`);
+    }
+    if (!sched.list.length) {
+      await answerCallback(token, cb.id, 'Aucun mix programmé');
+      return sendMessage(token, cb.message.chat.id,
+        "📀 Aucune mixtape n'a de date. Programme-la d'abord avec /queue_mix.");
+    }
+    await answerCallback(token, cb.id, 'Choisis le mix');
+    const kb = sched.list.slice(0, 8).map((f) => ([{
+      text: `${f.album} — ${f.artist || '?'} — ${(f.title || '?').slice(0, 28)}`,
+      callback_data: `pinset:${subId}:${f.id}`,
+    }]));
+    return sendMessage(token, cb.message.chat.id,
+      `📅 Quelle mixtape programmée correspond à « ${sub.dj || '?'} » ?`,
+      { reply_markup: { inline_keyboard: kb } });
+  } else if (data.startsWith('pinset:')) {
+    // Second tap : la liaison est faite, on epingle et on sort le mail.
+    const [subId, fileId] = data.slice(7).split(':');
+    const sub = await getSubmissionById(subId);
+    if (!sub) return answerCallback(token, cb.id, 'Candidature introuvable (trop ancienne).');
+    const sched = await scheduledMixes();
+    if (!sched.ok) return answerCallback(token, cb.id, '❌ AzuraCast injoignable');
+    const mix = sched.list.find((f) => String(f.id) === String(fileId));
+    if (!mix) return answerCallback(token, cb.id, 'Mixtape introuvable.');
+
+    const ok = await setPinned(mixPinText(sub, mix));
+    await answerCallback(token, cb.id, ok ? 'Épinglé ✅' : '❌ Échec (store non configuré ?)');
+    const mail = mixEmail(sub, mix);
+    await sendMessage(token, cb.message.chat.id,
+      (ok ? '📌 Épinglé dans le chat live :\n' : '❌ Pin échoué (store non configuré ?). Texte prévu :\n')
+      + mixPinText(sub, mix)
+      + `\n\n✉️ Mail pour ${sub.email || '(adresse inconnue)'} — objet :\n${mail.subject}`);
+    // Corps envoye seul : sur Telegram, "copier" prend le message entier.
+    // Le melanger a autre chose obligerait a nettoyer a la main avant de coller.
+    return sendMessage(token, cb.message.chat.id, mail.body, { disable_web_page_preview: true });
   } else if (data.startsWith('delsup:')) {
     const id = data.slice(7);
     await markDeletedSupporter(id);
@@ -1644,6 +1708,82 @@ function mixAnnouncement(s) {
   const head = `🎧 Next mixtape on KALBASSFM: ${s.dj || 'a guest DJ'} — ${s.style || 'DJ set'}.`;
   const budget = 200 - tail.length;
   return (head.length > budget ? head.slice(0, Math.max(0, budget - 1)).trimEnd() + '…' : head) + tail;
+}
+
+/* ---- Mixtapes programmees : pin + mail au DJ (/submissions, bouton 📅) ---- */
+
+// Mixtapes de mixtape_onair qui ont deja une date (champ Album), les plus
+// proches d'abord. Meme lecture que queueMixStatus(), extraite pour que le pin
+// et /queue_mix ne puissent pas diverger sur ce qui est "programme".
+async function scheduledMixes() {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { ok: false, text: 'Impossible de récupérer les playlists AzuraCast.' };
+  const onair = findPlaylist(pl.list, 'mixtape_onair');
+  if (!onair) return { ok: false, text: 'Playlist mixtape_onair introuvable.' };
+  const cand = await getMixtapeCandidates(onair.id);
+  if (!cand.ok) return { ok: false, text: `Lecture de la bibliothèque impossible (${cand.status}).` };
+  return {
+    ok: true,
+    list: cand.list.filter((f) => f.album).sort((a, b) => a.album.localeCompare(b.album)),
+  };
+}
+
+// "2026-09-13" -> "Sunday, September 13". Midi UTC pour qu'aucun decalage de
+// fuseau ne fasse basculer la date d'un jour.
+function prettyAirDate(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+// Formulation IDENTIQUE au bandeau automatique de tools/mixtape_weekly.py : un
+// pin pose a la main et un pin pose a J-3 doivent etre indiscernables pour
+// l'auditeur. Le nom du DJ vient de la candidature (c'est le pseudo qu'il a
+// saisi), le titre du fichier AzuraCast (c'est ce que le lecteur affiche).
+function mixPinText(sub, mix) {
+  const dj = sub.dj || mix.artist || 'a guest DJ';
+  const title = mix.title || 'a DJ set';
+  return `📌 Sunday mix incoming: ${dj} — "${title}" airs live this `
+    + `${prettyAirDate(mix.album)}, at ${MIX_AIR_START} (Paris time).`;
+}
+
+// Mail type a copier-coller. Volontairement en anglais : c'est la langue de
+// toutes les annonces publiques de la station, et les candidats ne sont pas
+// tous francophones.
+function mixEmail(sub, mix) {
+  const dj = sub.dj || mix.artist || 'there';
+  const title = mix.title || 'your mix';
+  const when = prettyAirDate(mix.album);
+  return {
+    subject: `Your mix airs on KALBASSFM — ${when} at ${MIX_AIR_START} (Paris)`,
+    body: [
+      `Hi ${dj},`,
+      '',
+      `Good news — your mix "${title}" is scheduled on KALBASSFM.`,
+      '',
+      `  Date  : ${when} (${mix.album})`,
+      `  Time  : ${MIX_AIR_START} Paris time (CET)`,
+      `  Listen: ${PLAYER_URL}`,
+      '',
+      'We pin an announcement in the live chat a few days before, so feel free',
+      'to share the date with your own audience.',
+      '',
+      'Thanks for sending it over — see you on air.',
+      '',
+      'KALBASSFM',
+      '',
+      // Le destinataire vient d'offrir son mix : on ne lui demande PAS de
+      // payer. La phrase donne le chiffre et lui propose de le relayer s'il
+      // partage la date — informer sans tendre la sebile a un contributeur.
+      `P.S. — Keeping KALBASSFM on air costs about ${MONTHLY_COST} a month: storage,`,
+      'SACEM royalties, and enough coffee to keep the code compiling. No ads, and',
+      "we'd rather keep it that way. If you mention the station when you share the",
+      `date, feel free to drop this in: ${SUPPORT_URL}`,
+    ].join('\n'),
+  };
 }
 
 // Ajout manuel (ex: don recu avant la mise en place du webhook BMC, ou
