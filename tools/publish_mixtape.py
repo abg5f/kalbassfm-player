@@ -28,6 +28,7 @@ Options utiles :
     --desc "..."    description de l'épisode
 """
 import argparse
+import calendar
 import json
 import mimetypes
 import os
@@ -35,7 +36,7 @@ import sys
 import urllib.error
 import urllib.request
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, time as dtime, timedelta, timezone
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8") if hasattr(sys.stdout, "reconfigure") else None
@@ -137,6 +138,47 @@ def upload_media(podcast_id, episode_id, filepath, progress=True):
     if progress:
         print()
     return last
+
+
+# --------------------------------------------------------------------------- heure de Paris
+# La station diffuse a l'heure de Paris, mais ce script tourne sur un PC dont
+# le fuseau n'est pas garanti : le 2026-09-13 il etait regle sur le Venezuela
+# (UTC-4). datetime.combine(...).timestamp() lit ce fuseau-la, et l'episode
+# prevu pour 18:00 Paris est sorti a minuit Paris, six heures apres le direct.
+# Meme chose le 2026-09-06. Le planning de la playlist, lui, etait juste :
+# AzuraCast lit les HHMM dans le fuseau de la station.
+#
+# Regle europeenne en dur plutot que zoneinfo : ce Python Windows n'embarque
+# pas la base des fuseaux (ZoneInfo('Europe/Paris') leve une erreur), et la
+# regle est fixee par directive depuis 1996. Ete du dernier dimanche de mars
+# 01:00 UTC au dernier dimanche d'octobre 01:00 UTC.
+
+def _dernier_dimanche(annee, mois):
+    fin = (date(annee, mois + 1, 1) - timedelta(days=1)) if mois < 12 else date(annee, 12, 31)
+    return fin - timedelta(days=(fin.weekday() + 1) % 7)
+
+
+def paris_offset_heures(utc_naif):
+    debut = datetime.combine(_dernier_dimanche(utc_naif.year, 3), dtime(1, 0))
+    fin = datetime.combine(_dernier_dimanche(utc_naif.year, 10), dtime(1, 0))
+    return 2 if debut <= utc_naif < fin else 1
+
+
+def paris_timestamp(jour, hhmm_int):
+    """Timestamp Unix de `jour` a `hhmm_int` (1800 = 18:00), heure de Paris."""
+    local = datetime.combine(jour, dtime(hhmm_int // 100, hhmm_int % 100))
+    utc = local - timedelta(hours=paris_offset_heures(local - timedelta(hours=1)))
+    return calendar.timegm(utc.timetuple())
+
+
+def paris_aujourdhui():
+    utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    return (utc + timedelta(hours=paris_offset_heures(utc))).date()
+
+
+def paris_depuis_timestamp(ts):
+    utc = datetime.fromtimestamp(ts, timezone.utc).replace(tzinfo=None)
+    return utc + timedelta(hours=paris_offset_heures(utc))
 
 
 def die(msg):
@@ -247,9 +289,7 @@ def main():
     st, eps = call("GET", f"/podcast/{podcast['id']}/episodes")
     episode_no = (len(eps) if isinstance(eps, list) else 0) + 1
     title = args.title or Path(chosen["path"]).stem
-    publish_at = int(datetime.combine(
-        air_date, datetime.min.time()).timestamp()) + (start_i // 100) * 3600 \
-        + (start_i % 100) * 60
+    publish_at = paris_timestamp(air_date, start_i)
 
     print(f"\n=== PLAN ===")
     print(f"  mixtape      : {Path(chosen['path']).name}")
@@ -258,7 +298,7 @@ def main():
     print(f"  playlist     : {PLAYLIST_NAME} (id {playlist['id']}) — vidée puis regarnie, "
           f"activée, poids {ONAIR_WEIGHT}")
     print(f"  podcast      : {PODCAST_TITLE} — épisode #{episode_no} « {title} »")
-    print(f"  publication  : {datetime.fromtimestamp(publish_at):%Y-%m-%d %H:%M}")
+    print(f"  publication  : {paris_depuis_timestamp(publish_at):%Y-%m-%d %H:%M} (Paris)")
     src = args.local or "(retéléchargement depuis le serveur)"
     print(f"  média podcast: {src}")
 

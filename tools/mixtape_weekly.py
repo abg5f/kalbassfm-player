@@ -53,6 +53,7 @@ sys.path.insert(0, str(TOOLS_DIR))
 from publish_mixtape import (  # noqa: E402  (reutilise le geste "diffuser + publier")
     call, upload_media, hhmm, resolve_targets, die,
     BASE, STATION, BANK_DIR, ONAIR_WEIGHT,
+    paris_timestamp, paris_aujourdhui, paris_depuis_timestamp,
 )
 from azuracast_config import AZURACAST_API_KEY  # noqa: E402
 
@@ -108,6 +109,39 @@ def post_admin_message(text):
     msg = {"id": msg_id, "nick": "Admin", "text": text[:400], "ts": int(time.time() * 1000), "admin": True}
     kv_call("lpush", "chat:messages", json.dumps(msg, ensure_ascii=False))
     kv_call("ltrim", "chat:messages", "0", "99")
+    notify_telegram_auto(msg)
+
+
+def notify_telegram_auto(msg):
+    """Notification Telegram avec bouton 🗑, comme pour un message d'auditeur.
+
+    Une annonce publiee par ce script n'avait AUCUNE notification : impossible
+    a retirer du chat depuis Telegram, sauf par /recent. Le bouton reutilise le
+    callback del:<id> du bot, qui marque le message supprime dans chat:deleted.
+
+    Le jeton du bot vit dans les variables d'environnement Vercel, pas sur ce
+    PC : il faut tools/telegram_config.py (ignore par git, comme les autres
+    *_config.py). Absent, on previent et on continue -- une notification
+    manquante ne doit jamais empecher le mix de passer."""
+    try:
+        from telegram_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+    except ImportError:
+        print("  [INFO] tools/telegram_config.py absent : annonce publiee sans notification "
+              "Telegram. Pour la retirer du chat : /recent dans le bot.")
+        return
+    body = json.dumps({
+        "chat_id": TELEGRAM_CHAT_ID,
+        "parse_mode": "HTML",
+        "text": "🤖 <i>Publié automatiquement</i>\n"
+                + msg["nick"] + ": " + msg["text"].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"),
+        "reply_markup": {"inline_keyboard": [[{"text": "🗑 Supprimer", "callback_data": "del:" + msg["id"]}]]},
+    }).encode("utf-8")
+    req = urllib.request.Request(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                                 data=body, headers={"Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=15).read()
+    except Exception as e:  # noqa: BLE001  jamais bloquant
+        print(f"  [ATTENTION] notification Telegram non envoyee ({e}).")
 
 
 def set_pinned(text):
@@ -120,19 +154,24 @@ def set_pinned(text):
 # --------------------------------------------------------------------------- AzuraCast
 
 def load_candidates(playlist_id):
-    """Morceaux actuellement membres de mixtape_onair, avec leur date (champ
-    Album, AAAA-MM-JJ) si deja programmee -- meme endpoint que load_bank()
-    dans publish_mixtape.py, filtre par appartenance a la playlist."""
+    """Tous les mix du dossier Mixtapes/, avec leur date (champ Album,
+    AAAA-MM-JJ) s'ils sont programmes.
+
+    PLUS de filtre par appartenance a mixtape_onair (corrige le 2026-09-14).
+    publish_one() VIDE cette playlist pour n'y laisser que le mix du jour :
+    le 13, la diffusion de Troze a detache Lupari (prevu le 20) et Massime
+    Ep. 3 (prevu le 27). Filtre par playlist, le run du 20 n'aurait rien vu,
+    alors que le bandeau annoncant Lupari etait deja epingle dans le chat. La
+    date dans le champ Album EST la programmation ; la playlist n'est que le
+    mecanisme de diffusion du jour. `playlist_id` reste dans la signature pour
+    ne rien casser chez les appelants."""
     st, files = call("GET", f"/files?searchPhrase={BANK_DIR}%2F&rowCount=500")
     if st != 200:
         die(f"Lecture de la bibliotheque impossible (HTTP {st}) : {files}")
     rows = files.get("rows", files) if isinstance(files, dict) else files
-    out = []
-    for f in rows:
-        playlists = [p.get("id") if isinstance(p, dict) else p for p in (f.get("playlists") or [])]
-        if playlist_id in playlists:
-            out.append(f)
-    return out
+    # searchPhrase cherche aussi dans les titres : le prefixe de chemin garantit
+    # qu'on ne ramasse que les fichiers du dossier.
+    return [f for f in rows if (f.get("path") or "").startswith(BANK_DIR + "/")]
 
 
 def find_djset_jingle():
@@ -226,8 +265,8 @@ def publish_one(candidate, air_date, playlist, podcast, apply_mode):
 
     st, eps = call("GET", f"/podcast/{podcast['id']}/episodes")
     episode_no = (len(eps) if isinstance(eps, list) else 0) + 1
-    publish_at = int(datetime.combine(air_date, datetime.min.time()).timestamp()) \
-        + (start_i // 100) * 3600 + (start_i % 100) * 60
+    # Heure de Paris, pas celle du PC : cf. paris_timestamp dans publish_mixtape.
+    publish_at = paris_timestamp(air_date, start_i)
     st, ep = call("POST", f"/podcast/{podcast['id']}/episodes", {
         # "Artiste — Titre" dans le TITRE de l'episode : le podcast AzuraCast
         # n'a pas de champ artiste, et le panneau Mixtapes du player n'affiche
@@ -291,7 +330,7 @@ def show_status(podcast):
     now = datetime.now().timestamp()
     for ep in sorted(eps, key=lambda e: e.get("publish_at") or 0, reverse=True):
         ts = ep.get("publish_at") or 0
-        when = datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts else "(aucune)"
+        when = paris_depuis_timestamp(ts).strftime("%Y-%m-%d %H:%M Paris") if ts else "(aucune)"
         future = " (a venir)" if ts > now else ""
         media = ep.get("media") or {}
         print(f"  {'oui' if ep.get('is_published') else 'NON':<7} "
@@ -308,7 +347,10 @@ def show_status(podcast):
 
 def main():
     apply_mode = "--apply" in sys.argv
-    today = date.today()  # heure de la machine (Windows, attendue Europe/Paris)
+    # Date de Paris : le PC n'est pas forcement a l'heure de la station (il
+    # etait sur le Venezuela le 2026-09-13), et entre minuit Paris et minuit
+    # local le "jour de diffusion" aurait ete decale d'un jour.
+    today = paris_aujourdhui()
 
     playlist, podcast = resolve_targets()
 
@@ -317,7 +359,7 @@ def main():
 
     candidates = load_candidates(playlist["id"])
     scheduled = [(c, c["album"]) for c in candidates if c.get("album")]
-    print(f"{len(candidates)} morceau(x) dans {playlist['name']}, {len(scheduled)} programme(s).")
+    print(f"{len(candidates)} mix dans {BANK_DIR}/, {len(scheduled)} programme(s).")
 
     state = load_state()
     to_pin, to_publish = [], []
