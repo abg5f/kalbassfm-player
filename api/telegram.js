@@ -121,7 +121,8 @@ async function handleMessage(token, message) {
       + '/rename, /unrename, /rename_nick — renommer un auditeur\n'
       + '/pin &lt;texte&gt;, /unpin — épingler un message\n\n'
       + '<b>Mixtapes</b>\n'
-      + '/submissions — les propositions reçues, avec programmation et relance\n'
+      + '/submissions — les candidatures à traiter (sans les exclues ni les déjà diffusées)\n'
+      + '/submissions tout — toutes, avec leur statut, pour rétablir une exclusion\n'
       + '/queue_mix — passer la mixtape maintenant\n\n'
       + '<b>Soutiens</b>\n'
       + '/recent_supporters — les derniers dons\n'
@@ -268,16 +269,44 @@ async function handleMessage(token, message) {
   // Filet de securite pour api/submit-mix.js : chaque candidature arrive deja
   // en notification, mais une notification se perd dans le fil — l'archive
   // Redis permet de retrouver les 10 dernieres avec leur mail et leur lien.
-  if (text === '/submissions') {
-    // On lit plus large que 10 : les candidatures exclues sont retirees APRES
-    // lecture, et sans marge la liste raccourcirait a chaque exclusion.
+  if (text === '/submissions' || text === '/submissions tout') {
+    // Par defaut, la liste ne montre que ce qui reste a traiter : ni les
+    // candidatures exclues pour le style, ni celles dont le mix est deja passe
+    // a l'antenne. "/submissions tout" les remontre, avec leur statut, pour
+    // rattraper une exclusion faite trop vite.
+    const tout = text === '/submissions tout';
     const excluded = await getExcludedSubmissions();
-    const list = (await getRecentSubmissions(30)).filter((s) => !excluded.has(s.id)).slice(0, 10);
+    const recentes = await getRecentSubmissions(30);
+    // Le parametre de getMixtapeCandidates ne sert plus depuis qu'elle lit tout
+    // Mixtapes/. Si AzuraCast ne repond pas, on n'invente pas de diffusion :
+    // rien n'est masque pour ce motif, et on le dit.
+    const bank = await getMixtapeCandidates(null);
+    const now = parisStamp(new Date());
+    const diffusee = new Map();
+    if (bank.ok) {
+      for (const s of recentes) {
+        const le = submissionAiredOn(s, bank.list, now);
+        if (le) diffusee.set(s.id, le);
+      }
+    }
+    // On lit plus large que 10 : les masquees sont retirees APRES lecture, et
+    // sans marge la liste raccourcirait a chaque exclusion ou diffusion.
+    const list = (tout ? recentes : recentes.filter((s) => !excluded.has(s.id) && !diffusee.has(s.id))).slice(0, 10);
+    const nbDiff = recentes.filter((s) => diffusee.has(s.id) && !excluded.has(s.id)).length;
+    const masquees = [
+      excluded.size ? `${excluded.size} exclue(s) pour le style` : '',
+      nbDiff ? `${nbDiff} déjà diffusée(s)` : '',
+    ].filter(Boolean).join(', ');
     if (!list.length) {
-      return sendMessage(token, chatId, excluded.size
-        ? `Aucune candidature à afficher (${excluded.size} exclue(s) pour le style).`
+      return sendMessage(token, chatId, masquees
+        ? `✅ Rien à traiter (${masquees}).\n/submissions tout pour les revoir.`
         : 'Aucune candidature mix à afficher.');
     }
+    const statut = (s) => {
+      if (excluded.has(s.id)) return '  🚫 exclue';
+      const le = diffusee.get(s.id);
+      return le ? `  ✅ diffusée le ${le.slice(8, 10)}/${le.slice(5, 7)}` : '';
+    };
     // Texte brut, sans parse_mode : convention du bot (voir audienceText).
     // disable_web_page_preview evite qu'un lien SoundCloud/Drive deploie une
     // carte de previsualisation plus grande que la liste elle-meme.
@@ -286,7 +315,7 @@ async function handleMessage(token, message) {
         s.instagram ? 'instagram.com/' + s.instagram : '',
         s.soundcloud ? 'soundcloud.com/' + s.soundcloud : '',
       ].filter(Boolean).join('  ');
-      return `${i + 1}. ${s.dj || '?'} — ${s.style || '?'}\n`
+      return `${i + 1}. ${s.dj || '?'} — ${s.style || '?'}${tout ? statut(s) : ''}\n`
         + `   ${s.email || '?'}\n`
         + `   ${s.url || '?'}`
         + (socials ? `\n   ${socials}` : '');
@@ -299,19 +328,25 @@ async function handleMessage(token, message) {
     // DJ, mail, liens) au fichier AzuraCast (titre, date en champ Album). Un
     // rapprochement par nom d'artiste echouerait des que le champ Artiste ne
     // reprend pas exactement le pseudo saisi dans le formulaire.
+    // Une candidature exclue garde ses boutons en mode "tout", mais 🚫 y
+    // devient ↩️ pour la retablir : c'est la seule raison de la revoir.
     const rows = list.map((s, i) => ([
       { text: '✉️ ' + (i + 1), callback_data: 'submail:' + s.id },
       { text: '📣 ' + (i + 1), callback_data: 'annmix:' + s.id },
       { text: '📅 ' + (i + 1), callback_data: 'pinsel:' + s.id },
-      { text: '🚫 ' + (i + 1), callback_data: 'subx:' + s.id },
+      excluded.has(s.id)
+        ? { text: '↩️ ' + (i + 1), callback_data: 'subux:' + s.id }
+        : { text: '🚫 ' + (i + 1), callback_data: 'subx:' + s.id },
     ]));
     return sendMessage(token, chatId,
-      '🎛 Dernières candidatures mix :\n' + lines.join('\n')
+      (tout ? '🎛 Toutes les candidatures récentes :\n' : '🎛 Candidatures à traiter :\n') + lines.join('\n')
       + '\n\n✉️ = mail d\'accusé de réception (demande le fichier audio).'
       + '\n📣 = annoncer dans le chat live.'
       + '\n📅 = épingler la date + mail de programmation (vérifie le fichier audio).'
       + '\n🚫 = exclure : ne colle pas au style de la radio.'
-      + (excluded.size ? `\n\n(${excluded.size} candidature(s) exclue(s), masquée(s).)` : ''), {
+      + (tout ? '\n↩️ = rétablir une candidature exclue.' : '')
+      + (!bank.ok ? '\n\n⚠️ AzuraCast injoignable : les mix déjà diffusés ne sont pas masqués.' : '')
+      + (!tout && masquees ? `\n\n(${masquees}, masquée(s) — /submissions tout pour les revoir.)` : ''), {
         disable_web_page_preview: true,
         reply_markup: { inline_keyboard: rows },
       });
@@ -1984,6 +2019,32 @@ function mixFilesForSubmission(sub, files) {
     const fileName = String(f.path || '').split('/').pop();
     return normName(f.title).includes(dj) || normName(fileName).includes(dj);
   });
+}
+
+// "2026-09-14 10:57", heure murale de Paris. Le champ Album et l'heure de
+// diffusion sont des heures de Paris : comparer ces chaines suffit, sans
+// arithmetique de fuseau.
+function parisStamp(date) {
+  const p = parisWallParts(date);
+  const z = (n) => String(n).padStart(2, '0');
+  return `${p.y}-${z(p.mo)}-${z(p.d)} ${z(p.h)}:${z(p.mi)}`;
+}
+
+// Le mix de cette candidature est-il deja passe a l'antenne ?
+// Oui si ses mix dates ont tous atteint leur heure de diffusion, et qu'aucun
+// n'est programme plus tard. On ne retient que les mix dates APRES la
+// reception de la candidature : un DJ deja diffuse en aout qui renvoie un mix
+// en septembre ne doit pas disparaitre de la liste a cause de l'ancien.
+// Renvoie la date de la derniere diffusion, ou null.
+function submissionAiredOn(sub, bank, nowStamp) {
+  const recue = sub.ts ? parisStamp(new Date(sub.ts)).slice(0, 10) : '0000-00-00';
+  const dates = mixFilesForSubmission(sub, bank)
+    .map((f) => f.album)
+    .filter((a) => /^\d{4}-\d{2}-\d{2}$/.test(a || '') && a >= recue)
+    .sort();
+  if (!dates.length) return null;
+  if (dates.some((a) => `${a} ${MIX_AIR_START}` > nowStamp)) return null;
+  return dates[dates.length - 1];
 }
 
 // Accuse de reception a copier-coller, en anglais comme toutes les annonces
