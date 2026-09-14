@@ -890,6 +890,33 @@ async function handleCallback(token, cb) {
     const label = minutes < 60 ? `Derniers ${minutes} min` : `Derniere ${minutes / 60} h`;
     const text = entries === null ? '❌ Historique AzuraCast indisponible.' : logsText(entries, label);
     await editMessageText(token, cb.message.chat.id, cb.message.message_id, text, logsKeyboard(), 'HTML');
+  } else if (data.startsWith('qmxok:')) {
+    // Confirmation donnee : on deprogramme, puis on renvoie l'etat a jour.
+    const r = await unscheduleMixtape(data.slice(6));
+    await answerCallback(token, cb.id, r.ok ? '✅ Déprogrammé' : '❌ Non déprogrammé');
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, r.text);
+    if (r.ok) {
+      const v = await queueMixStatus();
+      await sendMessage(token, cb.message.chat.id, v.text, v.keyboard ? { reply_markup: v.keyboard } : undefined);
+    }
+  } else if (data === 'qmxno') {
+    await answerCallback(token, cb.id, 'Annulé');
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, '↩️ Déprogrammation annulée, rien n\'a changé.');
+  } else if (data.startsWith('qmx:')) {
+    // Premier tap : une confirmation, parce que le geste retire une date
+    // parfois deja communiquee au DJ et une annonce deja visible des auditeurs.
+    const fileId = data.slice(4);
+    const cand = await getMixtapeCandidates(null);
+    const f = cand.ok ? cand.list.find((x) => String(x.id) === String(fileId)) : null;
+    if (!f || !f.album) return answerCallback(token, cb.id, 'Mix introuvable ou déjà sans date.');
+    await answerCallback(token, cb.id, 'Confirme');
+    return sendMessage(token, cb.message.chat.id,
+      `✖️ Déprogrammer « ${f.title || '?'} » (${f.artist || '?'}), prévu ${prettyAirDate(f.album)} à ${MIX_AIR_START} ?\n\n`
+      + "Il repassera dans les mix en attente de date, et l'annonce épinglée de ce dimanche sera retirée si elle existe.",
+      { reply_markup: { inline_keyboard: [[
+        { text: '✅ Oui, déprogrammer', callback_data: 'qmxok:' + f.id },
+        { text: 'Annuler', callback_data: 'qmxno' },
+      ]] } });
   } else if (data.startsWith('qm:')) {
     const fileId = data.slice(3);
     const r = await scheduleMixtape(fileId);
@@ -1489,27 +1516,100 @@ async function queueMixStatus() {
   const cand = await getMixtapeCandidates(onair.id);
   if (!cand.ok) return { text: `❌ Lecture de la bibliothèque impossible (${cand.status}).`, keyboard: null };
 
+  if (!cand.list.length) {
+    return { text: "📀 Le dossier Mixtapes/ est vide — dépose d'abord le fichier du mix dans AzuraCast.", keyboard: null };
+  }
   const unscheduled = cand.list.filter((f) => !f.album);
   const scheduled = cand.list.filter((f) => f.album).sort((a, b) => a.album.localeCompare(b.album));
+  // A venir / deja diffuses, a l'heure de diffusion de Paris. Seuls les mix a
+  // venir se deprogramment : retirer la date d'un mix passe le renverrait dans
+  // "en attente" et le ferait rediffuser au prochain dimanche libre.
+  const now = parisStamp(new Date());
+  const aVenir = scheduled.filter((f) => `${f.album} ${MIX_AIR_START}` > now);
+  const passes = scheduled.filter((f) => `${f.album} ${MIX_AIR_START}` <= now).slice(-5);
+  const ligne = (f) => `${f.album} — ${f.artist || '?'} — ${f.title || '?'}`;
 
-  if (!unscheduled.length) {
-    const lines = scheduled.map((f) => `${f.album} — ${f.artist || '?'} — ${f.title || '?'}`);
+  const rows = [];
+  const prog = unscheduled.slice(0, 10).map((f, i) => ({ text: String(i + 1), callback_data: 'qm:' + f.id }));
+  for (let i = 0; i < prog.length; i += 5) rows.push(prog.slice(i, i + 5));
+  const deprog = aVenir.slice(0, 9).map((f) => ({ text: '✖️ ' + jjmm(f.album), callback_data: 'qmx:' + f.id }));
+  for (let i = 0; i < deprog.length; i += 3) rows.push(deprog.slice(i, i + 3));
+
+  const text = (unscheduled.length
+    ? '📀 Mix en attente de date — choisis lequel programmer ensuite :\n\n'
+      + unscheduled.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || '?'}`).join('\n')
+    : '📀 Aucun mix en attente de date.')
+    + (aVenir.length ? '\n\n🗓 Programmés :\n' + aVenir.map(ligne).join('\n') : '\n\n🗓 Aucun mix programmé à venir.')
+    + (passes.length ? '\n\n✅ Déjà diffusés :\n' + passes.map(ligne).join('\n') : '')
+    + '\n'
+    + (unscheduled.length ? '\n1, 2… = programmer au prochain dimanche libre.' : '')
+    + (aVenir.length ? '\n✖️ JJ/MM = déprogrammer ce mix.' : '');
+  return { text, keyboard: rows.length ? { inline_keyboard: rows } : null };
+}
+
+// "2026-09-27" -> "27/09"
+function jjmm(iso) {
+  return `${String(iso).slice(8, 10)}/${String(iso).slice(5, 7)}`;
+}
+
+// Un mix est "arme" le jour meme quand tools/mixtape_weekly.py l'a deja mis a
+// l'antenne : planning de mixtape_onair a sa date, fichier rattache, episode
+// de podcast cree. Retirer la date ne l'enleverait alors PAS de l'antenne ;
+// il faudrait aussi defaire le planning et l'episode, ce qu'on ne fait pas
+// depuis un bouton.
+function mixArmed(file, onair) {
+  if (!file || !onair) return false;
+  const planifie = (onair.schedule_items || []).some((it) => it.start_date === file.album);
+  const rattache = (file.playlists || []).some((p) => String(p.id ?? p) === String(onair.id));
+  return planifie && rattache;
+}
+
+// Retire la date d'un mix a venir. Nettoie aussi l'annonce epinglee qui le
+// concerne (pose a J-7 par mixtape_weekly.py ou a la main par 📅), y compris
+// celle mise de cote par une pause du chat : sinon le chat annoncerait un
+// dimanche qui n'aura pas lieu.
+async function unscheduleMixtape(fileId) {
+  const pl = await getPlaylists();
+  if (!pl.ok) return { ok: false, text: '❌ Impossible de récupérer les playlists AzuraCast.' };
+  const onair = findPlaylist(pl.list, 'mixtape_onair');
+  const cand = await getMixtapeCandidates(null);
+  if (!cand.ok) return { ok: false, text: `❌ Lecture de la bibliothèque impossible (${cand.status}).` };
+  const f = cand.list.find((x) => String(x.id) === String(fileId));
+  if (!f) return { ok: false, text: '❌ Mix introuvable (supprimé ou déplacé entre-temps).' };
+  if (!f.album) return { ok: false, text: `ℹ️ « ${f.title || '?'} » n'a déjà plus de date.` };
+  if (`${f.album} ${MIX_AIR_START}` <= parisStamp(new Date())) {
+    return { ok: false, text: `❌ « ${f.title || '?'} » est déjà passé à l'antenne le ${jjmm(f.album)} : il ne se déprogramme plus.` };
+  }
+  if (mixArmed(f, onair)) {
     return {
-      text: '📀 Aucun mix en attente de date.\n\n' +
-        (lines.length ? 'Déjà programmés :\n' + lines.join('\n')
-          : "Le dossier Mixtapes/ est vide — dépose d'abord le fichier du mix dans AzuraCast."),
-      keyboard: null,
+      ok: false,
+      text: `❌ « ${f.title || '?'} » est déjà mis à l'antenne pour ce soir : l'automate du dimanche a posé `
+        + `le planning et créé l'épisode du podcast. Retirer la date ne l'empêcherait pas de passer.\n\n`
+        + `Pour l'annuler : dans AzuraCast, retire le planning de la playlist mixtape_onair et supprime l'épisode du podcast.`,
     };
   }
 
-  const lines = unscheduled.map((f, i) => `${i + 1}. ${f.artist || '?'} — ${f.title || '?'}`);
-  const buttons = unscheduled.slice(0, 10).map((f, i) => ({ text: String(i + 1), callback_data: 'qm:' + f.id }));
-  const rows = [];
-  for (let i = 0; i < buttons.length; i += 5) rows.push(buttons.slice(i, i + 5));
-  const already = scheduled.length ? `\n\nDéjà programmés :\n${scheduled.map((f) => `${f.album} — ${f.artist || '?'} — ${f.title || '?'}`).join('\n')}` : '';
+  const r = await setFileAlbum(f.id, '');
+  if (!r.ok) return { ok: false, text: `❌ Échec de la déprogrammation (${r.status}).` };
+
+  let pinRetire = false;
+  const kv = kvClient();
+  if (kv) {
+    const date = prettyAirDate(f.album);
+    for (const key of ['chat:pinned', 'chat:pinned:backup']) {
+      const cur = await kv('get', key);
+      if (cur.result && String(cur.result).includes(date)) {
+        await kv('del', key);
+        pinRetire = true;
+      }
+    }
+  }
   return {
-    text: '📀 Mix en attente de date — choisis lequel programmer ensuite :\n\n' + lines.join('\n') + already,
-    keyboard: { inline_keyboard: rows },
+    ok: true,
+    text: `✅ « ${f.title || '?'} » (${f.artist || '?'}) déprogrammé — il ne passera pas le ${jjmm(f.album)}.\n`
+      + 'Il repasse dans les mix en attente de date.'
+      + (pinRetire ? `\n📌 L'annonce épinglée du ${jjmm(f.album)} a été retirée du chat.` : '')
+      + "\n\nSi le DJ avait reçu la date par mail, pense à le prévenir.",
   };
 }
 

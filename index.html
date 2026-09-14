@@ -2272,9 +2272,13 @@
     nickSend.disabled = false;
   });
 
+  // "DD/MM HH:MM", a l'heure de l'auditeur. L'heure seule ne suffisait pas :
+  // le chat garde 100 messages sur plusieurs jours, et une heure isolee faisait
+  // passer un 09:52 de la veille pour un message posterieur a un 20:49.
   function formatChatTime(ts) {
     const d = new Date(ts);
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const z = (n) => String(n).padStart(2, '0');
+    return z(d.getDate()) + '/' + z(d.getMonth() + 1) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
   }
   /* Rend le texte d'un message, en transformant les liens en ancres cliquables
      UNIQUEMENT pour les messages admin (m.admin, pose exclusivement cote
