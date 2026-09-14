@@ -5,14 +5,14 @@
   "label": "index.html"
  },
  {
-  "id": "AzuraCast",
-  "degree": 21,
-  "label": "AzuraCast"
- },
- {
   "id": "api/telegram.js",
   "degree": 21,
   "label": "api/telegram.js"
+ },
+ {
+  "id": "AzuraCast",
+  "degree": 21,
+  "label": "AzuraCast"
  },
  {
   "id": "ChatFeature",
@@ -40,23 +40,23 @@
   "label": "Mixtapes (emission mensuelle)"
  },
  {
+  "id": "tools/triage_new_tracks.py",
+  "degree": 9,
+  "label": "triage_new_tracks.py"
+ },
+ {
+  "id": "tools/analyse_new_tracks.py",
+  "degree": 9,
+  "label": "analyse_new_tracks.py"
+ },
+ {
   "id": "BacLiquid",
   "degree": 8,
   "label": "BacLiquid"
  },
  {
-  "id": "tools/triage_new_tracks.py",
-  "degree": 8,
-  "label": "triage_new_tracks.py"
- },
- {
-  "id": "EnergyBoostTelegram",
+  "id": "RekordboxPipeline",
   "degree": 7,
-  "label": "EnergyBoostTelegram"
- },
- {
-  "id": "RedisQuotaIncident",
-  "degree": 7,
-  "label": "Incident quota Upstash (2026-07-21)"
+  "label": "Pipeline Rekordbox → radio"
  }
 ]

@@ -659,6 +659,18 @@
    "label": "Lien RSS retire du panneau Mixtapes",
    "type": "decision",
    "summary": "2026-09-06 (commit a900439) : le lien \"RSS feed\" est retire du panneau (balise, JS, CSS, mention dans What's new). Le flux existe TOUJOURS cote AzuraCast, il n'est simplement plus affiche. En contrepartie, mixtape_weekly.py --status (lecture seule) explique pourquoi un episode n'apparait pas : le player n'affiche que les episodes is_published ET has_media."
+  },
+  {
+   "id": "tools/review_analyse.py",
+   "label": "review_analyse.py",
+   "type": "file",
+   "summary": "Interface locale unique du pipeline (127.0.0.1:8137) : lance triage/analyse/envoi avec journal en direct dans le panneau Pipeline, arbitrage a l'ecoute (Garder/Ecarter, changement de bac). L'envoi exige confirmation ; il remonte au panneau, affiche l'avancement [SFTP i/N] a cote du bouton, et le journal survit au rechargement de fin (restaure depuis /log)."
+  },
+  {
+   "id": "EnvoiProgressLog",
+   "label": "Journal d'envoi AzuraCast (avancement i/N)",
+   "type": "feature",
+   "summary": "2026-09-14 : analyse_new_tracks.py imprime [SFTP i/N] par morceau ; review_analyse.py le parse pour afficher 'Envoi en cours - i/N envoye(s)'. Format a ne pas changer sans mettre a jour le regex JS."
   }
  ],
  "edges": [
@@ -2028,6 +2040,54 @@
    "source": "MixtapeRssRemoved",
    "target": "tools/mixtape_weekly.py",
    "relation": "compense par --status (is_published ET has_media)",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_analyse.py",
+   "target": "tools/analyse_new_tracks.py",
+   "relation": "lance (--no-browser / --apply) et affiche la sortie de",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_analyse.py",
+   "target": "tools/triage_new_tracks.py",
+   "relation": "lance le triage de",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_analyse.py",
+   "target": "tools/azuracast_upload.py",
+   "relation": "lit la file pending_review via",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_analyse.py",
+   "target": "tools/track_gate.py",
+   "relation": "rejuge avec la reference de",
+   "weight": 1
+  },
+  {
+   "source": "tools/review_analyse.py",
+   "target": "tools/analyse.bat",
+   "relation": "remplace dans l'usage courant",
+   "weight": 1
+  },
+  {
+   "source": "EnvoiProgressLog",
+   "target": "tools/review_analyse.py",
+   "relation": "affiche dans le panneau Pipeline de",
+   "weight": 1
+  },
+  {
+   "source": "EnvoiProgressLog",
+   "target": "tools/analyse_new_tracks.py",
+   "relation": "lit les lignes [SFTP i/N] de",
+   "weight": 1
+  },
+  {
+   "source": "IngestionTwoStage",
+   "target": "tools/review_analyse.py",
+   "relation": "pilote depuis une page unique",
    "weight": 1
   }
  ]

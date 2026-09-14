@@ -177,7 +177,9 @@
     "tools/track_gate.py",
     "tools/gate_reference.json",
     "tools/review_energy.py",
-    "tools/sync_library.py"
+    "tools/sync_library.py",
+    "tools/review_analyse.py",
+    "EnvoiProgressLog"
    ]
   }
  ]

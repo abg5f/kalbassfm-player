@@ -1,8 +1,18 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-09-07
+> Dernière mise à jour : 2026-09-14
 
-## État actuel (2026-09-06 — annonce mixtape, dosage du liquid, panneau Mixtapes)
+## État actuel (2026-09-14 — journal visible de l'envoi AzuraCast)
+
+**Session 2026-09-14** — courte : rendre l'envoi vérifiable depuis l'interface du pipeline.
+
+- ✅ **Journal de l'envoi dans le panneau Pipeline** (`review_analyse.py`). Le journal existait mais était inutilisable pour l'envoi : bouton en pied de page, journal en haut (on cliquait sans rien voir partir), et le rechargement automatique de fin **effaçait le compte rendu** — impossible de savoir après coup si c'était parti. Désormais : défilement direct vers `#pipeline` au lancement (le `smooth` sur ~5000 px ne s'exécutait pas), ligne `=== Lancement ===` immédiate, état repris en orange à côté du bouton (`#envoistate`), et **le dernier travail est restauré depuis `/log` à l'ouverture de la page** (en cours ou fini), sans boucle de rechargement (drapeau `restoring`).
+- ✅ **Compteur `[SFTP i/N]`** dans `analyse_new_tracks.py`, parsé par la page → « Envoi AzuraCast en cours — 12/180 envoye(s) — 45 s ». Format couplé au regex JS, commenté côté Python.
+- 🧪 Testé sans rien envoyer : page lancée sur le port 8140 avec l'étape d'envoi remplacée par un faux script (5 lignes SFTP simulées) — défilement, compteur, restauration après rechargement vérifiés.
+- 🔍 **État au 2026-09-14 : les 180 morceaux ne sont PAS encore partis.** `pending_review.json` contient toujours 236 entrées (modifié le 13/09 par le triage), serveur 8137 `idle`, `pending_uploads.json` vide, dernier `analyse_report.html` du 09/09. 42/43 signalés tranchés, 81 changements de bac en attente.
+- ✍️ Message de proposition de collaboration rédigé (anglais) pour **Retro House Mixtape** (découvert via r/House), pour diffuser ses mixes sur KALBASSFM — livré en conversation, envoi par l'utilisateur via le formulaire de contact du site.
+
+## État antérieur (2026-09-06 — annonce mixtape, dosage du liquid, panneau Mixtapes)
 
 **Session 2026-09-06** — trois corrections d'antenne, dont une qui touche à l'identité musicale de la station.
 
@@ -305,6 +315,10 @@
 
 ## En cours / TODOs
 
+- [ ] **Lancer l'envoi des 180 morceaux** depuis `review_analyse.py` (relancer le serveur pour charger la nouvelle page), et vérifier au journal que le bilan final est cohérent (`N morceau(x) en ligne`, `0 en attente d'envoi`) — puis commit + push de `api/bpm-table.json`
+- [ ] **Trancher le dernier signalé** (42/43) avant l'envoi — non tranché dans « à écouter » = part en ligne, dans « écartés » = reste écarté
+- [ ] **Suivre la réponse de Retro House Mixtape** (proposition de collaboration envoyée via leur formulaire de contact, 2026-09-14)
+
 - [x] **Exécuter le brief agent en 4 lots** — fait le 2026-09-01 (bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`)
 - [x] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — fait le 2026-09-01, vérifié iso local/serveur
 - [x] **Remplir `tools/kv_config.py`** avec les vraies valeurs Upstash — fait le 2026-09-01, pin/annonce chat mixtape opérationnels
@@ -386,6 +400,7 @@
 
 | Fichier | Rôle | Statut |
 |---------|------|--------|
+| `tools/review_analyse.py` | Interface locale unique du pipeline (127.0.0.1:8137) : triage/analyse/envoi avec journal en direct, arbitrage à l'écoute. **2026-09-14** : journal d'envoi visible (défilement, avancement `i/N`, état près du bouton, restauration du dernier travail après rechargement) | ✅ Testé avec un faux envoi (port 8140) |
 | `tools/analyse_new_tracks.py`, `tools/analyse.bat` | **Nouveau (2026-09-05)** — étape 2/2 de l'ingestion : juge les morceaux en attente (grille `track_gate.py`) puis envoie sur AzuraCast ce qui passe. `reject` → `_a_revoir/` + retrait de `metadata.json` ; `--strict` écarte aussi les `review` ; `--requeue` renvoie un écarté dans `_incoming`. Dry-run par défaut, régénère la table BPM en fin de course | ✅ Créé et testé le 2026-09-05 (bac à sable), pas encore lancé sur un vrai lot |
 | `tools/azuracast_upload.py` | **Nouveau (2026-09-05)** — envoi SFTP + les deux files d'attente, partagés par le triage et l'analyse. Traduction de chemins Windows ↔ WSL. Non importé par `sync_library.py` (chargerait `paramiko` et casserait `--no-sftp`) | ✅ Créé le 2026-09-05 |
 | `tools/triage_new_tracks.py` | Étape 1/2 : **classe, ne juge pas**. Plus de filtre d'antenne, plus de SFTP, plus de régénération de la table BPM ; termine en écrivant `pending_review.json`. Les drapeaux `--no-gate`/`--gate-strict` ont disparu | ♻️ Refondu le 2026-09-05 (−313 lignes) |
@@ -431,7 +446,9 @@
 - **Automatisation locale** : tâche planifiée Windows `KalbassFM Mixtape hebdo` (PowerShell `Register-ScheduledTask`, quotidienne 9h) — exécute `tools/mixtape_weekly.py --apply`
 
 ## Graphe de connaissances
-> Mis à jour le 2026-09-06 (construction manuelle via le skill `/graphify`, pas de CLI — la commande n'est pas dans le PATH) — **110 nœuds, 228 relations, 10 communautés**
+> Mis à jour le 2026-09-14 (construction manuelle via le skill `/graphify`, pas de CLI — la commande n'est pas dans le PATH) — **112 nœuds, 236 relations, 10 communautés**
+
+Nouveaux nœuds 2026-09-14 : `tools/review_analyse.py` (jusque-là absent du graphe, relié à analyse/triage/azuracast_upload/track_gate/analyse.bat), `EnvoiProgressLog` (journal d'envoi avec compteur `[SFTP i/N]`). Tous deux dans la communauté « Ingestion en deux temps ». God nodes inchangés en tête.
 
 God nodes (concepts centraux) : `index.html` (hub front, degré 25), `api/telegram.js` (21), `AzuraCast` (21), `ChatFeature` (14) / `api/chat.js` (13), `ProgrammeGrid` (12, supersédé par `RotationContinue`), `RotationContinue` (11), **`MixtapesFeature` (10 — entrée dans le top : l'émission est devenue un vrai sous-produit du player)**, `BacLiquid` (8), `EnergyBoostTelegram` (7).
 Nouveaux nœuds 2026-09-06 : `LiquidPunctuation` (le liquid passe de poids à `once_per_x_songs` — la décision qui touche à l'identité musicale), `MixtapeAnnounceExact` (annonce à l'heure réelle de diffusion + `pre-line` sur les seuls messages admin), `MixtapeArtistTitle` (artiste devant le titre, en deux bouts pour couvrir les épisodes déjà publiés), `MixtapeTransport` (mini-lecteur : un seul `.mix-transport` déplacé par `appendChild`), `MixtapeRssRemoved`.
