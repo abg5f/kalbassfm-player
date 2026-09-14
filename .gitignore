@@ -12,6 +12,7 @@ tools/orphans_report.txt
 tools/sftp_config.py
 tools/azuracast_config.py
 tools/kv_config.py
+tools/telegram_config.py
 tools/mixtape_state.json
 tools/pending_uploads.json
 tools/pending_review.json
@@ -28,3 +29,6 @@ tools/energy_review_selection.txt
 tools/energy_review_liste.txt
 tools/analyse_overrides.json
 tools/simulation_bins.json
+tools/review_dark_decisions.json
+tools/classify_new_decisions.json
+tools/bascule_plan.csv

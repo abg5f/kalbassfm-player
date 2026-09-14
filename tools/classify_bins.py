@@ -47,8 +47,14 @@ La SELECTION par mood.aggressive reste inchangee (cf. ci-dessus) ; seule la
 DESTINATION change : 9_liquid au lieu de 1_chill.
 """
 
-NEW_BINS = ["1_chill", "2_groove", "3_house", "4_deep", "5_clubhouse", "6_techno", "7_nightdub", "8_jungle", "9_liquid"]
-ROTATION_BINS = [b for b in NEW_BINS if b != "8_jungle"]  # 8_jungle = ponctuation
+# BASCULE DU 2026-09-13 : la grille a six bacs est en service depuis le
+# 2026-09-10 (tools/bascule_bins.py). Les neuf anciens n'existent plus, ni en
+# local ni sur le serveur. NEW_BINS garde son nom parce que neuf scripts
+# l'importent ; c'est son contenu qui change, et tous suivent sans retouche.
+# Le classement des nouveaux morceaux passe par classify_futur_bin() plus bas ;
+# classify_bin() et compute_cutoffs() restent pour l'historique, plus appeles.
+NEW_BINS = ["1_sunrise", "2_solaire", "3_sunset", "4_club", "5_misc", "_ecarte"]
+ROTATION_BINS = ["1_sunrise", "2_solaire", "3_sunset", "4_club"]  # 5_misc = ponctuation, _ecarte = reserve
 
 # Tempo plafond du bac chill : au-dela, un titre est un titre de club quel
 # que soit son niveau de mastering (et quoi qu'en disent mood.relaxed/party,
@@ -243,3 +249,58 @@ def classify_bin(subgenre, energy, mood, cut, bpm=None):
     if energy < cut["fallback_deep"]:
         return "4_deep"
     return "5_clubhouse"
+
+
+# ===========================================================================
+# GRILLE FUTURE (six bacs) — coexiste avec l'ancienne pendant la transition.
+# ===========================================================================
+#
+# Validee a l'oreille : 80 morceaux ecoutes (moitie coeur, moitie frontiere),
+# 94 % d'accord. Sur 245 combinaisons de seuils testees contre ces jugements,
+# 120/127/0.45 est l'optimum ; bouger le tempo d'un seul BPM tombe a 86 %.
+#
+# SEUILS ABSOLUS, pas des percentiles. Le calibrage par percentiles de la
+# grille precedente remplissait ses bacs a proportion fixe quelle que soit la
+# bibliotheque ; ici un morceau a 130 BPM est un morceau de club, point.
+#
+# LES DEUX AXES SONT LUS CORRECTEMENT, contrairement a mood.party et
+# mood.relaxed dont l'extracteur prend la mauvaise classe du softmax.
+
+# Alias : les deux noms designent desormais la meme grille. FUTURS_* reste pour
+# classify_new.py et bascule_bins.py, ecrits pendant la transition.
+FUTURS_BACS = NEW_BINS
+FUTURS_BACS_ROTATION = ROTATION_BINS
+
+FUTUR_BPM_BAS = 120.0
+FUTUR_BPM_HAUT = 127.0
+FUTUR_BPM_PLAFOND = 145.0     # au-dela, le tempo est lu en double
+FUTUR_HAPPY = 0.45
+
+
+def classify_futur_bin(subgenre, bpm, mood):
+    """Destination dans la nouvelle grille. Premier match gagnant.
+
+    LE DNB PASSE EN PREMIER, ET C'EST STRUCTUREL : son BPM est lu en
+    demi-tempo (87 pour du 174), donc n'importe quelle regle de tempo placee
+    avant le rangerait dans le bac du matin calme. Une premiere version de
+    cette grille cherchait le mot "liquid" dans le genre Discogs : zero des 32
+    morceaux du bac liquid ne le porte, ils sont tous etiquetes "Drum n Bass".
+
+    `5_misc` n'est JAMAIS atteint ici. C'est une fonction (ce qui casse le
+    rythme), pas une categorie de genre : 26 % de la bibliotheque est hors
+    famille house au sens Discogs, et 23 des 80 morceaux valides a l'oreille
+    en font partie tout en ayant leur place dans les bacs normaux. Une regle
+    par genre y deverserait un quart de la rotation. Seule une decision
+    humaine ecrit dans misc.
+    """
+    if genre_family(subgenre or "") == "jungle":
+        return "_ecarte"
+    b = float(bpm or 0.0)
+    if b > FUTUR_BPM_PLAFOND:
+        return "_ecarte"
+    if b < FUTUR_BPM_BAS:
+        return "1_sunrise"
+    if b >= FUTUR_BPM_HAUT:
+        return "4_club"
+    happy = float((mood or {}).get("happy", 0.0))
+    return "2_solaire" if happy >= FUTUR_HAPPY else "3_sunset"

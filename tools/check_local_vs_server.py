@@ -17,8 +17,7 @@ sys.path.insert(0, TOOLS_DIR)
 from sftp_config import SFTP_HOST, SFTP_PORT, SFTP_USER, SFTP_PASS, SFTP_REMOTE_ROOT  # noqa: E402
 
 LOCAL_ROOT = r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog"
-BINS = ["1_chill", "2_groove", "3_house", "4_deep", "5_clubhouse",
-        "6_techno", "7_nightdub", "8_jungle", "9_liquid"]
+from classify_bins import NEW_BINS as BINS  # noqa: E402  (liste en dur jusqu'au 2026-09-13)
 
 
 def local_files(bin_name):

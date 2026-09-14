@@ -6,8 +6,9 @@ Pipeline d'integration des nouveaux telechargements deposes dans _incoming :
 2. Detecte les doublons (artiste+titre normalises) contre ce qui existe deja
    dans New_prog -> deplace vers _incoming/_duplicates/ et ignore
 3. Analyse Essentia (energie, bpm, genre, mood, danceability)
-4. Classe le morceau dans un des 9 BACS de la grille (classify_bins.py :
-   genre d'abord, energie ensuite, seuils auto-calibres)
+4. Classe le morceau dans un des six bacs (classify_bins.classify_futur_bin :
+   DnB en reserve d'abord, puis tempo 120/127, puis couleur 0.45). Jamais
+   dans 5_misc, qui ne se remplit qu'a la main.
 5. Depose le fichier nettoye dans New_prog/<bac>/ sous son nom propre --
    PAS de prefixe d'ordre : l'ordonnancement est le travail d'AzuraCast
    (rotation continue ponderee, cf. tools/apply_rotation.py). Seuls les
@@ -52,7 +53,7 @@ sys.path.insert(0, TOOLS_DIR)
 import analyze_essentia  # noqa: E402  (modeles Essentia charges a l'import)
 import clean_local_tracks as clt  # noqa: E402  (fonctions clean() / itunes_lookup())
 from classify_bins import (  # noqa: E402  (source de verite unique de la grille)
-    NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_bin,
+    NEW_BINS, top_genre, compute_energies, compute_cutoffs, classify_futur_bin,
 )
 import azuracast_upload  # noqa: E402  (files d'attente + envoi, partages avec l'analyse)
 
@@ -365,7 +366,11 @@ def process_file(path, existing_metadata, cutoffs, dup_index, report):
     norm_bpm = norm_clip(result["bpm"], bpm_lo, bpm_hi)
     energy = 0.5 * norm_rms + 0.3 * norm_bpm + 0.2 * result["mood"]["party"]
 
-    slot = classify_bin(top_genre(result["genres"]), energy, result["mood"], cutoffs, result["bpm"])
+    # Grille a six bacs, seuils absolus (120/127 BPM, couleur 0.45) : la meme
+    # fonction que l'interface de classement, donc un nouveau morceau est range
+    # exactement comme l'aurait ete n'importe quel titre deja en rotation.
+    # L'energie ci-dessus ne route plus rien ; elle reste dans le journal.
+    slot = classify_futur_bin(top_genre(result["genres"]), result["bpm"], result["mood"])
     dest_dir = SLOT_FOLDERS[slot]
     os.makedirs(dest_dir, exist_ok=True)
     # Nom propre, sans prefixe d'ordre : l'ordonnancement est delegue a AzuraCast.
