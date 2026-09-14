@@ -100,6 +100,46 @@ async function handleMessage(token, message) {
     }
   }
 
+  // 26 commandes et aucune liste jusqu'ici : celles qu'on oublie n'existent
+  // pas. Groupees par ce qu'on vient y faire, pas par ordre alphabetique.
+  if (text === '/help' || text === '/aide' || text === '/start') {
+    return sendMessage(token, chatId,
+      '<b>Antenne</b>\n'
+      + '/skip — passer au morceau suivant\n'
+      + '/queue — la file d\'attente\n'
+      + '/energy — pousser ou calmer la rotation, pour un temps donné\n'
+      + '/move — ranger le morceau en cours dans un autre bac\n'
+      + '/delete — supprimer le morceau en cours\n\n'
+      + '<b>Bibliothèque</b>\n'
+      + '/search &lt;mots&gt; — chercher, puis file, bac, réserve ou suppression\n'
+      + '/find &lt;mots&gt; — identique à /search\n\n'
+      + '<b>Chat</b>\n'
+      + '/msg &lt;texte&gt; — écrire dans le chat live\n'
+      + '/recent — les 10 derniers messages, avec un bouton pour supprimer chacun\n'
+      + '/pause_chat, /resume_chat — fermer ou rouvrir le chat\n'
+      + '/ban, /unban &lt;pseudo&gt; — exclure un auditeur\n'
+      + '/rename, /unrename, /rename_nick — renommer un auditeur\n'
+      + '/pin &lt;texte&gt;, /unpin — épingler un message\n\n'
+      + '<b>Mixtapes</b>\n'
+      + '/submissions — les propositions reçues, avec programmation et relance\n'
+      + '/queue_mix — passer la mixtape maintenant\n\n'
+      + '<b>Soutiens</b>\n'
+      + '/recent_supporters — les derniers dons\n'
+      + '/add_supporter, /mark_supporter, /unmark_supporter\n\n'
+      + '<b>Coulisses</b>\n'
+      + '/stats — écoute et fréquentation\n'
+      + '/audience — auditeurs connectés\n'
+      + '/logs — journal technique\n\n'
+      + '<i>Les six bacs : 🌅 sunrise (matin), ☀️ solaire (jour), 🌇 sunset (soir), '
+      + '🌃 club (nuit), 🎲 misc (rupture, 1 titre sur 10), 🚫 réserve (hors antenne).</i>',
+      { parse_mode: 'HTML' });
+  }
+
+  if (text === '/recent') {
+    const v = await recentMessagesView();
+    return sendMessage(token, chatId, v.text, v.keyboard ? { reply_markup: v.keyboard } : {});
+  }
+
   if (text === '/skip') {
     const r = await skipSong();
     return sendMessage(token, chatId, r.ok ? '⏭ Morceau suivant lance.' : `Echec du skip (${r.status}).`);
@@ -229,8 +269,15 @@ async function handleMessage(token, message) {
   // en notification, mais une notification se perd dans le fil — l'archive
   // Redis permet de retrouver les 10 dernieres avec leur mail et leur lien.
   if (text === '/submissions') {
-    const list = await getRecentSubmissions(10);
-    if (!list.length) return sendMessage(token, chatId, 'Aucune candidature mix à afficher.');
+    // On lit plus large que 10 : les candidatures exclues sont retirees APRES
+    // lecture, et sans marge la liste raccourcirait a chaque exclusion.
+    const excluded = await getExcludedSubmissions();
+    const list = (await getRecentSubmissions(30)).filter((s) => !excluded.has(s.id)).slice(0, 10);
+    if (!list.length) {
+      return sendMessage(token, chatId, excluded.size
+        ? `Aucune candidature à afficher (${excluded.size} exclue(s) pour le style).`
+        : 'Aucune candidature mix à afficher.');
+    }
     // Texte brut, sans parse_mode : convention du bot (voir audienceText).
     // disable_web_page_preview evite qu'un lien SoundCloud/Drive deploie une
     // carte de previsualisation plus grande que la liste elle-meme.
@@ -253,13 +300,18 @@ async function handleMessage(token, message) {
     // rapprochement par nom d'artiste echouerait des que le champ Artiste ne
     // reprend pas exactement le pseudo saisi dans le formulaire.
     const rows = list.map((s, i) => ([
+      { text: '✉️ ' + (i + 1), callback_data: 'submail:' + s.id },
       { text: '📣 ' + (i + 1), callback_data: 'annmix:' + s.id },
       { text: '📅 ' + (i + 1), callback_data: 'pinsel:' + s.id },
+      { text: '🚫 ' + (i + 1), callback_data: 'subx:' + s.id },
     ]));
     return sendMessage(token, chatId,
       '🎛 Dernières candidatures mix :\n' + lines.join('\n')
-      + '\n\n📣 = annoncer dans le chat live.'
-      + '\n📅 = épingler la date + générer le mail au DJ.', {
+      + '\n\n✉️ = mail d\'accusé de réception (demande le fichier audio).'
+      + '\n📣 = annoncer dans le chat live.'
+      + '\n📅 = épingler la date + mail de programmation (vérifie le fichier audio).'
+      + '\n🚫 = exclure : ne colle pas au style de la radio.'
+      + (excluded.size ? `\n\n(${excluded.size} candidature(s) exclue(s), masquée(s).)` : ''), {
         disable_web_page_preview: true,
         reply_markup: { inline_keyboard: rows },
       });
@@ -329,22 +381,11 @@ async function handleMessage(token, message) {
       (f.title || '').toLowerCase() === song.title.toLowerCase() &&
       (!song.artist || (f.artist || '').toLowerCase() === song.artist.toLowerCase()));
     const candidate = exact.length ? exact[0] : r.list[0];
-    const playlists = await getPlaylists();
-    if (!playlists.ok || !playlists.list.length) {
-      return sendMessage(token, chatId, '❌ Impossible de récupérer les playlists.');
-    }
-    // Extraire le dossier source
-    const currentPath = candidate.path || '';
-    const pathMatch = currentPath.match(/Progv2\/([^\/]+)\//);
-    const currentPlaylist = pathMatch ? pathMatch[1] : '?';
+    const currentBin = binOfPath(candidate.path);
     const label = `${song.artist || '?'} — ${song.title}`;
-    const lines = playlists.list.map((p) => p.name);
-    const buttons = playlists.list.map((p) => ({ text: p.name.slice(0, 12), callback_data: 'movecur:' + candidate.id + ':' + p.id }));
-    const rows = [];
-    for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
     return sendMessage(token, chatId,
-      `▶️ En cours : ${label}\n📁 Actuellement : ${currentPlaylist}\n\nVers quelle playlist ?\n\n` + lines.join('\n'), {
-        reply_markup: { inline_keyboard: rows },
+      `▶️ En cours : ${label}\n📁 Bac actuel : ${currentBin}\n\nVers quel bac ?`, {
+        reply_markup: { inline_keyboard: binKeyboard(candidate.id, currentBin) },
       });
   }
 
@@ -454,6 +495,13 @@ async function handleCallback(token, cb) {
     await sendMessage(token, cb.message.chat.id,
       `✍️ Écris ta réponse à « ${orig.nick} » — je la posterai dans le chat live sous Admin.`,
       { reply_markup: { force_reply: true } });
+  } else if (data.startsWith('delr:')) {
+    // Suppression depuis /recent : la liste se redessine sur place, sans le
+    // message retire, au lieu de perdre tous ses boutons comme une notification.
+    await markDeleted(data.slice(5));
+    await answerCallback(token, cb.id, 'Supprimé ✅');
+    const v = await recentMessagesView();
+    await editMessageText(token, cb.message.chat.id, cb.message.message_id, v.text, v.keyboard);
   } else if (data.startsWith('del:')) {
     const id = data.slice(4);
     await markDeleted(id);
@@ -490,9 +538,40 @@ async function handleCallback(token, cb) {
     // aux suppressions : annoncer n'est pas destructif, et il arrive de vouloir
     // re-annoncer (nouvelle diffusion du meme mix, message noye dans le fil).
     return confirmWithDelete(token, cb.message.chat.id, '📣 Annonce publiée dans le chat live.', id);
+  } else if (data.startsWith('submail:')) {
+    // Accuse de reception. Objet et corps en DEUX messages : sur Telegram,
+    // "copier" prend le message entier, les melanger obligerait a nettoyer.
+    const sub = await getSubmissionById(data.slice(8));
+    if (!sub) return answerCallback(token, cb.id, 'Candidature introuvable (trop ancienne).');
+    await answerCallback(token, cb.id, 'Mail prêt ✉️');
+    const mail = submissionAckEmail(sub);
+    await sendMessage(token, cb.message.chat.id,
+      `✉️ Accusé de réception pour ${sub.dj || '?'}\n`
+      + `À : ${sub.email || '(adresse inconnue)'}\n`
+      + `Objet : ${mail.subject}`);
+    return sendMessage(token, cb.message.chat.id, mail.body, { disable_web_page_preview: true });
+  } else if (data.startsWith('subx:') || data.startsWith('subux:')) {
+    // Exclusion pour le style, et son annulation. Rien n'est efface de
+    // l'archive : la candidature disparait seulement de /submissions.
+    const exclure = data.startsWith('subx:');
+    const subId = data.slice(exclure ? 5 : 6);
+    const sub = await getSubmissionById(subId);
+    const ok = await setExcludedSubmission(subId, exclure);
+    if (!ok) return answerCallback(token, cb.id, '❌ Échec (store non configuré ?)');
+    const nom = (sub && sub.dj) || subId;
+    if (!exclure) {
+      await answerCallback(token, cb.id, 'Rétablie ✅');
+      await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
+      return sendMessage(token, cb.message.chat.id, `↩️ « ${nom} » réapparaît dans /submissions.`);
+    }
+    await answerCallback(token, cb.id, 'Exclue 🚫');
+    return sendMessage(token, cb.message.chat.id,
+      `🚫 « ${nom} » exclue : ne colle pas au style. Elle n'apparaîtra plus dans /submissions.`,
+      { reply_markup: { inline_keyboard: [[{ text: '↩️ Annuler', callback_data: 'subux:' + subId }]] } });
   } else if (data.startsWith('pinsel:')) {
-    // Premier tap : on ne sait pas encore a quelle mixtape programmee cette
-    // candidature correspond, on laisse choisir.
+    // Premier tap. On ne propose QUE les mix qui appartiennent a ce DJ : le
+    // 13, la liste de toutes les mixtapes programmees a fait epingler
+    // "Disco Sound System — Down and Out", le mix de Troze.
     const subId = data.slice(7);
     const sub = await getSubmissionById(subId);
     if (!sub) return answerCallback(token, cb.id, 'Candidature introuvable (trop ancienne).');
@@ -501,18 +580,59 @@ async function handleCallback(token, cb) {
       await answerCallback(token, cb.id, '❌ AzuraCast injoignable');
       return sendMessage(token, cb.message.chat.id, `❌ ${sched.text}`);
     }
-    if (!sched.list.length) {
-      await answerCallback(token, cb.id, 'Aucun mix programmé');
+    const pl = await getPlaylists();
+    const onair = pl.ok ? findPlaylist(pl.list, 'mixtape_onair') : null;
+    const bank = onair ? await getMixtapeCandidates(onair.id) : { ok: false };
+    const siens = bank.ok ? mixFilesForSubmission(sub, bank.list) : [];
+    const dates = siens.filter((f) => f.album).sort((a, b) => a.album.localeCompare(b.album));
+
+    if (!siens.length) {
+      await answerCallback(token, cb.id, '🎧 Fichier audio manquant');
+      // L'ecart de pseudo entre formulaire et tag Artiste existe ("Massime" /
+      // "Millésime") : le choix manuel reste possible, mais seulement apres
+      // l'alerte, et explicitement presente comme un forcage.
+      const force = sched.list.length
+        ? { reply_markup: { inline_keyboard: [[{ text: '⚠️ Lier un autre fichier quand même', callback_data: 'pinall:' + subId }]] } }
+        : {};
       return sendMessage(token, cb.message.chat.id,
-        "📀 Aucune mixtape n'a de date. Programme-la d'abord avec /queue_mix.");
+        `🎧 Fichier audio manquant pour « ${sub.dj || '?'} ».\n\n`
+        + `Aucun mix de ce DJ dans le dossier Mixtapes/ d'AzuraCast. Pour le programmer :\n`
+        + `1. Récupère son fichier (✉️ dans /submissions pour lui demander).\n`
+        + `2. Dépose-le dans Mixtapes/ avec le tag Artiste « ${sub.dj || '?'} ».\n`
+        + `3. /queue_mix pour lui donner une date, puis reviens sur 📅.`,
+        force);
     }
-    await answerCallback(token, cb.id, 'Choisis le mix');
+    if (!dates.length) {
+      await answerCallback(token, cb.id, 'Mix présent, pas encore daté');
+      return sendMessage(token, cb.message.chat.id,
+        `📀 Le fichier de « ${sub.dj || '?'} » est bien dans Mixtapes/ :\n`
+        + siens.map((f) => `• ${f.artist || '?'} — ${f.title || '?'}`).join('\n')
+        + `\n\nMais il n'a pas encore de date. Lance /queue_mix pour le programmer, puis reviens sur 📅.`);
+    }
+    await answerCallback(token, cb.id, dates.length > 1 ? 'Choisis le mix' : 'Mix trouvé');
+    const kb = dates.slice(0, 8).map((f) => ([{
+      text: `${f.album} — ${f.artist || '?'} — ${(f.title || '?').slice(0, 28)}`,
+      callback_data: `pinset:${subId}:${f.id}`,
+    }]));
+    return sendMessage(token, cb.message.chat.id,
+      `📅 Mix programmé de « ${sub.dj || '?'} » — confirme pour épingler et générer le mail :`,
+      { reply_markup: { inline_keyboard: kb } });
+  } else if (data.startsWith('pinall:')) {
+    // Forcage apres l'alerte "fichier manquant" : toutes les mixtapes datees,
+    // pour le cas ou le tag Artiste ne reprend pas le pseudo du formulaire.
+    const subId = data.slice(7);
+    const sub = await getSubmissionById(subId);
+    if (!sub) return answerCallback(token, cb.id, 'Candidature introuvable (trop ancienne).');
+    const sched = await scheduledMixes();
+    if (!sched.ok || !sched.list.length) return answerCallback(token, cb.id, 'Aucun mix programmé');
+    await answerCallback(token, cb.id, 'Vérifie bien le DJ');
     const kb = sched.list.slice(0, 8).map((f) => ([{
       text: `${f.album} — ${f.artist || '?'} — ${(f.title || '?').slice(0, 28)}`,
       callback_data: `pinset:${subId}:${f.id}`,
     }]));
     return sendMessage(token, cb.message.chat.id,
-      `📅 Quelle mixtape programmée correspond à « ${sub.dj || '?'} » ?`,
+      `⚠️ Forçage : aucun de ces mix n'est au nom de « ${sub.dj || '?'} ». `
+      + `Ne choisis que si c'est bien son set sous un autre nom d'artiste.`,
       { reply_markup: { inline_keyboard: kb } });
   } else if (data.startsWith('pinset:')) {
     // Second tap : la liaison est faite, on epingle et on sort le mail.
@@ -539,41 +659,52 @@ async function handleCallback(token, cb) {
     await markDeletedSupporter(id);
     await answerCallback(token, cb.id, 'Supprimé ✅');
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
-  } else if (data.startsWith('movecur:')) {
-    const parts = data.slice(8).split(':');
-    const trackId = parts[0];
-    const playlistId = parts[1];
-    if (!trackId || !playlistId) {
+  } else if (data.startsWith('mvbac:')) {
+    // Deplacement vers un BAC, pas vers une playlist : le fichier change de
+    // dossier ET recoit les deux ou trois playlists qui servent ce bac.
+    const sep = data.indexOf(':', 6);
+    const trackId = data.slice(6, sep);
+    const bac = data.slice(sep + 1);
+    if (!trackId || !BACS[bac]) {
       await answerCallback(token, cb.id, '❌ Paramètres invalides.');
       return;
     }
     const info = await getTrack(trackId);
-    const label = info.ok && info.data ? `${info.data.artist || '?'} — ${info.data.title || info.data.text || trackId}` : trackId;
-    const playlists = await getPlaylists();
-    const targetPlaylist = playlists.ok ? playlists.list.find(p => String(p.id) === String(playlistId)) : null;
-    const r = await moveTrackToPlaylist(trackId, playlistId);
+    const label = info.ok && info.data ? trackLabel(info.data) : trackId;
+    const currentPath = info.ok && info.data ? (info.data.path || '') : '';
+    const sourceBac = binOfPath(currentPath);
+    const pl = await getPlaylists();
+    if (!pl.ok) {
+      await answerCallback(token, cb.id, '❌ Playlists illisibles');
+      return;
+    }
+    // Le fichier d'abord : le dossier decide des playlists a l'arrivee, donc
+    // le rattachement pose ensuite ne peut pas etre contredit.
+    if (currentPath && sourceBac !== bac) {
+      const mv = await moveFileToFolder(currentPath, bac);
+      if (!mv.ok) {
+        await answerCallback(token, cb.id, `❌ Échec du déplacement (${mv.status})`);
+        await sendMessage(token, cb.message.chat.id,
+          `❌ Impossible de déplacer le fichier de « ${label} » (${mv.status}).`);
+        return;
+      }
+    }
+    const r = await moveTrackToBin(trackId, bac, pl.list);
     if (!r.ok) {
       await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
       await sendMessage(token, cb.message.chat.id,
-        `❌ Impossible de déplacer « ${label} » (${r.status}).`);
+        `⚠️ Fichier rangé dans ${bac}, mais les playlists n'ont pas suivi (${r.status}).\n`
+        + `Le morceau est hors antenne tant que ce n'est pas réparé.`);
       return;
     }
-    await answerCallback(token, cb.id, '✅ Déplacé');
-    // Extraire les informations de chemin pour le résumé local
-    const currentPath = info.ok && info.data ? (info.data.path || '') : '';
-    const pathMatch = currentPath.match(/Progv2\/([^\/]+)\/(.+)$/);
-    const sourceBac = pathMatch ? pathMatch[1] : '?';
-    const filename = pathMatch ? pathMatch[2] : '?';
-    const targetBac = targetPlaylist ? targetPlaylist.name : 'Destination';
-    const summary = currentPath
-      ? `📋 Résumé pour synchronisation locale :\n\n` +
-        `Fichier : ${filename}\n` +
-        `De : Progv2\\${sourceBac}\\\n` +
-        `Vers : Progv2\\${targetBac}\\\n\n` +
-        `(Copier/déplacer le fichier sur votre PC avec FileZilla)`
-      : '';
+    await answerCallback(token, cb.id, '✅ Rangé');
+    const dest = BACS[bac];
+    const ou = dest.playlists.length ? dest.playlists.join(', ') : 'aucune playlist, hors antenne';
+    const nom = currentPath.split('/').pop();
     await sendMessage(token, cb.message.chat.id,
-      `✅ Morceau déplacé : ${label}\n${summary}`);
+      `✅ ${label}\n📁 ${sourceBac} → <b>${bac}</b>\n🎛 ${ou}\n\n`
+      + `<i>En local : déplacer ${nom} de New_prog\\${sourceBac}\\ vers New_prog\\${bac}\\</i>`,
+      { parse_mode: 'HTML' });
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('fq:')) {
     // File d'attente : AzuraCast n'expose pas d'endpoint "ajouter a la file",
@@ -598,22 +729,35 @@ async function handleCallback(token, cb) {
         + `et la playlist du morceau → "Inclure dans les demandes".`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('fo:')) {
-    // "Hors antenne" = retire de toutes les playlists, le fichier reste dans la
-    // bibliotheque. Reversible d'un /move, contrairement a la suppression : c'est
-    // l'action a preferer pour ecarter un titre trop repetitif de la rotation.
+    // Mise en reserve = le dossier _ecarte, qui n'est associe a aucune
+    // playlist. Le fichier reste sur le serveur, hors antenne, et revient d'un
+    // simple deplacement -- contrairement a la suppression. C'est l'action a
+    // preferer pour ecarter un titre trop repetitif.
+    // On deplace AUSSI le fichier : le laisser dans son bac alors qu'il n'a
+    // plus de playlist ferait mentir le dossier, et le prochain outil qui
+    // synchronise par dossier le remettrait en rotation.
     const id = data.slice(3);
     const info = await getTrack(id);
     const label = info.ok && info.data ? trackLabel(info.data) : id;
+    const chemin = info.ok && info.data ? (info.data.path || '') : '';
+    if (chemin && binOfPath(chemin) !== '_ecarte') {
+      const mv = await moveFileToFolder(chemin, '_ecarte');
+      if (!mv.ok) {
+        await answerCallback(token, cb.id, `❌ Échec (${mv.status})`);
+        await sendMessage(token, cb.message.chat.id, `❌ Impossible de mettre « ${label} » en réserve (${mv.status}).`);
+        return;
+      }
+    }
     const r = await setTrackPlaylists(id, []);
     if (!r.ok) {
       await answerCallback(token, cb.id, `❌ Échec (${r.status})`);
       await sendMessage(token, cb.message.chat.id, `❌ Impossible de sortir « ${label} » de l'antenne (${r.status}).`);
       return;
     }
-    await answerCallback(token, cb.id, '✅ Hors antenne');
+    await answerCallback(token, cb.id, '✅ En réserve');
     await sendMessage(token, cb.message.chat.id,
-      `🚫 Sorti de l'antenne : ${label}\n`
-      + `Le fichier reste dans la bibliothèque (aucune playlist) — /search puis 📁 Déplacer pour le remettre en rotation.`);
+      `🚫 Mis en réserve : ${label}\n`
+      + `Le fichier reste sur le serveur dans _ecarte — /search puis 📁 Déplacer pour le remettre en rotation.`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('fd:')) {
     const id = data.slice(3);
@@ -630,23 +774,19 @@ async function handleCallback(token, cb) {
     await sendMessage(token, cb.message.chat.id, `✅ Piste supprimée d'AzuraCast : ${label}`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('fm:')) {
-    // Deplacement d'un resultat de /search : meme clavier que /move, et meme
-    // callback movecur: (qui n'a jamais dependu du morceau en cours). C'est
-    // aussi le chemin de retour d'un titre sorti de l'antenne.
+    // Deplacement d'un resultat de /search : meme clavier de bacs que /move,
+    // et meme callback mvbac: (qui n'a jamais dependu du morceau en cours).
+    // C'est aussi le chemin de retour d'un titre mis en reserve.
     const id = data.slice(3);
     const info = await getTrack(id);
-    const playlists = await getPlaylists();
-    if (!info.ok || !info.data || !playlists.ok || !playlists.list.length) {
-      await answerCallback(token, cb.id, '❌ Impossible de récupérer les playlists.');
+    if (!info.ok || !info.data) {
+      await answerCallback(token, cb.id, `❌ Morceau introuvable (${info.status})`);
       return;
     }
     await answerCallback(token, cb.id, '');
-    const rows = [];
-    const buttons = playlists.list.map((p) => ({ text: p.name.slice(0, 12), callback_data: 'movecur:' + id + ':' + p.id }));
-    for (let i = 0; i < buttons.length; i += 2) rows.push(buttons.slice(i, i + 2));
     await sendMessage(token, cb.message.chat.id,
-      `🎵 ${trackLabel(info.data)}\n${trackDetails(info.data)}\n\nVers quelle playlist ?`,
-      { reply_markup: { inline_keyboard: rows } });
+      `🎵 ${trackLabel(info.data)}\n${trackDetails(info.data)}\n\nVers quel bac ?`,
+      { reply_markup: { inline_keyboard: binKeyboard(id, binOfPath(info.data.path)) } });
   } else if (data.startsWith('f:')) {
     // Menu d'actions d'un resultat de /search, envoye en NOUVEAU message pour
     // garder la liste de resultats lisible au-dessus (on ne l'edite pas).
@@ -817,8 +957,38 @@ async function getPlaylists() {
 // est un champ ecrivable de la ressource file elle-meme (Api_StationMedia.playlists,
 // tableau d'IDs), donc on passe par le meme endpoint que getTrack/deleteTrack
 // (PUT au lieu de GET/DELETE) avec { playlists: [playlistId] }.
-async function moveTrackToPlaylist(trackId, playlistId) {
-  return setTrackPlaylists(trackId, [playlistId]);
+// Deplace le FICHIER dans le dossier du bac. AzuraCast associe chaque dossier
+// a ses playlists, donc ranger le fichier suffit a le faire suivre -- et
+// surtout le dossier dit alors la verite en SFTP, ce qui est tout l'interet.
+async function moveFileToFolder(path, bac) {
+  const apiKey = process.env.AZURACAST_API_KEY;
+  if (!apiKey) return { ok: false, status: 'no-api-key' };
+  try {
+    const r = await fetch(`${AZURACAST_BASE}/api/station/${STATION}/files/batch`, {
+      method: 'PUT',
+      headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ do: 'move', currentDirectory: '', files: [path], dirs: [], directory: bac }),
+    });
+    return { ok: r.ok, status: r.status };
+  } catch {
+    return { ok: false, status: 'network-error' };
+  }
+}
+
+// Range un morceau dans un bac : le fichier dans le bon dossier, et toutes les
+// playlists du bac d'un coup. Poser une seule playlist le laisserait au poids
+// plancher et il ne passerait jamais a l'heure ou son bac domine.
+async function moveTrackToBin(trackId, bac, playlists) {
+  const def = BACS[bac];
+  if (!def) return { ok: false, status: 'bac-inconnu' };
+  const ids = def.playlists
+    .map((n) => findPlaylist(playlists, n))
+    .filter(Boolean)
+    .map((p) => p.id);
+  if (def.playlists.length && ids.length !== def.playlists.length) {
+    return { ok: false, status: 'playlists-manquantes' };
+  }
+  return setTrackPlaylists(trackId, ids);
 }
 
 /* ---- Recherche libre + file d'attente (/search, /queue) ---- */
@@ -852,12 +1022,47 @@ function trackLabel(f) {
   return `${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`;
 }
 
-// Bac de rotation d'apres le chemin ("Progv2/5_clubhouse/xxx.mp3"), avec repli
-// sur le premier dossier pour les fichiers deposes hors de l'arborescence
-// (mixtapes, jingles).
+/* ---- Les six bacs ----
+
+   Un bac est servi par PLUSIEURS playlists : un plancher qui tourne 24h/24 et
+   un ou deux boosts qui s'y ajoutent dans leur fenetre. Un poids AzuraCast est
+   unique par playlist, c'est la seule facon de faire varier l'influence d'un
+   bac dans la journee.
+
+   Consequence pour le bot : deplacer un morceau, c'est le rattacher a TOUTES
+   les playlists de son bac. N'en poser qu'une le laisserait au poids plancher,
+   donc muet a l'heure ou son bac domine. Doit rester aligne sur PLANCHER,
+   BOOSTS et PONCTUATION dans tools/bascule_bins.py.
+
+   `_ecarte` n'a aucune playlist : c'est la reserve, sur le serveur mais hors
+   antenne, et le fichier reste recuperable d'un simple deplacement. */
+const BACS = {
+  '1_sunrise': { label: '🌅 Sunrise', playlists: ['sunrise', 'sunrise_matin', 'sunrise_nuit'] },
+  '2_solaire': { label: '☀️ Solaire', playlists: ['solaire', 'solaire_jour'] },
+  '3_sunset': { label: '🌇 Sunset', playlists: ['sunset', 'sunset_soir'] },
+  '4_club': { label: '🌃 Club', playlists: ['club', 'club_nuit'] },
+  '5_misc': { label: '🎲 Misc', playlists: ['misc_jour', 'misc_nuit'] },
+  '_ecarte': { label: '🚫 Réserve', playlists: [] },
+};
+
+// Clavier des six bacs, deux par ligne. Le bac courant est marque plutot que
+// retire : voir d'ou vient le morceau aide autant que de choisir ou l'envoyer.
+function binKeyboard(trackId, currentBin) {
+  const rows = [];
+  const noms = Object.keys(BACS);
+  for (let i = 0; i < noms.length; i += 2) {
+    rows.push(noms.slice(i, i + 2).map((b) => ({
+      text: (b === currentBin ? '• ' : '') + BACS[b].label,
+      callback_data: 'mvbac:' + trackId + ':' + b,
+    })));
+  }
+  return rows;
+}
+
+// Bac d'apres le chemin ("3_sunset/xxx.mp3"). Les fichiers hors grille
+// (Jingles/, Mixtapes/) tombent sur leur propre dossier, ce qui est la
+// reponse juste : ils ne sont dans aucun bac de rotation.
 function binOfPath(path) {
-  const m = String(path || '').match(/Progv2\/([^/]+)\//);
-  if (m) return m[1];
   const parts = String(path || '').split('/');
   return parts.length > 1 ? parts[0] : '?';
 }
@@ -898,7 +1103,7 @@ async function queueTrack(uniqueId) {
 }
 
 // Ecrit l'appartenance aux playlists d'un fichier (champ ecrivable de la
-// ressource file, cf. moveTrackToPlaylist). Un tableau vide sort le morceau de
+// ressource file, cf. moveTrackToBin). Un tableau vide sort le morceau de
 // l'antenne sans le supprimer.
 async function setTrackPlaylists(trackId, playlistIds) {
   const apiKey = process.env.AZURACAST_API_KEY;
@@ -964,9 +1169,11 @@ function queueText(list) {
    weight, schedule_items, et les points retrouves via description). AzuraCast
    est la source de verite unique, comme pour le reste de la rotation.
 
-   Playlists creees par tools/create_boost_playlists.py :
-   - boost_up   (5_clubhouse + 6_techno) — "pousser" la rotation
-   - boost_down (1_chill + 7_nightdub)   — "calmer" la rotation */
+   Playlists creees et remplies par tools/bascule_bins.py --boosts :
+   - boost_up   (le bac 4_club)    — "pousser" la rotation
+   - boost_down (le bac 1_sunrise) — "calmer" la rotation
+   Elles tirent aux deux extremites de la grille, et restent DESACTIVEES tant
+   que /energy ne les reveille pas. */
 const BOOST_PART_BY_POINTS = { 1: 0.15, 2: 0.25 }; // |points| -> part visee de la rotation
 
 async function updatePlaylist(id, payload) {
@@ -1056,7 +1263,7 @@ function scheduleCoversNow(item, nowParis) {
 }
 
 function isPlaylistActiveNow(p, nowParis) {
-  if (!p.is_enabled || p.type !== 'default') return false; // exclut Jingles/jungle (once_per_x_songs)
+  if (!p.is_enabled || p.type !== 'default') return false; // exclut Jingles/misc (once_per_x_songs)
   const items = p.schedule_items || [];
   return items.length ? items.some((it) => scheduleCoversNow(it, nowParis)) : true; // pas de planning = 24h/24
 }
@@ -1112,7 +1319,7 @@ async function energyStatus() {
   const pl = await getPlaylists();
   if (!pl.ok) return { text: '❌ Impossible de récupérer les playlists AzuraCast.', keyboard: null };
   if (!findPlaylist(pl.list, 'boost_up') || !findPlaylist(pl.list, 'boost_down')) {
-    return { text: '❌ Playlists boost_up/boost_down introuvables — lance tools/create_boost_playlists.py --apply.', keyboard: null };
+    return { text: '❌ Playlists boost_up/boost_down introuvables — lance tools/bascule_bins.py --boosts --apply.', keyboard: null };
   }
   const boost = activeBoost(pl.list);
   if (!boost) {
@@ -1136,7 +1343,7 @@ async function applyBoost(points, minutes) {
   const target = findPlaylist(pl.list, targetName);
   const other = findPlaylist(pl.list, otherName);
   if (!target) {
-    return { ok: false, text: `❌ Playlist ${targetName} introuvable — lance tools/create_boost_playlists.py --apply.` };
+    return { ok: false, text: `❌ Playlist ${targetName} introuvable — lance tools/bascule_bins.py --boosts --apply.` };
   }
   const T = currentRotationWeight(pl.list);
   const weight = boostWeightFor(points, T);
@@ -1195,7 +1402,15 @@ async function getMixtapeCandidates(playlistId) {
     if (!r.ok) return { ok: false, status: r.status };
     const body = await r.json();
     const rows = Array.isArray(body) ? body : (body.rows || []);
-    const list = rows.filter((f) => (f.playlists || []).some((p) => (p.id ?? p) === playlistId));
+    // Tout le dossier Mixtapes/, PLUS filtre par appartenance a mixtape_onair
+    // (corrige le 2026-09-14). tools/mixtape_weekly.py vide cette playlist a
+    // chaque diffusion pour n'y garder que le mix du jour : filtre par
+    // playlist, le bot ne voyait plus les mix des dimanches suivants. Le 13,
+    // 📅 n'a donc propose que Troze pour la candidature de Disco Sound System,
+    // et /queue_mix pouvait attribuer a un autre mix un dimanche deja pris.
+    // C'est la date (champ Album) qui fait la programmation, pas la playlist.
+    // `playlistId` reste en parametre pour ne pas toucher aux appelants.
+    const list = rows.filter((f) => String(f.path || '').startsWith('Mixtapes/'));
     return { ok: true, list };
   } catch {
     return { ok: false, status: 'network-error' };
@@ -1247,7 +1462,7 @@ async function queueMixStatus() {
     return {
       text: '📀 Aucun mix en attente de date.\n\n' +
         (lines.length ? 'Déjà programmés :\n' + lines.join('\n')
-          : "mixtape_onair est vide — ajoute d'abord des morceaux dans AzuraCast."),
+          : "Le dossier Mixtapes/ est vide — dépose d'abord le fichier du mix dans AzuraCast."),
       keyboard: null,
     };
   }
@@ -1645,6 +1860,51 @@ async function takePendingReply(fromId) {
 // Suppression logique d'un message (bouton "🗑 Supprimer" sur sa notification
 // Telegram, cf. api/chat.js) : le hash chat:deleted est lu et filtre cote GET
 // de api/chat.js, jamais retire de chat:messages lui-meme.
+// Derniers messages encore visibles dans le chat, deja-supprimes filtres.
+// Retire le 2026-08-31 avec /recent lors d'un nettoyage des commandes, alors
+// que c'etait le SEUL moyen de supprimer un message sans notification : les
+// annonces du mix du dimanche, les reponses du jeu BPM, un vieux message dont
+// la notification est enfouie dans le fil. Restaure le 2026-09-14.
+async function getRecentMessages(n) {
+  const kv = kvClient();
+  if (!kv) return [];
+  const [lj, dj] = await Promise.all([
+    kv('lrange', 'chat:messages', '0', String(n * 2)),   // marge : les supprimes sont filtres apres
+    kv('hgetall', 'chat:deleted'),
+  ]);
+  const champs = dj.result || [];
+  const supprimes = new Set();
+  for (let i = 0; i < champs.length; i += 2) supprimes.add(champs[i]);
+  return (lj.result || [])
+    .map((s) => { try { return JSON.parse(s); } catch { return null; } })
+    .filter((m) => m && m.id && !supprimes.has(m.id))
+    .slice(0, n);
+}
+
+// Texte et clavier de /recent, partages par la commande et par le rafraichis-
+// sement apres suppression : les deux doivent afficher exactement la meme liste.
+async function recentMessagesView() {
+  const msgs = await getRecentMessages(10);
+  if (!msgs.length) return { text: 'Aucun message à afficher dans le chat.', keyboard: null };
+  // Jour ET heure : les 10 derniers messages s'etalent souvent sur plusieurs
+  // jours, et une heure seule faisait passer un 15:52 de la veille sous un
+  // 15:05 du jour sans qu'on comprenne l'ordre.
+  const heure = (ts) => new Date(ts).toLocaleString('fr-FR',
+    { timeZone: 'Europe/Paris', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const lignes = msgs.map((m, i) => {
+    const t = String(m.text || '').replace(/\s+/g, ' ');
+    return `${i + 1}. ${heure(m.ts)} ${m.nick || '?'} : ${t.length > 90 ? t.slice(0, 89) + '…' : t}`;
+  });
+  const boutons = msgs.map((m, i) => ({ text: '🗑 ' + (i + 1), callback_data: 'delr:' + m.id }));
+  const rows = [];
+  for (let i = 0; i < boutons.length; i += 5) rows.push(boutons.slice(i, i + 5));
+  return {
+    text: '💬 Derniers messages du chat (heure de Paris) :\n\n' + lignes.join('\n')
+      + '\n\n🗑 N = retirer le message du chat.',
+    keyboard: { inline_keyboard: rows },
+  };
+}
+
 async function markDeleted(id) {
   const kv = kvClient();
   if (!kv || !id) return;
@@ -1680,6 +1940,78 @@ async function getRecentSubmissions(n) {
   return (lj.result || [])
     .map((s) => { try { return JSON.parse(s); } catch { return null; } })
     .filter(Boolean);
+}
+
+/* ---- Candidatures : exclusion, accuse de reception, fichier audio ---- */
+
+// Candidatures ecartees parce qu'elles ne collent pas au style. Un ensemble
+// Redis a part plutot qu'une suppression dans mix:submissions : l'archive
+// reste intacte (une liste Redis ne se modifie pas proprement au milieu), et
+// l'exclusion se defait d'un bouton.
+async function getExcludedSubmissions() {
+  const kv = kvClient();
+  if (!kv) return new Set();
+  const r = await kv('smembers', 'mix:excluded');
+  return new Set(r.result || []);
+}
+
+async function setExcludedSubmission(id, excluded) {
+  const kv = kvClient();
+  if (!kv || !id) return false;
+  await kv(excluded ? 'sadd' : 'srem', 'mix:excluded', id);
+  return true;
+}
+
+// "Disco Sound System" et "disco_sound-system" doivent se reconnaitre : on
+// compare des suites de lettres et de chiffres, accents retires.
+function normName(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+// Mix du dossier Mixtapes/ qui appartiennent a cette candidature. On cherche
+// le nom du DJ dans le champ Artiste d'abord, puis dans le titre et le nom de
+// fichier (un mix depose avec des tags vides n'a que son nom de fichier).
+// En dessous de 3 caracteres, un nom trouverait n'importe quoi : on renonce.
+function mixFilesForSubmission(sub, files) {
+  const dj = normName(sub.dj);
+  if (dj.length < 3) return [];
+  return files.filter((f) => {
+    const artist = normName(f.artist);
+    // Le sens inverse ("DJ Troze" contient "troze") exige lui aussi 3 lettres :
+    // un Artiste "VA" ou "DJ" se retrouverait sinon dans tous les pseudos.
+    if (artist && (artist === dj || artist.includes(dj) || (artist.length >= 3 && dj.includes(artist)))) return true;
+    const fileName = String(f.path || '').split('/').pop();
+    return normName(f.title).includes(dj) || normName(fileName).includes(dj);
+  });
+}
+
+// Accuse de reception a copier-coller, en anglais comme toutes les annonces
+// publiques. Il ne promet PAS la diffusion : il dit ce qu'il faudra si le mix
+// colle a la radio, pour que le DJ n'ait pas a attendre un second echange.
+function submissionAckEmail(sub) {
+  const dj = sub.dj || 'there';
+  const style = sub.style ? ` ${sub.style}` : '';
+  return {
+    subject: `KALBASSFM — we received your mix submission`,
+    body: [
+      `Hi ${dj},`,
+      '',
+      `Thanks for sending your${style} mix over to KALBASSFM — your submission came through.`,
+      '',
+      "I'll give it a proper listen in the coming days.",
+      '',
+      // Un paragraphe = une ligne : coupees a la main, les lignes s'affichent en
+      // escalier dans une messagerie qui re-justifie le texte (mobile surtout).
+      "If it fits the sound of the station, I'll need the audio file itself so I can import it into the radio library and schedule the broadcast. Send it however suits you best; my preference is SwissTransfer (https://www.swisstransfer.com): free, no account needed, and it handles large files. A 320 kbps MP3 or a WAV is perfect.",
+      '',
+      "Either way, I'll get back to you once I've listened.",
+      '',
+      'Cheers,',
+      'KALBASSFM',
+      PLAYER_URL,
+    ].join('\n'),
+  };
 }
 
 async function getSubmissionById(id) {

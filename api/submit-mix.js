@@ -139,8 +139,12 @@ export default async function handler(req, res) {
           + `Insta : ${instagram ? 'instagram.com/' + escapeHtml(instagram) : '—'}\n`
           + `SC : ${soundcloud ? 'soundcloud.com/' + escapeHtml(soundcloud) : '—'}\n`
           + `<code>${escapeHtml(clientId)}</code>`,
+        // Le geste qui suit une candidature, c'est repondre au DJ, pas le bannir :
+        // ✉️ sort l'accuse de reception a copier-coller (api/telegram.js,
+        // submissionAckEmail). Un spammeur se bannit toujours avec
+        // /ban <clientId>, le code est affiche juste au-dessus.
         reply_markup: { inline_keyboard: [[
-          { text: '🔨 Bannir', callback_data: 'ban:' + clientId },
+          { text: '✉️ Email', callback_data: 'submail:' + id },
         ]] },
       }),
     });

@@ -293,6 +293,10 @@ export default async function handler(req, res) {
         };
         await kv('lpush', 'chat:messages', JSON.stringify(botMsg));
         await kv('ltrim', 'chat:messages', '0', '99');
+        // Silencieuse : l'essai de l'auditeur a deja fait vibrer le telephone,
+        // la reponse du jeu n'a pas a le refaire. Mais elle doit pouvoir etre
+        // retiree comme n'importe quel message du chat.
+        await notifyAutoMessage(botMsg, { silent: true });
       }
     }
 
@@ -304,6 +308,29 @@ export default async function handler(req, res) {
 
 function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+// Notification d'un message publie AUTOMATIQUEMENT (jeu BPM ici), avec le meme
+// bouton 🗑 qu'un message d'auditeur. Sans elle, un message automatique ne
+// pouvait etre retire que par /recent. Pas de Repondre ni de Bannir : il n'y a
+// personne derriere. Meme contrat que notifyTelegram : jamais bloquante.
+async function notifyAutoMessage(msg, { silent = false } = {}) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId || !msg || !msg.id) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        parse_mode: 'HTML',
+        disable_notification: silent,
+        text: `🤖 <i>Publié automatiquement</i>\n${escapeHtml(msg.nick || 'Bot')}: ${escapeHtml(msg.text || '')}`,
+        reply_markup: { inline_keyboard: [[{ text: '🗑 Supprimer', callback_data: 'del:' + msg.id }]] },
+      }),
+    });
+  } catch {}
 }
 
 // Relaie chaque nouveau message vers l'admin Telegram avec des boutons inline

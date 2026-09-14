@@ -129,7 +129,7 @@ export default async function handler(req, res) {
     await kv('lpush', 'chat:messages', JSON.stringify(chatMsg));
     await kv('ltrim', 'chat:messages', '0', '99');
 
-    await notifyTelegram(prefix + name, message);
+    await notifyTelegram(prefix + name, message, id);
     return res.status(200).json({ ok: true, test: isTest });
   } catch {
     // 200 malgre l'echec cote nous : un retry BMC ne resoudra pas une panne
@@ -138,16 +138,26 @@ export default async function handler(req, res) {
   }
 }
 
-async function notifyTelegram(name, message) {
+// `chatMsgId` : l'id du remerciement publie automatiquement dans le chat. Le
+// bouton 🗑 le retire du chat comme n'importe quel message (meme callback del:
+// qu'une notification d'auditeur) ; le don, lui, reste dans la liste des
+// soutiens, qui se gere a part dans /recent_supporters.
+async function notifyTelegram(name, message, chatMsgId) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
   try {
-    const text = `☕ New Buy Me a Coffee supporter: ${escapeHtml(name)}` + (message ? `\n"${escapeHtml(message)}"` : '');
+    const text = `☕ New Buy Me a Coffee supporter: ${escapeHtml(name)}` + (message ? `\n"${escapeHtml(message)}"` : '')
+      + (chatMsgId ? '\n\n🤖 <i>Remerciement publié automatiquement dans le chat.</i>' : '');
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, parse_mode: 'HTML', text }),
+      body: JSON.stringify({
+        chat_id: chatId, parse_mode: 'HTML', text,
+        ...(chatMsgId ? { reply_markup: { inline_keyboard: [[
+          { text: '🗑 Retirer le remerciement du chat', callback_data: 'del:' + chatMsgId },
+        ]] } } : {}),
+      }),
     });
   } catch {}
 }
