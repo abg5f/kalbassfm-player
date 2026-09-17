@@ -23,6 +23,9 @@
 */
 import crypto from 'node:crypto';
 
+// Meme motif que api/chat.js : un lien n'a rien a faire dans un remerciement.
+const LINK_RE = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|fr|io|co|link|to|me|tv|info|biz|xyz|gg|app|shop))/i;
+
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
@@ -106,8 +109,14 @@ export default async function handler(req, res) {
   const data = payload.data || {};
   const rawName = data.supporter_name || data.payer_name || data.name || '';
   const rawMessage = data.support_note || data.message || data.note || data.support_message || '';
-  const name = String(rawName).slice(0, 60).trim() || 'A listener';
-  const message = String(rawMessage).slice(0, 200).trim();
+  let name = String(rawName).slice(0, 60).trim() || 'A listener';
+  let message = String(rawMessage).slice(0, 200).trim();
+  // Le remerciement part dans le chat sous Admin, et le player rend les liens
+  // des messages Admin CLIQUABLES (fillChatText) : une note de don contenant
+  // « phishing.com » serait devenue un lien signe Admin. Un don n'achete pas
+  // le droit de poster un lien — le texte est neutralise, le don reste compte.
+  if (LINK_RE.test(name)) name = 'A listener';
+  if (LINK_RE.test(message)) message = '';
   // Les events de test envoyes depuis BMC Studio ("Send test event") portent
   // live_mode:false : on fait quand meme tout le chemin (chat + Telegram +
   // liste) pour permettre de verifier la tuyauterie de bout en bout, mais

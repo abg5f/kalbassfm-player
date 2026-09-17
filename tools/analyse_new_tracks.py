@@ -372,6 +372,18 @@ def main():
     queue = azuracast_upload.load_pending_review()
     if not queue:
         print("Aucun morceau en attente de verdict — lance triage.bat d'abord.")
+        # Les envois rates d'un run precedent ne dependent d'aucun verdict :
+        # sans ce chemin, le bouton d'envoi ne pouvait plus jamais les relancer
+        # une fois la file des verdicts videe (2026-09-16, 80 envois bloques).
+        attente = azuracast_upload.load_pending_uploads()
+        if attente and args.apply:
+            print(f"\n{len(attente)} envoi(s) AzuraCast en attente — relance.")
+            _, _, pending = envoyer([])
+            azuracast_upload.save_pending_uploads(pending)
+            print(f"\n{len(attente) - len(pending)} morceau(x) en ligne, "
+                  f"{len(pending)} en attente d'envoi.")
+        elif attente:
+            print(f"{len(attente)} envoi(s) AzuraCast en attente : relance avec --apply.")
         return
 
     ref = track_gate.load_reference()
@@ -449,41 +461,12 @@ def main():
     passed = [r for r in passed if not r.get("verrouille")]
 
     # ── Envoi AzuraCast ──────────────────────────────────────────────────────
-    uploaded, failures = 0, []
-    still_queued = []
-    print("\nConnexion SFTP AzuraCast...")
-    transport, sftp = azuracast_upload.open_sftp()
-    if sftp is None:
-        # Rien n'est perdu : les morceaux juges bons restent en file et
-        # repasseront au prochain run. Les ecartes, eux, sont deja ranges.
-        still_queued = [{"slot": r["slot"], "path": r["path"]} for r in passed]
-        print(f"SFTP indisponible — {len(still_queued)} morceau(x) restent en "
-              f"attente d'envoi, relance ce script quand la connexion revient.")
-        pending = azuracast_upload.load_pending_uploads()
-    else:
-        pending = azuracast_upload.retry_pending_uploads(sftp)
-        try:
-            # Le compteur i/N est lu par review_analyse.py pour afficher
-            # l'avancement de l'envoi : ne pas changer son format a la legere.
-            for i, row in enumerate(passed, 1):
-                name = os.path.basename(row["path"])
-                try:
-                    print(f"[SFTP {i}/{len(passed)}] Envoi -> /{row['slot']}/{name}")
-                    azuracast_upload.upload(sftp, row["slot"], row["path"])
-                    uploaded += 1
-                except azuracast_upload.RemoteAlreadyExists:
-                    print(f"[SFTP] Deja sur le serveur, ignore : {name}")
-                    uploaded += 1
-                except Exception as e:
-                    print(f"[SFTP] Echec envoi {name}: {e}")
-                    failures.append((name, str(e)))
-                    pending.append({"slot": row["slot"], "path": row["path"]})
-        finally:
-            sftp.close()
-            transport.close()
-
+    # Un morceau juge bon mais pas envoye passe dans pending_uploads.json : la
+    # file des verdicts, elle, ne garde que les verrouilles — tout le reste a
+    # ete juge.
+    uploaded, failures, pending = envoyer(passed)
     azuracast_upload.save_pending_uploads(pending)
-    azuracast_upload.save_pending_review(still_queued + verrouilles)
+    azuracast_upload.save_pending_review(verrouilles)
     render_report(rows, orphans, True, uploaded, failures)
 
     print(f"\n{uploaded} morceau(x) en ligne, {len(held)} ecarte(s), "
@@ -510,6 +493,53 @@ def main():
         if written:
             print("\n>>> A FAIRE : commit + push de api/bpm-table.json.\n"
                   "    Sans push, le jeu BPM reste muet en ligne sur ces morceaux.")
+
+
+def envoyer(passed):
+    """Relance les envois en attente, puis envoie `passed`.
+
+    Retourne (envoyes, echecs, file d'envoi a enregistrer). Une coupure du
+    serveur ne fait plus echouer tout le reste en rafale : Connexion se
+    reconnecte, et si le serveur ne repond vraiment plus, on s'arrete en
+    gardant TOUT ce qui n'est pas parti dans la file.
+    """
+    uploaded, failures = 0, []
+    print("\nConnexion SFTP AzuraCast...")
+    conn = azuracast_upload.Connexion()
+    if not conn.ok():
+        # Rien n'est perdu : tout reste en file et repassera au prochain run.
+        pending = (azuracast_upload.load_pending_uploads()
+                   + [{"slot": r["slot"], "path": r["path"]} for r in passed])
+        print(f"SFTP indisponible — {len(pending)} morceau(x) restent en "
+              f"attente d'envoi, relance quand la connexion revient.")
+        return uploaded, failures, pending
+    try:
+        pending = azuracast_upload.retry_pending_uploads(conn)
+        # Le compteur i/N est lu par review_analyse.py pour afficher
+        # l'avancement de l'envoi : ne pas changer son format a la legere.
+        for i, row in enumerate(passed, 1):
+            name = os.path.basename(row["path"])
+            try:
+                print(f"[SFTP {i}/{len(passed)}] Envoi -> /{row['slot']}/{name}")
+                conn.send(row["slot"], row["path"])
+                uploaded += 1
+            except azuracast_upload.RemoteAlreadyExists:
+                print(f"[SFTP] Deja sur le serveur, ignore : {name}")
+                uploaded += 1
+            except azuracast_upload.ConnexionPerdue as e:
+                reste = passed[i - 1:]
+                print(f"[SFTP] Echec envoi : serveur injoignable ({e}) — "
+                      f"{len(reste)} morceau(x) gardes en attente.")
+                failures.extend((os.path.basename(r["path"]), str(e)) for r in reste)
+                pending.extend({"slot": r["slot"], "path": r["path"]} for r in reste)
+                break
+            except Exception as e:
+                print(f"[SFTP] Echec envoi {name}: {e}")
+                failures.append((name, str(e)))
+                pending.append({"slot": row["slot"], "path": row["path"]})
+    finally:
+        conn.close()
+    return uploaded, failures, pending
 
 
 def requeue(name):

@@ -75,6 +75,12 @@ PENDING_UPLOADS_PATH = os.path.join(TOOLS_DIR, "pending_uploads.json")
 # --no-sftp sur une machine sans paramiko.
 PENDING_REVIEW_PATH = os.path.join(TOOLS_DIR, "pending_review.json")
 QUARANTINE = "_ecartes"  # meme dossier que review_energy.py --delete
+# Bacs qui n'existent QUE sur le serveur : la reserve _ecarte garde les
+# morceaux sortis de l'antenne, rattaches a aucune playlist, sans copie locale
+# (cf. bascule_bins.py). Les y comparer au PC concluait a 316 « supprimes sur
+# le PC » et --apply les aurait effaces d'AzuraCast (constate le 2026-09-17).
+# Pour ces bacs, seule l'entree metadata.json est verifiee (cas F).
+SERVER_ONLY_BINS = {"_ecarte"}
 
 BASE = os.getenv("AZURACAST_BASE_URL", "https://kalbassfm.duckdns.org") + "/api"
 STATION = os.getenv("AZURACAST_STATION_ID", "1")
@@ -213,6 +219,8 @@ def diagnose(bins, use_sftp):
     deleted_on_radio, not_indexed, awaiting_upload, deleted_on_pc = [], [], [], []
     awaiting_review = []
     for b in bins:
+        if b in SERVER_ONLY_BINS:
+            continue        # ni sens A ni sens E : rien a comparer cote PC
         for name in sorted(local[b] - set(remote[b])):
             # L'attente du verdict passe en premier : un morceau tout juste
             # classe n'a jamais ete envoye, il n'a donc rien a faire dans la

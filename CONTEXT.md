@@ -1,8 +1,24 @@
 # Context — KALBASSFM — FM Caraïbes (3_Radiofm)
 
-> Dernière mise à jour : 2026-09-14
+> Dernière mise à jour : 2026-09-17
 
-## État actuel (2026-09-14 — journal visible de l'envoi AzuraCast)
+## État actuel (2026-09-17 — audit global + sécurité, envoi fiabilisé)
+
+**Sessions 2026-09-15 → 17** — l'envoi du lot de 73 a planté deux fois (fichier verrouillé, puis coupure SFTP) ; audit complet ensuite, corrections appliquées en autonomie.
+
+- ⚠️ **La grille est passée à 5 bacs + réserve** (`1_sunrise`, `2_solaire`, `3_sunset`, `4_club`, `5_misc` en ponctuation, `_ecarte` = réserve **serveur uniquement**, aucune copie locale) via `bascule_bins.py` — les sections antérieures de ce fichier parlent encore des 9 bacs. 13 playlists actives, `boost_up/down` pilotées par `/energy`.
+- 🔥 **Envoi SFTP fiabilisé** (`azuracast_upload.py`, `analyse_new_tracks.py`) : reconnexion automatique après coupure (avant : 61 échecs en rafale sur une session morte), taille distante vérifiée après chaque envoi, fichier tronqué reconnu et renvoyé, **relance des envois en attente même sans verdict à rendre** (bouton « Relancer N envois en attente » dans `review_analyse.py`). Fichier verrouillé par un lecteur → ligne `[VERROU]`, le morceau reste en file, plus de plantage ni de copie en double. **Piège appris : pas d'envoi en `.part` + renommage** — le SFTP d'AzuraCast indexe à la volée et la course avec le renommage a rendu 24 fichiers sur 80 `unprocessable` (complets sur disque, jamais à l'antenne). Envoi direct sous le nom final, comme AzuraCast l'attend.
+- ✅ `review_analyse.py` refuse de démarrer si le port 8137 est déjà pris (SO_REUSEADDR laissait deux serveurs coexister sous Windows — cause du verrou du 16/09), coupe le lecteur avant tout lancement, timeout socket 60 s.
+- 🔴→✅ **XSS corrigées dans le player** : panneau Supporters (nom/note d'un donateur BMC interpolés en HTML) et historique des titres (tags ID3). Tout passe par `textContent`. Une note de don contenant un lien n'est plus publiée sous Admin (les liens Admin sont cliquables).
+- 🔴→✅ **Le dépôt entier était servi par Vercel** (`/CONTEXT.md`, `/tools/*.py`, `/tools/metadata.json` en 200) : `.vercelignore` ne publie plus que le player + `api/`. `vercel.json` ajoute nosniff / X-Frame-Options / Referrer-Policy / Permissions-Policy. Le dépôt GitHub reste **public** — à passer en privé.
+- ✅ **Anti-abus par IP** (`x-forwarded-for`) en plus du `clientId` falsifiable : chat 20/min, requests 10/10 min, candidatures 5/h, flappy 30/min. `/api/flappy?top` plafonné à 10 et pseudos en un seul `hmget` (51 commandes Redis par appel avant). Pseudos réservés testés après `trim` (« Admin  » passait), aussi sur Flappy.
+- ✅ **`metadata.json` réaligné sur la nouvelle grille** : 1 127 entrées sur 1 367 pointaient encore vers `3_house/`, `2_groove/`… (la bascule avait déplacé les fichiers sans réécrire les chemins). 800 retrouvées en local, 315 pointées vers `_ecarte` (serveur), 10 vers leur bac serveur, 2 retirées. **Table BPM régénérée : 992 titres** (bloquée à 1 060 périmés depuis le 09/09 par son garde-fou).
+- ✅ **`sync_library.py` : `_ecarte` déclaré `SERVER_ONLY_BINS`** — le dry-run proposait de **supprimer 326 fichiers d'AzuraCast** (les 316 de la réserve, sans copie locale par construction). Reste en dry-run : A = 4 (supprimés côté radio, encore sur PC), E = 10 (sur serveur, plus sur PC) — à trancher à la main.
+- ✅ AzuraCast : `always_use_ssl` activé (le port 80 redirigeait vers `/login` en HTTP) ; doublon podcast « Millésime 2026 — Épisode 2 » du 08/08 supprimé (le 06/09 reste).
+- 📜 **`tools/vps_hardening.sh`** — à lancer à la main sur le VPS (pas d'accès SSH depuis ici) : SSH par clé seule (garde-fou si aucune clé), fail2ban, ufw (22/80/443/2022, **ferme 8000** Icecast direct), mise à jour AzuraCast 0.23.7 → 0.23.8.
+- 📉 Disque VPS **87 %** (9,5 Go libres sur 75) ; la réserve `_ecarte` (316 fichiers) pèse lourd.
+
+## État antérieur (2026-09-14 — journal visible de l'envoi AzuraCast)
 
 **Session 2026-09-14** — courte : rendre l'envoi vérifiable depuis l'interface du pipeline.
 
@@ -315,9 +331,14 @@
 
 ## En cours / TODOs
 
-- [ ] **Lancer l'envoi des 180 morceaux** depuis `review_analyse.py` (relancer le serveur pour charger la nouvelle page), et vérifier au journal que le bilan final est cohérent (`N morceau(x) en ligne`, `0 en attente d'envoi`) — puis commit + push de `api/bpm-table.json`
-- [ ] **Trancher le dernier signalé** (42/43) avant l'envoi — non tranché dans « à écouter » = part en ligne, dans « écartés » = reste écarté
+- [ ] **Lancer `tools/vps_hardening.sh` sur le VPS** (PuTTY, root) — poser une clé SSH d'abord, voir l'en-tête du script. Fermer le port 8000, fail2ban, AzuraCast 0.23.8
+- [ ] **Passer le dépôt GitHub `abg5f/kalbassfm-player` en privé** (Vercel continue de déployer)
+- [ ] **Vérifier après déploiement** : `https://kalbassfm-player.vercel.app/CONTEXT.md` doit répondre 404, les en-têtes `X-Frame-Options`/`nosniff` doivent apparaître
+- [ ] **Trancher les cas A (4) et E (10) de `sync_library.py`** — `--apply` est désormais sûr pour `_ecarte`, mais ces 14 morceaux sont des vraies divergences PC ↔ radio
+- [ ] **Plafond de dépense Upstash** (console → budget) : les limites par IP réduisent le risque, un plafond le borne
 - [ ] **Suivre la réponse de Retro House Mixtape** (proposition de collaboration envoyée via leur formulaire de contact, 2026-09-14)
+- [x] **Lancer l'envoi du lot** — fait les 15-17/09 en trois passes (plantages corrigés au passage), 0 en attente
+- [x] **Trancher le dernier signalé** — fait
 
 - [x] **Exécuter le brief agent en 4 lots** — fait le 2026-09-01 (bac `9_liquid`, `tools/apply_rotation.py`, compteurs UTC + player, commande `/energy`)
 - [x] **LOT 1 : déplacement de ~79 fichiers** `1_chill/` → `9_liquid/` — fait le 2026-09-01, vérifié iso local/serveur
@@ -375,6 +396,12 @@
 
 | Problème | Sévérité | Notes |
 |----------|----------|-------|
+| Dépôt GitHub public | MEDIUM | Aucun secret dans l'historique (vérifié 2026-09-17), mais tout le code des outils, l'IP du VPS et ce fichier sont lisibles. Passer en privé |
+| Ban et rate-limit par `clientId` restent contournables | LOW | Atténué le 2026-09-17 par des plafonds par IP (chat 20/min, requests 10/10 min, mix 5/h, flappy 30/min). Un attaquant derrière plusieurs IP passe encore ; un plafond de dépense Upstash borne le coût |
+| Scores Flappy falsifiables | LOW | Le score est envoyé tel quel par le navigateur (plafond 100 000). Classement décoratif, assumé |
+| Pas de Content-Security-Policy sur le player | LOW | Scripts inline, polices Google, pochettes depuis n'importe quel hôte : une CSP demande un inventaire complet avant d'être posée sans casser le player. Les autres en-têtes (nosniff, frame, referrer) sont en place |
+| Disque VPS à 87 % | MEDIUM | 9,5 Go libres. La réserve `_ecarte` (316 mp3, jamais à l'antenne) est le premier candidat au ménage ; chaque mixtape compte double |
+| Les 9 sections « État antérieur » d'avant le 2026-09-15 décrivent la grille à 9 bacs | INFO | Périmées depuis `bascule_bins.py` (5 bacs + `_ecarte`). Lire « État actuel » d'abord |
 | `track_gate.py refresh --exclude` ne signale pas les lignes non appariées | INFO | Sur les 120 lignes d'`energy_review_selection.txt`, 18 ne correspondent à aucune entrée de `metadata.json` (fichiers sortis de la bibliothèque) : l'ancrage repose sur 102 décisions, sans que le log le dise. Une ligne « N titres de la liste ne sont plus dans la bibliothèque » lèverait l'ambiguïté |
 | Le log de `refresh` annonce « le plus doux d'entre eux » pour une valeur qui est le **p10** | INFO | `track_gate.py:208` affiche le minimum des écartés (0.722) alors que le seuil retenu est le p10 (0.738). Le comportement suit la docstring, c'est la phrase qui décrit autre chose que ce qu'elle calcule |
 | Le pipeline en deux temps n'a jamais tourné bout en bout sur de vrais fichiers | INFO | Triage vérifié à vide sous WSL, analyse vérifiée en bac à sable (SFTP neutralisé). L'enchaînement réel `triage.bat` → `analyse.bat` sur un lot de nouveaux morceaux reste à faire |
@@ -439,8 +466,9 @@
 **Hébergement :**
 - **Streaming** : VPS `167.233.226.128` (Ubuntu, Docker) — AzuraCast v0.23.7 + Icecast + Liquidsoap, `kalbassfm.duckdns.org` HTTPS, fuseau **Europe/Paris** (bascule le 2026-09-01, était America/Martinique — heure d'été automatique)
 - **Player** : Vercel — kalbassfm-player.vercel.app, deploy auto sur push GitHub (`abg5f/kalbassfm-player`)
-- **Musique serveur** : volume Docker, dossier `Progv2/` contenant les **9 bacs** (`9_liquid` ajouté le 2026-09-01) ; anciens dossiers morning/... encore présents (filet, non nettoyé)
-- **Musique locale** : `C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\<bac>` + `_incoming` (triage)
+- **Musique serveur** : volume Docker, à la racine du média : **5 bacs** `1_sunrise`, `2_solaire`, `3_sunset`, `4_club`, `5_misc` + `_ecarte` (réserve, serveur seulement) + `Jingles/` + `Mixtapes/` (depuis `bascule_bins.py`, septembre 2026)
+- **Musique locale** : `C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\<bac>` (mêmes 5 bacs, `_a_revoir/` = écartés par le verdict, `_ecartes/` = quarantaine de `sync_library`) + `..\_incoming` (triage)
+- **Sécurité (2026-09-17)** : AzuraCast en HTTPS forcé ; ports ouverts 22/80/443/2022/**8000** (à fermer via `tools/vps_hardening.sh`) ; Vercel ne sert plus que le player + `api/` (`.vercelignore`)
 - **Réseau perso** : RaiDrive `Z:` sur le SFTP AzuraCast (port 2022) ; FileZilla pour les gros uploads
 - **Bot** : `@kalbassfm_bot` (BotFather), webhook `kalbassfm-player.vercel.app/api/telegram`
 - **Automatisation locale** : tâche planifiée Windows `KalbassFM Mixtape hebdo` (PowerShell `Register-ScheduledTask`, quotidienne 9h) — exécute `tools/mixtape_weekly.py --apply`

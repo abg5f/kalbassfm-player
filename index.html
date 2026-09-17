@@ -2182,15 +2182,26 @@
       return;
     }
     supportersList.innerHTML = '';
+    // Noeuds DOM + textContent, jamais innerHTML : le nom et la note viennent
+    // du formulaire Buy Me a Coffee, c'est-a-dire de n'importe qui pour le
+    // prix d'un don. Interpoles en HTML, un nom du type <img onerror=...>
+    // s'executait chez TOUS les visiteurs du player (XSS, corrige 2026-09-17).
     list.forEach((s) => {
       const el = document.createElement('div');
       el.className = 'supporter-item';
-      el.innerHTML =
-        '<div class="supporter-item-head">' +
-          '<span class="supporter-name">☕ ' + (s.name || 'A listener') + '</span>' +
-          '<span class="supporter-time">' + formatChatTime(s.ts) + '</span>' +
-        '</div>' +
-        (s.message ? '<div class="supporter-message">' + s.message + '</div>' : '');
+      const head = document.createElement('div');
+      head.className = 'supporter-item-head';
+      const name = document.createElement('span');
+      name.className = 'supporter-name'; name.textContent = '☕ ' + (s.name || 'A listener');
+      const time = document.createElement('span');
+      time.className = 'supporter-time'; time.textContent = formatChatTime(s.ts);
+      head.appendChild(name); head.appendChild(time);
+      el.appendChild(head);
+      if (s.message) {
+        const msg = document.createElement('div');
+        msg.className = 'supporter-message'; msg.textContent = s.message;
+        el.appendChild(msg);
+      }
       supportersList.appendChild(el);
     });
   }
@@ -2460,15 +2471,23 @@
     historyList.innerHTML = '';
     hist.slice(0, 6).forEach(h => {
       const s = h.song || {};
+      // Artiste et titre sortent des tags ID3 des fichiers telecharges : un tag
+      // piege ne doit pas devenir du HTML dans le player (meme correctif que le
+      // panneau Supporters, 2026-09-17).
       const el = document.createElement('div');
       el.className = 'hist-item';
+      const art = document.createElement('div');
+      art.className = 'hist-art';
       const histArt = realArt(s.art);
-      el.innerHTML =
-        '<div class="hist-art" style="' + (histArt ? "background-image:url('" + histArt + "')" : '') + '"></div>' +
-        '<div class="hist-meta">' +
-          '<div class="hist-title">' + (s.title || '—') + '</div>' +
-          '<div class="hist-artist">' + (s.artist || '') + '</div>' +
-        '</div>';
+      if (histArt) art.style.backgroundImage = 'url("' + histArt.replace(/["\\]/g, '') + '")';
+      const meta = document.createElement('div');
+      meta.className = 'hist-meta';
+      const t = document.createElement('div');
+      t.className = 'hist-title'; t.textContent = s.title || '—';
+      const a = document.createElement('div');
+      a.className = 'hist-artist'; a.textContent = s.artist || '';
+      meta.appendChild(t); meta.appendChild(a);
+      el.appendChild(art); el.appendChild(meta);
       historyList.appendChild(el);
     });
   }

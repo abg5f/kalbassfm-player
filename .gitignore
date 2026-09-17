@@ -32,3 +32,12 @@ tools/simulation_bins.json
 tools/review_dark_decisions.json
 tools/classify_new_decisions.json
 tools/bascule_plan.csv
+tools/metadata.json.bak-*
+tools/_server_index.json
+0_medias/
+# graphify : seul graph.json est versionne, le reste se regenere
+graphify-out/cache/
+graphify-out/graph.html
+graphify-out/GRAPH_REPORT.md
+graphify-out/manifest.json
+graphify-out/.graphify_*

@@ -198,6 +198,11 @@ def build_rows():
     que l'envoi va faire."""
     queue = azuracast_upload.load_pending_review()
     if not queue:
+        attente = len(azuracast_upload.load_pending_uploads())
+        if attente:
+            return [], (f"Aucun morceau en attente de verdict. {attente} envoi(s) "
+                        f"AzuraCast restent en attente d'un run precedent : le bouton "
+                        f"d'envoi les relance.")
         return [], "Aucun morceau en attente de verdict. Lance le triage, puis l'analyse."
     ref = track_gate.load_reference()
     metadata = ana.load_metadata()
@@ -242,6 +247,8 @@ def stats(rows):
         "final_ok": sum(1 for r in rows if r["final"] in ("ok", "ecouter")),
         "final_ecarte": sum(1 for r in rows if r["final"] == "ecarte"),
         "rebinned": sum(1 for r in rows if r.get("bin_override")),
+        # Envois rates d'un run precedent : relances par le meme bouton.
+        "attente": len(azuracast_upload.load_pending_uploads()),
     }
 
 
@@ -454,11 +461,14 @@ function refreshCounts(s){
   const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
   set('done', s.tranches); set('todo', s.a_trancher);
   set('fok', s.final_ok); set('fko', s.final_ecarte); set('reb', s.rebinned);
+  set('att', s.attente);
   const pct = s.a_trancher ? Math.round(100*s.tranches/s.a_trancher) : 100;
   const bf = document.getElementById('barfill');
   if(bf) bf.style.width = pct + '%';
   const b = document.getElementById('btn-envoi');
-  if(b) b.textContent = 'Envoyer ' + s.final_ok + ' morceaux vers AzuraCast';
+  if(b) b.textContent = (s.final_ok || !s.attente)
+    ? 'Envoyer ' + s.final_ok + ' morceaux vers AzuraCast'
+    : 'Relancer ' + s.attente + ' envois en attente';
 }
 // --- pipeline -------------------------------------------------------------
 const JOBLABEL = {triage:'Triage', analyse:'Analyse', envoi:'Envoi AzuraCast'};
@@ -468,7 +478,9 @@ async function run(job){
     const s = document.getElementById('fok').textContent;
     const k = document.getElementById('fko').textContent;
     const r = document.getElementById('reb').textContent;
-    if(!confirm("Envoyer " + s + " morceaux sur AzuraCast ?\n\n"
+    const a = document.getElementById('att').textContent;
+    if(!confirm("Envoyer " + s + " morceaux sur AzuraCast ?\n"
+      + (a !== '0' ? "+ " + a + " envoi(s) en attente d'un run precedent.\n" : "") + "\n"
       + k + " seront ranges dans _a_revoir/.\n"
       + r + " changement(s) de bac seront appliques EN LOCAL aussi.\n\n"
       + "Un morceau envoye peut passer a l'antenne dans les minutes qui suivent.\n"
@@ -586,6 +598,12 @@ def row_html(r):
 </div>"""
 
 
+def libelle_envoi(stat):
+    if stat["final_ok"] or not stat["attente"]:
+        return f"Envoyer {stat['final_ok']} morceaux vers AzuraCast"
+    return f"Relancer {stat['attente']} envois en attente"
+
+
 def render(rows, stat, notice=None):
 
     DEFAUT = {
@@ -641,6 +659,7 @@ def render(rows, stat, notice=None):
     &nbsp;&middot;&nbsp; ira en ligne : <b id="fok">{stat['final_ok']}</b>
     &nbsp;&middot;&nbsp; &eacute;cart&eacute; : <b id="fko">{stat['final_ecarte']}</b>
     &nbsp;&middot;&nbsp; bac chang&eacute; : <b id="reb">{stat['rebinned']}</b>
+    &nbsp;&middot;&nbsp; envois en attente : <b id="att">{stat['attente']}</b>
   </div>
 </header>
 <main>
@@ -661,7 +680,7 @@ def render(rows, stat, notice=None):
     <span id="nowplaying">Clique sur &#9654; pour &eacute;couter</span>
   </div>
   <button class="danger" id="btn-envoi" onclick="run('envoi')">
-    Envoyer {stat['final_ok']} morceaux vers AzuraCast</button>
+    {libelle_envoi(stat)}</button>
   <span class="pill" id="envoistate" style="color:var(--warn)"></span>
   <span>Range les &eacute;cart&eacute;s, applique les changements de bac en local,
   puis envoie. Rien n'a boug&eacute; jusqu'ici.</span>

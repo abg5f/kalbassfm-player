@@ -96,12 +96,23 @@ class RemoteAlreadyExists(Exception):
     """Un fichier du meme nom existe deja dans le bac distant."""
 
 
+class ConnexionPerdue(Exception):
+    """La session SFTP est morte et la reconnexion a echoue : inutile d'insister."""
+
+
+# Delai sans reponse du serveur au-dela duquel une operation SFTP echoue. Sans
+# lui, une connexion coupee net peut bloquer un envoi indefiniment.
+SFTP_TIMEOUT = 120
+
+
 def open_sftp():
     """Ouvre la connexion SFTP vers AzuraCast. Retourne (transport, sftp) ou (None, None)."""
     try:
         transport = paramiko.Transport((SFTP_HOST, SFTP_PORT))
         transport.connect(username=SFTP_USER, password=SFTP_PASS)
+        transport.set_keepalive(30)
         sftp = paramiko.SFTPClient.from_transport(transport)
+        sftp.get_channel().settimeout(SFTP_TIMEOUT)
         return transport, sftp
     except Exception as e:
         print(f"[SFTP] Connexion impossible ({e}) — rien ne sera envoye ce run.")
@@ -109,7 +120,21 @@ def open_sftp():
 
 
 def upload(sftp, slot, local_path):
-    """Envoie local_path vers /<slot>/<nom> sur AzuraCast. Leve en cas d'echec."""
+    """Envoie local_path vers /<slot>/<nom> sur AzuraCast. Leve en cas d'echec.
+
+    ENVOI DIRECT, SOUS LE NOM FINAL, ET VERIFIE. Le SFTP d'AzuraCast previent
+    l'indexation a chaque fichier depose : un envoi en deux temps
+    (`<nom>.part` puis renommage, essaye le 2026-09-16) declenchait une
+    course entre cette indexation et le renommage — 24 morceaux sur 80 sont
+    ressortis « unprocessable », complets sur le disque mais jamais a
+    l'antenne. On envoie donc comme AzuraCast l'attend, et on se protege
+    autrement : la taille distante est comparee a la locale APRES l'envoi
+    (un fichier coupe en route est ainsi renvoye au prochain passage), et un
+    fichier deja present mais PLUS PETIT que l'original est reconnu comme un
+    envoi interrompu, pas comme un morceau deja en ligne.
+    """
+    local = to_current_platform(local_path)
+    taille = os.path.getsize(local)
     remote_dir = SFTP_REMOTE_ROOT.rstrip("/") + "/" + slot
     remote_path = remote_dir + "/" + os.path.basename(local_path)
     try:
@@ -118,14 +143,66 @@ def upload(sftp, slot, local_path):
         sftp.mkdir(remote_dir)
     # Garde-fou : ne jamais ecraser silencieusement un morceau deja en ligne.
     try:
-        sftp.stat(remote_path)
-        raise RemoteAlreadyExists(remote_path)
+        distant = sftp.stat(remote_path).st_size
     except FileNotFoundError:
-        pass
-    sftp.put(to_current_platform(local_path), remote_path)
+        distant = None
+    if distant is not None:
+        if distant >= taille:
+            raise RemoteAlreadyExists(remote_path)
+        print(f"  [SFTP] {os.path.basename(remote_path)} tronque sur le serveur "
+              f"({distant} / {taille} octets) -> renvoi complet")
+    sftp.put(local, remote_path)
+    arrive = sftp.stat(remote_path).st_size
+    if arrive != taille:
+        raise IOError(f"envoi incomplet : {arrive} / {taille} octets")
 
 
-def retry_pending_uploads(sftp, on_success=None):
+class Connexion:
+    """Session SFTP qui se reconnecte quand le serveur coupe.
+
+    Avant elle, une seule coupure reseau faisait echouer TOUS les envois
+    suivants en rafale sur une session morte : le 2026-09-16, 0 envoye et 61
+    echecs apres la coupure pendant Jackson 5.
+    """
+
+    def __init__(self):
+        self.transport, self.sftp = open_sftp()
+
+    def ok(self):
+        return self.sftp is not None
+
+    def close(self):
+        for obj in (self.sftp, self.transport):
+            try:
+                if obj is not None:
+                    obj.close()
+            except Exception:                           # noqa: BLE001
+                pass
+        self.transport = self.sftp = None
+
+    def send(self, slot, local_path):
+        """upload() avec UNE reconnexion si la session est morte.
+
+        Leve RemoteAlreadyExists, l'erreur d'origine si la session est saine
+        (probleme propre a ce fichier), ou ConnexionPerdue si le serveur ne
+        repond plus : l'appelant doit alors arreter et garder le reste en file.
+        """
+        try:
+            return upload(self.sftp, slot, local_path)
+        except RemoteAlreadyExists:
+            raise
+        except Exception as exc:
+            # On rouvre meme si la session semble active : apres un delai
+            # depasse, paramiko la garde ouverte alors qu'elle ne repond plus.
+            print(f"  [SFTP] {exc} — reconnexion...")
+            self.close()
+            self.transport, self.sftp = open_sftp()
+            if not self.ok():
+                raise ConnexionPerdue(str(exc)) from exc
+            return upload(self.sftp, slot, local_path)
+
+
+def retry_pending_uploads(conn, on_success=None):
     """Retente les envois SFTP restes en echec lors d'un run precedent.
 
     Retourne la liste des entrees toujours en echec ; n'ecrit PAS le fichier :
@@ -137,14 +214,14 @@ def retry_pending_uploads(sftp, on_success=None):
         return []
     print(f"{len(pending)} envoi(s) AzuraCast en attente d'un run precedent...")
     still_pending = []
-    for entry in pending:
+    for n, entry in enumerate(pending):
         slot, stored = entry["slot"], entry["path"]
         local = to_current_platform(stored)
         if not os.path.exists(local):
             # Fichier deplace/supprime manuellement depuis -> on abandonne le suivi.
             continue
         try:
-            upload(sftp, slot, local)
+            conn.send(slot, local)
             print(f"  [OK] {os.path.basename(local)} envoye (retry)")
             if on_success:
                 on_success()
@@ -155,6 +232,11 @@ def retry_pending_uploads(sftp, on_success=None):
             print(f"  [OK] {os.path.basename(local)} deja sur le serveur (retry)")
             if on_success:
                 on_success()
+        except ConnexionPerdue as e:
+            print(f"  [ECHEC] serveur injoignable ({e}) — {len(pending) - n} envoi(s) "
+                  f"restent en attente.")
+            still_pending.extend(pending[n:])
+            break
         except Exception as e:
             print(f"  [ECHEC] {os.path.basename(local)}: {e}")
             still_pending.append(entry)

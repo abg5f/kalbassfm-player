@@ -1,0 +1,11 @@
+# Seuls le player (racine) et api/ ont a etre en ligne. Sans ce fichier, tout
+# le depot etait servi tel quel — https://kalbassfm-player.vercel.app/tools/...,
+# /CONTEXT.md — IP du VPS, port SFTP et liste des faiblesses connues comprises
+# (constate le 2026-09-17).
+tools/
+graphify-out/
+Jingles/
+0_medias/
+.claude/
+.planning/
+*.md

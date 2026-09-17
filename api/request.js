@@ -14,6 +14,18 @@ function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }
 
+// Plafond par IP, le clientId etant choisi par le navigateur (cf. api/chat.js).
+// 10 demandes / 10 min / IP : chacune reveille le telephone de l'admin.
+async function ipFlood(kv, req, prefix, max, windowSec) {
+  const raw = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  const ip = raw.replace(/[^0-9a-f.:]/gi, '');
+  if (!ip) return false;
+  const key = `${prefix}:ip:${ip}`;
+  const n = await kv('incr', key);
+  if (n.result === 1) await kv('expire', key, String(windowSec));
+  return (n.result || 0) > max;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -42,6 +54,7 @@ export default async function handler(req, res) {
 
   if (kv) {
     try {
+      if (await ipFlood(kv, req, 'req', 10, 600)) return res.status(200).json({ enabled: true, ok: false, rateLimited: true });
       const lock = await kv('set', `req:rate:${clientId}`, '1', 'EX', '30', 'NX');
       if (lock.result !== 'OK') return res.status(200).json({ enabled: true, ok: false, rateLimited: true });
     } catch {}

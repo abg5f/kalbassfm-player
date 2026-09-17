@@ -209,7 +209,8 @@ export default async function handler(req, res) {
   // Anti-usurpation : les pseudos reserves aux bots (admin Telegram et
   // BPM GUESSER, flag admin:true pose cote serveur dans les deux cas) ne
   // peuvent pas etre pris par un auditeur.
-  let nick = (body.nick || 'Listener').toString().slice(0, 30);
+  // trim AVANT le test : « Admin  » (espace finale) passait le filtre.
+  let nick = (body.nick || 'Listener').toString().trim().slice(0, 30) || 'Listener';
   if (/kalbassfm|^admin$|^bpm\s*guesser$/i.test(nick)) nick = 'Listener';
   const text = (body.text || '').toString().trim().slice(0, 200);
 
@@ -238,6 +239,7 @@ export default async function handler(req, res) {
   if (LINK_RE.test(text)) return res.status(200).json({ enabled: true, ok: false, blocked: 'link' });
 
   try {
+    if (await ipFlood(kv, req, 'chat', 20, 60)) return res.status(200).json({ enabled: true, ok: false, rateLimited: true });
     const lockJ = await kv('set', `chat:rate:${clientId}`, '1', 'EX', '3', 'NX');
     if (lockJ.result !== 'OK') return res.status(200).json({ enabled: true, ok: false, rateLimited: true });
 
@@ -308,6 +310,25 @@ export default async function handler(req, res) {
 
 function escapeHtml(s) {
   return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+/* Plafond par adresse IP, EN PLUS du rate-limit par clientId. Le clientId est
+   choisi par le navigateur : en changer a chaque envoi suffisait a inonder le
+   chat — et avec lui les notifications Telegram et la facture Upstash. `max`
+   envois par fenetre de `windowSec` secondes et par IP : large pour un foyer
+   derriere une meme box, trop etroit pour un script. Une commande Redis
+   (deux a la premiere de la fenetre), sur les POST seulement. Meme helper
+   dans api/request.js, api/submit-mix.js et api/flappy.js — les fonctions
+   restent autonomes, comme escapeHtml/LINK_RE. Sans IP lisible, on laisse
+   passer : mieux vaut un garde-fou absent qu'un chat ferme a tout le monde. */
+async function ipFlood(kv, req, prefix, max, windowSec) {
+  const raw = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  const ip = raw.replace(/[^0-9a-f.:]/gi, '');
+  if (!ip) return false;
+  const key = `${prefix}:ip:${ip}`;
+  const n = await kv('incr', key);
+  if (n.result === 1) await kv('expire', key, String(windowSec));
+  return (n.result || 0) > max;
 }
 
 // Notification d'un message publie AUTOMATIQUEMENT (jeu BPM ici), avec le meme

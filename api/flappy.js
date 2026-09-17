@@ -18,6 +18,17 @@ const MAX_LEADERBOARD_SIZE = 500; // borne la croissance, on ne garde que le Top
 // (gros consommateur), donc quota nettement moins a risque.
 const REDIS_PAUSED = false;
 
+// Plafond par IP, le clientId etant choisi par le navigateur (cf. api/chat.js).
+async function ipFlood(kv, req, prefix, max, windowSec) {
+  const raw = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim();
+  const ip = raw.replace(/[^0-9a-f.:]/gi, '');
+  if (!ip) return false;
+  const key = `${prefix}:ip:${ip}`;
+  const n = await kv('incr', key);
+  if (n.result === 1) await kv('expire', key, String(windowSec));
+  return (n.result || 0) > max;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -34,17 +45,17 @@ export default async function handler(req, res) {
   // ---- GET ?top=10 : classement des meilleurs scores ----
   if (req.method === 'GET' && req.query.top) {
     try {
-      const n = Math.min(parseInt(req.query.top, 10) || 10, 50);
+      // Plafond a 10 (ce que le player demande) et UN seul hmget pour les
+      // pseudos : avant, ?top=50 declenchait 51 commandes Redis par appel,
+      // sans limite, a la portee de n'importe quel curl.
+      const n = Math.min(parseInt(req.query.top, 10) || 10, 10);
       const zj = await kv('zrange', 'flappy:leaderboard', '0', String(n - 1), 'REV', 'WITHSCORES');
       if (zj.result === undefined) throw new Error('kv-error');
       const raw = zj.result || [];
-      const top = [];
-      for (let i = 0; i < raw.length; i += 2) {
-        const clientId = raw[i];
-        const score = parseInt(raw[i + 1], 10) || 0;
-        const nj = await kv('hget', 'flappy:meta', clientId);
-        top.push({ nick: nj.result || 'Listener', score });
-      }
+      const ids = [], scores = [];
+      for (let i = 0; i < raw.length; i += 2) { ids.push(raw[i]); scores.push(parseInt(raw[i + 1], 10) || 0); }
+      const nicks = ids.length ? ((await kv('hmget', 'flappy:meta', ...ids)).result || []) : [];
+      const top = ids.map((_, i) => ({ nick: nicks[i] || 'Listener', score: scores[i] }));
       return res.status(200).json({ enabled: true, top });
     } catch {
       return res.status(200).json({ enabled: false, top: [] });
@@ -54,12 +65,15 @@ export default async function handler(req, res) {
   // ---- POST : soumettre un score (garde seulement le meilleur par clientId) ----
   const body = req.body || {};
   const clientId = (body.clientId || '').toString().slice(0, 64).replace(/[^a-zA-Z0-9_-]/g, '') || null;
-  const nick = (body.nick || 'Listener').toString().slice(0, 30) || 'Listener';
+  // Memes pseudos reserves que le chat : le classement est public lui aussi.
+  let nick = (body.nick || 'Listener').toString().trim().slice(0, 30) || 'Listener';
+  if (/kalbassfm|^admin$|^bpm\s*guesser$/i.test(nick)) nick = 'Listener';
   const score = Math.max(0, Math.min(MAX_SCORE, parseInt(body.score, 10) || 0));
 
   if (!clientId || score <= 0) return res.status(200).json({ enabled: true, ok: false });
 
   try {
+    if (await ipFlood(kv, req, 'flappy', 30, 60)) return res.status(200).json({ enabled: true, ok: false, rateLimited: true });
     const curJ = await kv('zscore', 'flappy:leaderboard', clientId);
     const currentBest = parseInt(curJ.result ?? 0, 10) || 0;
     if (score > currentBest) {
