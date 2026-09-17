@@ -362,7 +362,7 @@ def main():
     print(f"{len(candidates)} mix dans {BANK_DIR}/, {len(scheduled)} programme(s).")
 
     state = load_state()
-    to_pin, to_publish = [], []
+    to_pin, to_publish, fenetre = [], [], []
     for c, album in scheduled:
         try:
             air_date = datetime.strptime(album, "%Y-%m-%d").date()
@@ -370,11 +370,31 @@ def main():
             print(f"  [IGNORE] champ Album illisible comme date : {album!r} ({Path(c['path']).name})")
             continue
         key = f"{c['id']}:{album}"
-        if (air_date - timedelta(days=PIN_DAYS_BEFORE) <= today < air_date
-                and key not in state["pinned"]):
-            to_pin.append((c, air_date, key))
+        if air_date - timedelta(days=PIN_DAYS_BEFORE) <= today < air_date:
+            fenetre.append((c, air_date, key))
+            if key not in state["pinned"]:
+                to_pin.append((c, air_date, key))
         if air_date == today and key not in state["published"]:
             to_publish.append((c, air_date, key))
+
+    # Un bandeau deja pose peut disparaitre avant le jour J : /unpin, une
+    # deprogrammation, une pause du chat mal restauree... Constate le
+    # 2026-09-17 : le mix du 20/09 etait marque epingle dans l'etat, et
+    # chat:pinned etait vide — l'automate croyait le travail fait et ne
+    # l'aurait jamais repose. Si le bandeau est VIDE pendant la fenetre, on le
+    # repose pour le prochain mix ; s'il porte autre chose (bandeau de pause,
+    # /pin manuel), on n'y touche pas.
+    deja = [x for x in fenetre if x[2] in state["pinned"]]
+    if not to_pin and deja:
+        try:
+            actuel = kv_call("get", "chat:pinned").get("result")
+        except Exception as e:  # noqa: BLE001
+            actuel = "?"
+            print(f"  [ATTENTION] bandeau illisible ({e}), pas de repose.")
+        if not actuel:
+            c, air_date, key = min(deja, key=lambda x: x[1])
+            print(f"  [REPIN] bandeau disparu, repose pour {Path(c['path']).name}")
+            to_pin.append((c, air_date, key))
 
     if not to_pin and not to_publish:
         print("Rien a faire aujourd'hui.")
@@ -400,7 +420,8 @@ def main():
         print(f"[PIN] {text}")
         if apply_mode:
             set_pinned(text)
-            state["pinned"].append(key)
+            if key not in state["pinned"]:
+                state["pinned"].append(key)
 
     if apply_mode:
         save_state(state)
