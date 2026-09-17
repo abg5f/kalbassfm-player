@@ -35,6 +35,7 @@ import json
 import mimetypes
 import os
 import re
+import socket
 import subprocess
 import sys
 import threading
@@ -473,43 +474,79 @@ async function run(job){
       + "Un morceau envoye peut passer a l'antenne dans les minutes qui suivent.\n"
       + "C'est la seule action de cette page qui ne se defait pas.")) return;
   }
+  // Couper le lecteur AVANT de lancer : un mp3 en cours de lecture est ouvert
+  // cote serveur, et Windows refuse de deplacer un fichier ouvert.
+  player.pause();
+  player.removeAttribute('src');
+  player.load();
   const r = await post('/run', {job: job, confirm: job === 'envoi' ? 'oui' : ''});
   if(!r) return;
-  seen = 0;
-  document.getElementById('log').textContent = '';
+  seen = 0; progress = '';
+  const log = document.getElementById('log');
+  log.textContent = '';
+  logLine(log, '=== Lancement : ' + (JOBLABEL[job] || job) + ' ===');
   setBusy(true);
+  // Le bouton d'envoi est dans le pied de page, le journal tout en haut :
+  // sans ce defilement, on clique et on ne voit rien partir.
+  document.getElementById('pipeline').scrollIntoView({block: 'start'});
+  setState('running', job, 0);
   poll();
 }
 function setBusy(on){
   document.querySelectorAll('.steps button, #btn-envoi').forEach(b => b.disabled = on);
   document.getElementById('logwrap').hidden = false;
 }
+function logLine(log, l){
+  const div = document.createElement('div');
+  if(/^\[ECHEC\]|^\[ERREUR\]|ECHEC|Echec envoi|indisponible/.test(l)) div.className = 'err';
+  else if(/^\[OK\]|^===|en ligne,/.test(l)) div.className = 'good';
+  div.textContent = l;
+  log.appendChild(div);
+}
+// Avancement de l'envoi, tire des lignes "[SFTP i/N]" de analyse_new_tracks.py.
+let progress = '';
+function setState(status, name, elapsed, rc){
+  const lab = JOBLABEL[name] || name || '';
+  const txt =
+      status === 'running' ? lab + ' en cours' + (progress ? ' — ' + progress : '') + ' — ' + elapsed + ' s'
+    : status === 'done'    ? lab + ' termine' + (progress ? ' (' + progress + ')' : '') + '.'
+    : status === 'failed'  ? lab + ' en echec (code ' + rc + ').' : '';
+  document.getElementById('jobstate').textContent = txt;
+  // Repris a cote du bouton : c'est la qu'on regarde apres avoir clique.
+  const f = document.getElementById('envoistate');
+  if(f) f.textContent = name === 'envoi' ? txt : '';
+}
 async function poll(){
-  const d = await (await fetch('/log?since=' + seen)).json();
+  let d;
+  try { d = await (await fetch('/log?since=' + seen)).json(); }
+  catch(e){ setTimeout(poll, 2000); return; }   // serveur occupe : on retente
   seen = d.total;
   if(d.lines.length){
     const log = document.getElementById('log');
     for(const l of d.lines){
-      const div = document.createElement('div');
-      if(/^\[ECHEC\]|^\[ERREUR\]|ECHEC/.test(l)) div.className = 'err';
-      else if(/^\[OK\]|^===/.test(l)) div.className = 'good';
-      div.textContent = l;
-      log.appendChild(div);
+      const m = /^\[SFTP (\d+)\/(\d+)\]/.exec(l);
+      if(m) progress = m[1] + '/' + m[2] + ' envoye(s)';
+      logLine(log, l);
     }
     log.scrollTop = log.scrollHeight;
   }
-  document.getElementById('jobstate').textContent =
-      d.status === 'running' ? (JOBLABEL[d.name] || d.name) + ' en cours — ' + d.elapsed + ' s'
-    : d.status === 'done'    ? 'Termine.'
-    : d.status === 'failed'  ? 'Echec (code ' + d.rc + ').' : '';
+  setState(d.status, d.name, d.elapsed, d.rc);
   if(d.status === 'running'){ setTimeout(poll, 1000); return; }
   setBusy(false);
-  // L'etat des morceaux a change : on recharge pour repartir du vrai.
-  if(d.status === 'done') setTimeout(() => location.reload(), 1500);
+  // L'etat des morceaux a change : on recharge pour repartir du vrai. Le
+  // journal survit au rechargement (le serveur le garde, voir plus bas).
+  if(d.status === 'done' && !restoring) setTimeout(() => location.reload(), 2500);
+  restoring = false;
 }
-// Reprend l'affichage si un travail tourne deja (page rouverte en cours de route).
+// A l'ouverture, on reaffiche le dernier travail : en cours (page rouverte en
+// route) ou fini (rechargement de fin) — sinon le compte rendu de l'envoi
+// disparaissait avec le rechargement, et on ne savait pas s'il etait parti.
+let restoring = false;
 fetch('/log?since=0').then(r=>r.json()).then(d=>{
-  if(d.status === 'running'){ setBusy(true); poll(); }
+  if(d.status === 'idle') return;
+  restoring = d.status !== 'running';
+  setBusy(d.status === 'running');
+  poll();
 });
 """
 
@@ -607,7 +644,7 @@ def render(rows, stat, notice=None):
   </div>
 </header>
 <main>
-  <div class="panel">
+  <div class="panel" id="pipeline" style="scroll-margin-top:110px">
     <h3>Pipeline</h3>
     <div class="steps">
       <button onclick="run('triage')">1. Triage (~1 h)</button>
@@ -625,6 +662,7 @@ def render(rows, stat, notice=None):
   </div>
   <button class="danger" id="btn-envoi" onclick="run('envoi')">
     Envoyer {stat['final_ok']} morceaux vers AzuraCast</button>
+  <span class="pill" id="envoistate" style="color:var(--warn)"></span>
   <span>Range les &eacute;cart&eacute;s, applique les changements de bac en local,
   puis envoie. Rien n'a boug&eacute; jusqu'ici.</span>
 </footer>
@@ -636,6 +674,11 @@ def render(rows, stat, notice=None):
 class Handler(BaseHTTPRequestHandler):
     index = {}
     protocol_version = "HTTP/1.1"
+    # Un navigateur qui met la lecture en pause cesse de lire la socket :
+    # serve_audio() reste bloque en ecriture, le mp3 OUVERT, et Windows refuse
+    # alors de le deplacer. Sans delai, ce verrou durait jusqu'a la fermeture
+    # de l'onglet — c'est ce qui a fait planter l'envoi du 2026-09-16.
+    timeout = 60
 
     def log_message(self, *a):
         pass
@@ -733,8 +776,8 @@ class Handler(BaseHTTPRequestHandler):
                     break
                 try:
                     self.wfile.write(chunk)
-                except (BrokenPipeError, ConnectionResetError):
-                    return          # changement de morceau : normal
+                except (BrokenPipeError, ConnectionResetError, TimeoutError):
+                    return          # changement de morceau, ou lecture en pause
                 left -= len(chunk)
 
     # ---------------------------------------------------------------- POST
@@ -801,6 +844,23 @@ class Handler(BaseHTTPRequestHandler):
 
 # --------------------------------------------------------------------------- main
 
+class ServeurExclusif(ThreadingHTTPServer):
+    """Refuse de demarrer si le port est deja occupe.
+
+    HTTPServer active SO_REUSEADDR, qui sous Windows laisse un SECOND processus
+    ecouter sur le meme port sans erreur. Le 2026-09-16, deux review_analyse.py
+    tournaient ainsi (celui de la veille, oublie, et le nouveau) : le navigateur
+    lisait l'audio sur l'ancien, qui tenait un mp3 ouvert pendant que le nouveau
+    essayait de le ranger dans _a_revoir/.
+    """
+    allow_reuse_address = False
+
+    def server_bind(self):
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):      # Windows uniquement
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--port", type=int, default=DEFAULT_PORT)
@@ -830,8 +890,16 @@ def main():
             print(f"{st['tranches']} arbitrage(s), {st['rebinned']} bac(s) "
                   f"change(s) deja enregistre(s).")
 
-    srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     url = f"http://127.0.0.1:{args.port}/"
+    try:
+        srv = ServeurExclusif(("127.0.0.1", args.port), Handler)
+    except OSError:
+        print(f"Le port {args.port} est deja pris : l'interface tourne sans doute deja "
+              f"dans une autre fenetre.\nOuverture de {url} — ferme l'autre fenetre "
+              f"si tu veux relancer le serveur.")
+        if not args.no_open:
+            webbrowser.open(url)
+        return
     print(f"\nInterface : {url}")
     print("Seul le bouton d'envoi met quelque chose en ligne. Ferme cette fenetre pour arreter.\n")
     if not args.no_open:

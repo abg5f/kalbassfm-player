@@ -184,8 +184,33 @@ def judge(queue, metadata, ref, strict, overrides=None):
     return rows, orphans
 
 
+class FichierVerrouille(Exception):
+    """Le mp3 est ouvert par un autre programme et Windows refuse de le deplacer."""
+
+
+def deplacer(src, dest):
+    """Deplacement local qui echoue PROPREMENT sur un fichier verrouille.
+
+    shutil.move rattrape l'echec du renommage par copie + suppression : sur un
+    fichier ouvert ailleurs, la copie reussit et la suppression echoue — on se
+    retrouve avec le mp3 en double. C'est ce qu'a laisse l'envoi du 2026-09-16
+    (Conrad Van Orton dans 4_club/ ET dans _a_revoir/), lu au meme moment par
+    un second review_analyse.py oublie. Source et destination sont toutes deux
+    sous New_prog/, donc sur le meme disque : un renommage suffit, et il reussit
+    en entier ou pas du tout.
+    """
+    try:
+        os.rename(src, dest)
+    except PermissionError as exc:
+        raise FichierVerrouille(os.path.basename(src)) from exc
+
+
 def hold(row, metadata):
-    """Range un morceau ecarte dans _a_revoir/, journalise le motif, sort de metadata."""
+    """Range un morceau ecarte dans _a_revoir/, journalise le motif, sort de metadata.
+
+    Leve FichierVerrouille sans rien avoir touche (ni fichier, ni journal, ni
+    metadata) : l'appelant laisse le morceau en file pour le prochain passage.
+    """
     src = LOCAL(row["path"])
     os.makedirs(LOCAL(HOLD_FOLDER), exist_ok=True)
     dest = os.path.join(LOCAL(HOLD_FOLDER), os.path.basename(src))
@@ -195,7 +220,7 @@ def hold(row, metadata):
         dest = f"{base}_{i}{ext}"
         i += 1
     if os.path.exists(src):
-        shutil.move(src, dest)
+        deplacer(src, dest)
     else:
         print(f"  [ATTENTION] fichier introuvable, deplacement saute : {src}")
     with open(LOCAL(HOLD_LOG), "a", encoding="utf-8") as fh:
@@ -256,7 +281,7 @@ def move_to_bin(row, metadata):
         # Les deux existent : c'est un vrai homonyme, pas un deplacement fait.
         return renonce(f"un AUTRE fichier du meme nom est deja dans {row['slot']}")
     os.makedirs(dest_dir, exist_ok=True)
-    shutil.move(src, dest)
+    deplacer(src, dest)                 # FichierVerrouille : rien n'a bouge
     print(f"[BAC] {os.path.basename(src)} : {row['slot_auto']} -> {row['slot']}")
     return adopte(dest)
 
@@ -385,21 +410,43 @@ def main():
             open_in_browser()
         return
 
+    # Morceaux qu'un autre programme tient ouverts (lecteur, second serveur
+    # review_analyse.py...) : ni ecartes, ni envoyes, ils RESTENT en file et
+    # repasseront au prochain lancement. Planter ici laissait les deplacements
+    # deja faits sans que metadata.json ni la file ne soient enregistres.
+    verrouilles = []
+
+    def attendre(row):
+        print(f"[VERROU] {os.path.basename(row['path'])} : ouvert par un autre programme "
+              f"— reste en file, relance l'envoi une fois le lecteur ferme.")
+        verrouilles.append({"slot": row["slot_auto"], "path": row["path"]})
+        row["verrouille"] = True
+
     # ── Mise de cote ─────────────────────────────────────────────────────────
     for row in held:
         print(f"[ECARTE] -> _a_revoir : {os.path.basename(row['path'])}")
-        metadata = hold(row, metadata)
+        try:
+            metadata = hold(row, metadata)
+        except FichierVerrouille:
+            attendre(row)
     if held:
         save_metadata(metadata)
+    held = [r for r in held if not r.get("verrouille")]
 
     # ── Changements de bac demandes a la main ────────────────────────────────
     # Avant l'envoi : le slot decide du dossier distant, il doit etre definitif
     # au moment ou le SFTP s'ouvre.
     rebinned = [r for r in passed if r.get("bin_override")]
     for row in rebinned:
-        metadata = move_to_bin(row, metadata)
+        try:
+            metadata = move_to_bin(row, metadata)
+        except FichierVerrouille:
+            # Pas de repli sur l'ancien bac : le choix fait a l'oreille serait
+            # perdu, la file d'attente etant videe apres l'envoi.
+            attendre(row)
     if rebinned:
         save_metadata(metadata)
+    passed = [r for r in passed if not r.get("verrouille")]
 
     # ── Envoi AzuraCast ──────────────────────────────────────────────────────
     uploaded, failures = 0, []
@@ -416,10 +463,12 @@ def main():
     else:
         pending = azuracast_upload.retry_pending_uploads(sftp)
         try:
-            for row in passed:
+            # Le compteur i/N est lu par review_analyse.py pour afficher
+            # l'avancement de l'envoi : ne pas changer son format a la legere.
+            for i, row in enumerate(passed, 1):
                 name = os.path.basename(row["path"])
                 try:
-                    print(f"[SFTP] Envoi -> /{row['slot']}/{name}")
+                    print(f"[SFTP {i}/{len(passed)}] Envoi -> /{row['slot']}/{name}")
                     azuracast_upload.upload(sftp, row["slot"], row["path"])
                     uploaded += 1
                 except azuracast_upload.RemoteAlreadyExists:
@@ -434,11 +483,14 @@ def main():
             transport.close()
 
     azuracast_upload.save_pending_uploads(pending)
-    azuracast_upload.save_pending_review(still_queued)
+    azuracast_upload.save_pending_review(still_queued + verrouilles)
     render_report(rows, orphans, True, uploaded, failures)
 
     print(f"\n{uploaded} morceau(x) en ligne, {len(held)} ecarte(s), "
           f"{len(pending)} en attente d'envoi.")
+    if verrouilles:
+        print(f"{len(verrouilles)} morceau(x) verrouille(s), laisse(s) en file : "
+              f"relance l'envoi apres avoir ferme ce qui les lit.")
 
     # ── Table BPM du chat live ───────────────────────────────────────────────
     # metadata.json a pu changer (morceaux ecartes) : api/bpm-table.json doit
