@@ -112,6 +112,7 @@ async function handleMessage(token, message) {
       + '/delete — supprimer le morceau en cours\n\n'
       + '<b>Bibliothèque</b>\n'
       + '/search &lt;mots&gt; — chercher, puis file, bac, réserve ou suppression\n'
+      + '/search &lt;mots&gt; --reserve — chercher AUSSI dans les morceaux hors antenne\n'
       + '/find &lt;mots&gt; — identique à /search\n\n'
       + '<b>Chat</b>\n'
       + '/msg &lt;texte&gt; — écrire dans le chat live\n'
@@ -428,26 +429,47 @@ async function handleMessage(token, message) {
   // le morceau choisi : file d'attente, sortie d'antenne, suppression.
   // Complete /delete et /move, qui ne savent agir que sur le titre EN COURS.
   if (text.startsWith('/search') || text.startsWith('/find')) {
-    const query = text.replace(/^\/(search|find)(@\S+)?/, '').trim();
+    // --reserve : la reserve est EXCLUE par defaut. Un morceau de _ecarte a ete
+    // sorti de l'antenne volontairement, et la file le refuse de toute facon
+    // (aucune playlist = pas demandable) : le proposer au milieu des autres ne
+    // menait qu'a un echec. Le drapeau reste necessaire pour le repecher,
+    // /search etant le seul chemin de retour vers un bac.
+    const raw = text.replace(/^\/(search|find)(@\S+)?/, '').trim();
+    const avecReserve = /(^|\s)--reserve$/.test(raw);
+    const query = avecReserve ? raw.replace(/(^|\s)--reserve$/, '').trim() : raw;
     if (!query) {
       return sendMessage(token, chatId,
         'Usage : /search <artiste ou titre>\n'
         + 'Ex : /search Kerri Chandler — puis choisis un résultat pour l\'ajouter à la file, '
-        + 'le sortir de l\'antenne ou le supprimer.');
+        + 'le sortir de l\'antenne ou le supprimer.\n'
+        + 'Ajoute --reserve à la fin pour chercher aussi dans les morceaux hors antenne.');
     }
     const r = await searchLibrary(query);
     if (!r.ok) return sendMessage(token, chatId, `Echec de la recherche dans la bibliothèque (${r.status}).`);
-    if (!r.list.length) return sendMessage(token, chatId, `Aucun morceau ne correspond à « ${query} ».`);
 
-    const found = r.list.slice(0, SEARCH_MAX_RESULTS);
+    const enReserve = r.list.filter(isReserve).length;
+    const list = avecReserve ? r.list : r.list.filter((f) => !isReserve(f));
+    // Combien de resultats la reserve a-t-elle avales : sans ce compte, une
+    // recherche qui ne ramene que des morceaux ecartes semble ne rien trouver.
+    const noteReserve = (!avecReserve && enReserve)
+      ? `\n\n🚫 ${enReserve} en réserve, masqué${enReserve > 1 ? 's' : ''} — `
+        + `/search ${query} --reserve pour les voir.`
+      : '';
+    if (!list.length) {
+      return sendMessage(token, chatId,
+        `Aucun morceau à l'antenne ne correspond à « ${query} ».${noteReserve}`);
+    }
+
+    const found = list.slice(0, SEARCH_MAX_RESULTS);
     const lines = found.map((f, i) => `${i + 1}. ${trackLabel(f)}\n   ${trackDetails(f)}`);
     const buttons = found.map((f, i) => ({ text: String(i + 1), callback_data: 'f:' + f.id }));
     const rows = [];
     for (let i = 0; i < buttons.length; i += 4) rows.push(buttons.slice(i, i + 4));
     return sendMessage(token, chatId,
-      `🔎 « ${query} » — ${r.list.length} résultat(s)`
-      + (r.list.length > found.length ? ` (${found.length} affichés)` : '') + '\n\n'
-      + lines.join('\n') + '\n\nChoisis un numéro pour agir dessus.',
+      `🔎 « ${query} » — ${list.length} résultat(s)`
+      + (list.length > found.length ? ` (${found.length} affichés)` : '')
+      + (avecReserve ? ' · réserve comprise' : '') + '\n\n'
+      + lines.join('\n') + '\n\nChoisis un numéro pour agir dessus.' + noteReserve,
       { reply_markup: { inline_keyboard: rows } });
   }
 
@@ -792,7 +814,8 @@ async function handleCallback(token, cb) {
     await answerCallback(token, cb.id, '✅ En réserve');
     await sendMessage(token, cb.message.chat.id,
       `🚫 Mis en réserve : ${label}\n`
-      + `Le fichier reste sur le serveur dans _ecarte — /search puis 📁 Déplacer pour le remettre en rotation.`);
+      + `Le fichier reste sur le serveur dans _ecarte — /search ${label.split(' — ')[0]} --reserve `
+      + `puis 📁 Déplacer pour le remettre en rotation.`);
     await editMessageMarkup(token, cb.message.chat.id, cb.message.message_id);
   } else if (data.startsWith('fd:')) {
     const id = data.slice(3);
@@ -1082,6 +1105,14 @@ async function searchLibrary(query) {
 
 function trackLabel(f) {
   return `${f.artist || '?'} — ${f.title || f.text || f.path || '(sans titre)'}`;
+}
+
+// Un morceau de la reserve : range dans _ecarte, donc rattache a aucune
+// playlist. Le dossier fait foi plutot que l'absence de playlists — un titre
+// d'un vrai bac qui n'a pas encore ete rattache (envoi frais pas fini
+// d'indexer) est un incident a corriger, pas un morceau ecarte.
+function isReserve(f) {
+  return binOfPath(f && f.path) === '_ecarte';
 }
 
 /* ---- Les six bacs ----
