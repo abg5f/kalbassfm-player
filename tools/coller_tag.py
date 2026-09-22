@@ -16,8 +16,13 @@ TROIS PRECAUTIONS, dans cet ordre d'importance :
    ca s'entend immediatement. On mesure donc la sonie (EBU R128) des deux
    fichiers et on applique un gain AU TAG SEUL pour l'aligner sur le jingle.
    Le jingle, lui, n'est jamais retouche : c'est le materiau artistique.
-2. SILENCE. Colles bord a bord, la derniere syllabe du jingle mord sur le
-   tag. Un souffle de 0,15 s par defaut (--gap) suffit a poser la signature.
+2. QUEUE ET SILENCE. Les clips Suno ne s'arretent pas net : ils trainent une
+   queue de reverbe de 0,4 a 0,6 s sous -35 dB (mesure : Dogger Bass 0,57 s,
+   Nobody Asked 0,55 s). Ajoutee au silence de raccord, elle faisait attendre
+   le tag une demi-seconde de trop -- le defaut du premier jet. On rogne donc
+   cette queue (--seuil, -35 dB par defaut ; --no-rogner pour la garder) AVANT
+   d'ajouter le souffle de --gap. Certains jingles s'arretent deja net
+   (Forty Years of Light) : le rognage ne leur retire rien.
 3. FORMAT. Les fichiers Suno sont en Opus dans un conteneur .m4a : coller
    sans reencoder est impossible de toute facon (concat exige des flux
    identiques). On sort donc en MP3 320 kbps, ce qu'AzuraCast indexe sans
@@ -28,6 +33,7 @@ Usage :
     python coller_tag.py --apply            # produit tout dans _final/
     python coller_tag.py --apply --only "Dogger"   # un seul jingle, pour ecouter
     python coller_tag.py --apply --gap 0.3         # plus d'air avant le tag
+    python coller_tag.py --apply --seuil -45       # rogner moins (vraie reverbe gardee)
     python coller_tag.py --apply --vhf             # tag filtre facon radio VHF
 
 --vhf applique highpass=300,lowpass=3000 AU TAG : la bande passante d'une
@@ -73,18 +79,30 @@ def sonie(path):
     return float(m[-1]) if m else None
 
 
-def coller(jingle, tag, dest, gap, gain_db, vhf, apply_mode):
-    """Un seul ffmpeg : silence ajoute au jingle, gain + filtre sur le tag,
-    puis concatenation. apad plutot qu'un troisieme flux de silence : c'est le
-    jingle qu'on prolonge, le tag n'a pas a porter le blanc."""
+def coller(jingle, tag, dest, gap, gain_db, vhf, seuil, apply_mode):
+    """Un seul ffmpeg : queue rognee puis silence ajoute au jingle, gain +
+    filtre sur le tag, puis concatenation. apad plutot qu'un troisieme flux de
+    silence : c'est le jingle qu'on prolonge, le tag n'a pas a porter le blanc.
+
+    Le rognage passe par areverse : silenceremove ne sait couper qu'au DEBUT
+    d'un flux, alors on retourne l'audio, on coupe sa nouvelle tete, et on le
+    remet a l'endroit. detection=peak et non rms : une reverbe qui s'eteint
+    fait descendre le rms bien avant que la queue soit vraiment finie.
+    """
+    filtre_jingle = ["aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo"]
+    if seuil is not None:
+        filtre_jingle.append(
+            f"areverse,silenceremove=start_periods=1:start_threshold={seuil}dB:"
+            "start_silence=0:detection=peak,areverse")
+    if gap > 0:
+        filtre_jingle.append(f"apad=pad_dur={gap}")
     filtre_tag = ["aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo"]
     if abs(gain_db) > 0.1:
         filtre_tag.append(f"volume={gain_db:.1f}dB")
     if vhf:
         filtre_tag.append(VHF)
     chaine = (
-        "[0:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,"
-        f"apad=pad_dur={gap}[j];"
+        "[0:a]" + ",".join(filtre_jingle) + "[j];"
         "[1:a]" + ",".join(filtre_tag) + "[t];"
         "[j][t]concat=n=2:v=0:a=1[out]"
     )
@@ -115,7 +133,11 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dossier", default=DOSSIER)
     ap.add_argument("--tag", default=TAG, help="nom du fichier tag dans le dossier")
-    ap.add_argument("--gap", type=float, default=0.15, help="silence avant le tag, en secondes")
+    ap.add_argument("--gap", type=float, default=0.08, help="silence avant le tag, en secondes")
+    ap.add_argument("--seuil", type=float, default=-35.0,
+                    help="niveau sous lequel la fin du jingle est consideree comme une queue "
+                         "a rogner (dB, defaut -35)")
+    ap.add_argument("--no-rogner", action="store_true", help="garder la queue du jingle telle quelle")
     ap.add_argument("--vhf", action="store_true", help="filtre radio VHF sur le tag")
     ap.add_argument("--no-niveau", action="store_true", help="ne pas aligner le niveau du tag")
     ap.add_argument("--only", help="ne traiter que les jingles dont le nom contient ce texte")
@@ -142,7 +164,9 @@ def main():
     sonie_tag = None if args.no_niveau else sonie(tag)
     print(f"Tag : {args.tag} ({duree(tag):.2f} s"
           + (f", {sonie_tag:.1f} LUFS" if sonie_tag is not None else "") + ")")
-    print(f"{len(jingles)} jingle(s), silence {args.gap} s"
+    seuil = None if args.no_rogner else args.seuil
+    print(f"{len(jingles)} jingle(s), silence {args.gap} s, "
+          + (f"queue rognee sous {seuil:.0f} dB" if seuil is not None else "queue gardee")
           + (", tag filtre VHF" if args.vhf else "")
           + ("" if args.apply else "  — SIMULATION") + "\n")
 
@@ -161,15 +185,20 @@ def main():
                 # Borne a +/-12 dB : au-dela, ce n'est plus un ajustement mais
                 # un fichier abime (silence quasi total, ou saturation).
                 gain = max(-12.0, min(12.0, s - sonie_tag))
-        ok, msg = coller(src, tag, dest, args.gap, gain, args.vhf, args.apply)
+        ok, msg = coller(src, tag, dest, args.gap, gain, args.vhf, seuil, args.apply)
         if not ok:
             print(f"  [ECHEC] {f} : {msg}")
             echecs += 1
             continue
-        attendu = duree(src) + args.gap + duree(tag)
-        reel = duree(dest) if args.apply else attendu
-        alerte = "" if abs(reel - attendu) < 0.35 else f"  ⚠ attendu {attendu:.2f} s"
-        print(f"  [OK] {f[:46]:<46} {reel:5.2f} s  tag {gain:+.1f} dB{alerte}")
+        # La queue rognee se lit dans l'ecart : ce qui manque par rapport au
+        # cumul brut, c'est exactement ce que silenceremove a coupe.
+        brut = duree(src) + args.gap + duree(tag)
+        reel = duree(dest) if args.apply else brut
+        coupe = brut - reel
+        note = f"  queue -{coupe:.2f} s" if coupe > 0.05 else ""
+        if coupe > 1.5:
+            note += "  ⚠ beaucoup : ecoute, ou remonte --seuil"
+        print(f"  [OK] {f[:44]:<44} {reel:5.2f} s  tag {gain:+.1f} dB{note}")
         faits += 1
 
     print(f"\n{faits} produit(s), {sautes} deja la, {echecs} echec(s) -> {sortie}")
