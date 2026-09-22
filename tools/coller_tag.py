@@ -133,6 +133,9 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dossier", default=DOSSIER)
     ap.add_argument("--tag", default=TAG, help="nom du fichier tag dans le dossier")
+    ap.add_argument("--sortie", default=SORTIE,
+                    help="sous-dossier de sortie (defaut _final). Un second tag merite le "
+                         "sien : les deux series cohabitent et on tranche a l'ecoute.")
     ap.add_argument("--gap", type=float, default=0.08, help="silence avant le tag, en secondes")
     ap.add_argument("--seuil", type=float, default=-35.0,
                     help="niveau sous lequel la fin du jingle est consideree comme une queue "
@@ -149,7 +152,7 @@ def main():
     tag = os.path.join(args.dossier, args.tag)
     if not os.path.isfile(tag):
         sys.exit(f"Tag introuvable : {tag}")
-    sortie = os.path.join(args.dossier, SORTIE)
+    sortie = os.path.join(args.dossier, args.sortie)
     os.makedirs(sortie, exist_ok=True)
 
     jingles = sorted(

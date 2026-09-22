@@ -158,11 +158,83 @@ l'intérêt.
 
 ### Collage et normalisation
 
-`ffmpeg` n'est toujours pas dans le PATH — à installer avant tout le reste.
+`ffmpeg` est installé depuis le 2026-09-16 (Windows + WSL), et le collage est scripté :
+`tools/coller_tag.py` rogne la queue de réverbe du jingle, aligne le niveau du tag sur
+celui du jingle (EBU R128) et sort un MP3 320k. La ligne brute ci-dessous reste valable
+pour un essai isolé.
 
 ```bash
 ffmpeg -i "jingle.mp3" -i "tag.mp3" -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1,loudnorm=I=-16:TP=-1.5:LRA=11" -b:a 192k "out.mp3"
 ```
+
+### Tag bis — la version chantée, tirée du n° 31 (2026-09-22)
+
+Le n° 31 chante le nom **faux** au milieu du jingle ; le tag le corrige. L'idée ici est de
+reprendre ce phrasé — les syllabes étirées — pour un tag **chanté juste**, plus mémorable
+qu'une voix parlée. Le premier tag (`CH16 - On Channel Sixteen.m4a`, 2,04 s) reste la
+signature de référence : ce qui suit est une alternative à tester, pas un remplacement.
+
+**Ce qu'un deuxième tag coûte.** Une signature se reconnaît parce qu'elle ne varie pas. Deux
+tags alternés sur 51 jingles, c'est deux fois moins d'occasions d'accrocher — sauf s'ils
+partagent la même mélodie, auquel cas l'oreille entend une variation et non une autre radio.
+Les variantes 1 et 3 respectent ça ; la 2 est un objet à part, à réserver.
+
+**Variante 1 — la correction chantée (recommandée).** Le même étirement de syllabes que le
+n° 31, mais juste. Trois notes, voix claire.
+
+- Style : `sung radio station ID, three note vocal hook, bright warm voice, light pad, no drums`
+
+```
+[1second]
+[Sung, bright and warm, three clean notes, confident]
+"Chaaa-nnel... Siiix-teeen."
+[1second]
+```
+
+**Variante 2 — le gag complet dans le tag.** Faux, puis rattrapé. À n'utiliser que sur
+quelques jingles : la blague ne survit pas à 51 répétitions, et elle doublonne le n° 31.
+
+- Style : `radio imaging, one wobbly off-key voice then a clean sung hook, bright, comedic timing`
+
+```
+[Sung, gloriously off-key and wobbly]
+"Chaaaa-nnel... siiiix... teeeee—"
+[Sound FX: record scratch]
+[0.5seconds]
+[Sung, bright and perfectly in tune, two notes]
+"Sixteen."
+[1second]
+```
+
+**Variante 3 — harmonisé.** Une voix seule attaque, deux autres résolvent l'accord. C'est le
+tag radio classique, et Suno harmonise mieux qu'il ne parle.
+
+- Style : `sung station ID, single voice answered by three part harmony, sunny, balearic, airy pad`
+
+```
+[1second]
+[Sung, one bright voice]
+"Chaaa-nnel..."
+[Sung, three voices resolving the chord, warm and sunny]
+"...Siiix-teeen."
+[1second]
+```
+
+**Pourquoi l'orthographe déformée protège aussi du filtre.** « Chaaaa-nnel » et « Channel »
+sont deux chaînes différentes pour le détecteur de paroles : le nom peut donc apparaître
+deux fois dans la variante 2 sans se lire comme un refrain répété — exactement le piège
+décrit plus bas. Ne pas « corriger » cette orthographe.
+
+**Découpe, puis mise en service :**
+
+```bash
+ffmpeg -i "tag_brut.mp3" -ss 1.0 -to 3.2 -b:a 320k "CH16 - Sung Sixteen.m4a"
+python tools/coller_tag.py --apply --only "Dogger" --tag "CH16 - Sung Sixteen.m4a" --sortie _final_chante
+```
+
+Pas de filtre VHF sur un tag chanté : `highpass`+`lowpass` écrase l'harmonie. Le `--sortie`
+évite d'écraser les collages faits avec le tag parlé — les deux séries cohabitent, on
+tranche à l'écoute.
 
 ### Si Suno refuse un jingle (« lyrics contain copyrighted material »)
 
