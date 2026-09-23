@@ -4958,5 +4958,715 @@
   "artist": "War",
   "title": "Flying Machine (The Chase)",
   "bpm": 120.8
+ },
+ {
+  "artist": "Carlos",
+  "title": "Lock Down Move On",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Cinebrivido",
+  "title": "Automatic Object",
+  "bpm": 140.0
+ },
+ {
+  "artist": "Conemelt",
+  "title": "Pear Shaped Funk",
+  "bpm": 142.2
+ },
+ {
+  "artist": "Dee Dee Brave",
+  "title": "My My Lover",
+  "bpm": 120.3
+ },
+ {
+  "artist": "Derek Carr",
+  "title": "An Ocean Of Stars Between Us",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Derek Carr",
+  "title": "Data Intercept",
+  "bpm": 128.5
+ },
+ {
+  "artist": "Dub Theory",
+  "title": "All T'ings Dub",
+  "bpm": 131.1
+ },
+ {
+  "artist": "Erika de Casier",
+  "title": "Rainy",
+  "bpm": 85.0
+ },
+ {
+  "artist": "Fries & Bridges",
+  "title": "Just Because (Ghetto Mix)",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Nemo Vachez",
+  "title": "Christmas Time",
+  "bpm": 132.0
+ },
+ {
+  "artist": "OCB",
+  "title": "Computer Default",
+  "bpm": 138.0
+ },
+ {
+  "artist": "Primoz ‎",
+  "title": "Debugger",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Quarter",
+  "title": "Logic",
+  "bpm": 111.1
+ },
+ {
+  "artist": "Seekers",
+  "title": "Brick By Brick",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Terisa Griffin",
+  "title": "Wonderful Remix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "The Third Man",
+  "title": "Smoke Daddy",
+  "bpm": 132.0
+ },
+ {
+  "artist": "Tiago Walter & Tom Ries",
+  "title": "Hotwing",
+  "bpm": 131.0
+ },
+ {
+  "artist": "Uptown Connection",
+  "title": "Abyss",
+  "bpm": 131.2
+ },
+ {
+  "artist": "Kapote",
+  "title": "Mystery",
+  "bpm": 127.8
+ },
+ {
+  "artist": "ALOT",
+  "title": "Mi Casa",
+  "bpm": 128.0
+ },
+ {
+  "artist": "Alma Negra",
+  "title": "Free",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Alma Negra",
+  "title": "What Would You Do",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Asad & Tangun",
+  "title": "Fear And Loathing By The Bosphorus",
+  "bpm": 123.4
+ },
+ {
+  "artist": "Bernardo Campos",
+  "title": "Tela Azul",
+  "bpm": 129.2
+ },
+ {
+  "artist": "Boulderhead",
+  "title": "Dancing Rain",
+  "bpm": 135.0
+ },
+ {
+  "artist": "Boulderhead",
+  "title": "On The Phone",
+  "bpm": 136.4
+ },
+ {
+  "artist": "Boulderhead",
+  "title": "Rounded",
+  "bpm": 135.0
+ },
+ {
+  "artist": "Chris Geschwindner",
+  "title": "In 2 ∞",
+  "bpm": 129.0
+ },
+ {
+  "artist": "Chris Geschwindner",
+  "title": "Modern Axis of Evil",
+  "bpm": 131.0
+ },
+ {
+  "artist": "Christian Zimmerman",
+  "title": "Diary of a Lost Girl (World of Apples Mojave Rehab Mix)",
+  "bpm": 106.7
+ },
+ {
+  "artist": "Cinthie",
+  "title": "Get up",
+  "bpm": 129.8
+ },
+ {
+  "artist": "Cody Currie",
+  "title": "Midnight Love",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Crackazat",
+  "title": "Dark",
+  "bpm": 120.0
+ },
+ {
+  "artist": "DJ Ghost",
+  "title": "Bar Talk",
+  "bpm": 124.0
+ },
+ {
+  "artist": "DJ Sneak",
+  "title": "Dirty jazz",
+  "bpm": 127.0
+ },
+ {
+  "artist": "DJ Sneak",
+  "title": "You know what I mean?",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Backyard galaxy",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Closer",
+  "bpm": 116.0
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Home",
+  "bpm": 128.7
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Is this love?",
+  "bpm": 126.9
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "It's okay, I can wait",
+  "bpm": 103.0
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Only ever now",
+  "bpm": 132.1
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Open (",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Rhythm baby",
+  "bpm": 124.2
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Run, run, run",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Dam Swindle",
+  "title": "Some day (",
+  "bpm": 114.0
+ },
+ {
+  "artist": "Danny Snowden",
+  "title": "Look Into The Light",
+  "bpm": 130.0
+ },
+ {
+  "artist": "David Bay",
+  "title": "At The Function",
+  "bpm": 127.0
+ },
+ {
+  "artist": "David Bay",
+  "title": "Orbit",
+  "bpm": 129.0
+ },
+ {
+  "artist": "David Bay",
+  "title": "We Owe This World",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Davide Dev",
+  "title": "Crazy Love",
+  "bpm": 128.1
+ },
+ {
+  "artist": "Davide Dev",
+  "title": "Shine",
+  "bpm": 128.4
+ },
+ {
+  "artist": "Davide Dev",
+  "title": "Turn Me On",
+  "bpm": 129.0
+ },
+ {
+  "artist": "Davide Dev",
+  "title": "What You Need",
+  "bpm": 128.5
+ },
+ {
+  "artist": "Doc Martin & Tony Hewitt",
+  "title": "Music From My Soul",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Elisa Elisa",
+  "title": "Whistle me",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Fimiani",
+  "title": "La Isla Respira",
+  "bpm": 122.1
+ },
+ {
+  "artist": "Ilario Liburni",
+  "title": "Rolly",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Jerome Isma",
+  "title": "Ae - Mellow Yellow Pt.2",
+  "bpm": 124.9
+ },
+ {
+  "artist": "John Tejada",
+  "title": "Sweat (On The Walls) Laolu Instrumental Remix",
+  "bpm": 122.1
+ },
+ {
+  "artist": "Kaap",
+  "title": "Sereen",
+  "bpm": 129.0
+ },
+ {
+  "artist": "Kim April",
+  "title": "1212",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Kim April",
+  "title": "Honey Trap",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Kim April",
+  "title": "Yes",
+  "bpm": 129.7
+ },
+ {
+  "artist": "Kymono",
+  "title": "La Musica Dance",
+  "bpm": 126.0
+ },
+ {
+  "artist": "London Connection",
+  "title": "Select 1 To 1",
+  "bpm": 132.9
+ },
+ {
+  "artist": "Melon Bomb",
+  "title": "Galia",
+  "bpm": 128.0
+ },
+ {
+  "artist": "Menta Sauce",
+  "title": "He Said",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Michael James",
+  "title": "Forever Gliding",
+  "bpm": 131.1
+ },
+ {
+  "artist": "Moonstarr",
+  "title": "Workin' Man's Hustle",
+  "bpm": 128.8
+ },
+ {
+  "artist": "Mungo Sound Machine",
+  "title": "Feeling Nice",
+  "bpm": 129.0
+ },
+ {
+  "artist": "Musta",
+  "title": "Afro Tonic",
+  "bpm": 122.1
+ },
+ {
+  "artist": "Nu Mood Orchestra",
+  "title": "Deeper Moods",
+  "bpm": 133.8
+ },
+ {
+  "artist": "Paul Older",
+  "title": "Xylo",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Positiver",
+  "title": "Natural Instinct",
+  "bpm": 131.0
+ },
+ {
+  "artist": "Positiver",
+  "title": "Pleasant Point",
+  "bpm": 134.0
+ },
+ {
+  "artist": "T. Jacques",
+  "title": "Houze Control",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Tarde Loco",
+  "title": "Izza Ly",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Tarde Loco",
+  "title": "Tu Cintura",
+  "bpm": 130.0
+ },
+ {
+  "artist": "Tesfa Williams",
+  "title": "Moments Ahead",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Two Banks Of Four",
+  "title": "Skylines Over Rooftops",
+  "bpm": 129.7
+ },
+ {
+  "artist": "Uptown Connection",
+  "title": "Madness",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Watershell",
+  "title": "We",
+  "bpm": 117.5
+ },
+ {
+  "artist": "Yuta Yamada",
+  "title": "Fantastic Light",
+  "bpm": 129.0
+ },
+ {
+  "artist": "3 Winans Brothers,The Clark Sisters",
+  "title": "Dance - Louie Vega Dance Ritual Mix",
+  "bpm": 120.0
+ },
+ {
+  "artist": "ALOT",
+  "title": "Que Queres",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Alberto Melloni",
+  "title": "Credimi (Instrumental Version)",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Alma Negra",
+  "title": "Where Is The Love",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Aretha Franklin",
+  "title": "A Deeper Love - C+C Radio Mix",
+  "bpm": 122.2
+ },
+ {
+  "artist": "Art of Tones",
+  "title": "All Night - Extended",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Atjazz,E-Man,Rainy Payne",
+  "title": "For Real - Atjazz Remix",
+  "bpm": 121.9
+ },
+ {
+  "artist": "Brainstorm",
+  "title": "We're On Our Way Home (Part 1)",
+  "bpm": 117.3
+ },
+ {
+  "artist": "Cajmere,Dajae",
+  "title": "Brighter Days - Underground Trance Mix '92",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Chez Damier",
+  "title": "Can You Feel It - M.K. Dub",
+  "bpm": 122.9
+ },
+ {
+  "artist": "Chez Damier,Ron Trent",
+  "title": "Morning Factory",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Crackazat",
+  "title": "Alfa - Original Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Crown Heights Affair",
+  "title": "Say a Prayer for Two",
+  "bpm": 113.9
+ },
+ {
+  "artist": "Dawn Tallman",
+  "title": "For Me - Honeycomb Extended Vocal Mix",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Debbie Jacobs,Dimitri From Paris",
+  "title": "Don't You Want My Love - Dimitri From Paris Classic Re-Edit",
+  "bpm": 128.1
+ },
+ {
+  "artist": "Dennis Ferrer",
+  "title": "Reach 4 Freedom - DF's Vocal Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Donae'o",
+  "title": "I - Sean McCabe Remix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Dream 2 Science",
+  "title": "My Love Turns to Liquid",
+  "bpm": 119.6
+ },
+ {
+  "artist": "Earth, Wind & Fire",
+  "title": "Can't Hide Love",
+  "bpm": 143.3
+ },
+ {
+  "artist": "Elado",
+  "title": "I Wanna Dance",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Funky Green Dogs",
+  "title": "Fired Up!",
+  "bpm": 122.9
+ },
+ {
+  "artist": "Halo,Maiya,Atjazz",
+  "title": "Glory - Atjazz Remix",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Jesusdapnk",
+  "title": "Jazz Metric",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Jovonn",
+  "title": "Get Together - Jovonn's BND Remix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kamar",
+  "title": "I Need You - Big Bad Dub",
+  "bpm": 120.9
+ },
+ {
+  "artist": "Kapote",
+  "title": "The Come On",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Kathy Brown",
+  "title": "Happy People - Knee Deep's Happy Vocal Mix",
+  "bpm": 123.8
+ },
+ {
+  "artist": "Kem",
+  "title": "Love Calls - Darryl James Mix",
+  "bpm": 126.0
+ },
+ {
+  "artist": "Kenny Dixon Jr",
+  "title": "Soul Sounds - Mixed",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Atmosphere",
+  "bpm": 122.5
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Back to the Raw - Vocal Rough Mix",
+  "bpm": 123.8
+ },
+ {
+  "artist": "Kerri Chandler",
+  "title": "Up And Away - Kerri Chandler Remaster",
+  "bpm": 124.8
+ },
+ {
+  "artist": "Kerri Chandler,Isis",
+  "title": "Hanging On",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Kerri Chandler,Kamar,Rocco Rodamaal",
+  "title": "I Need You - Rocco Rodamaal's 222 Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Lexa Hill",
+  "title": "Lipstick - Original Mix",
+  "bpm": 122.0
+ },
+ {
+  "artist": "Liquideep",
+  "title": "Welcome Aboard",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Louie Vega,Jay Sinister Sealee,Julie McKnight",
+  "title": "Diamond Life (feat. Julie McKnight) - Dance Ritual Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "Ministers de la Funk",
+  "title": "Believe - Ministers Vocal Mix",
+  "bpm": 128.0
+ },
+ {
+  "artist": "Mr V",
+  "title": "Jus Dance",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Ossie",
+  "title": "Are U Still Smiling?",
+  "bpm": 129.6
+ },
+ {
+  "artist": "Osunlade,Nadirah Shakoor",
+  "title": "Pride - Main Mix",
+  "bpm": 126.7
+ },
+ {
+  "artist": "Phil Weeks,Ladybird",
+  "title": "Love Come Down - Main Mix",
+  "bpm": 123.0
+ },
+ {
+  "artist": "Quentin Harris",
+  "title": "Poor People - Big Room Mix",
+  "bpm": 127.0
+ },
+ {
+  "artist": "Ralphi Rosario",
+  "title": "Brinca - The Definitive Vocal Mix",
+  "bpm": 123.6
+ },
+ {
+  "artist": "Sandy Barber,Opolopo",
+  "title": "I Think I'll Do Some Stepping (On My Own) - OPOLOPO Rework",
+  "bpm": 121.0
+ },
+ {
+  "artist": "Sandy Rivera,Hayze",
+  "title": "Changes (feat. Haze)",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Sandy Rivera,LT Brown,Soul Vision",
+  "title": "Come Into My Room (feat. LT Brown) - Take It Back Mix",
+  "bpm": 125.0
+ },
+ {
+  "artist": "Sharon Pass,Steve Silk Hurley",
+  "title": "The Word Is Love - Silks Orginal Anthem Mix",
+  "bpm": 124.5
+ },
+ {
+  "artist": "Sounds Of Blackness",
+  "title": "The Pressure - Frankie Knuckles Classic Mix (With Intro)",
+  "bpm": 126.9
+ },
+ {
+  "artist": "Stevie Wonder",
+  "title": "Another Star",
+  "bpm": 122.0
+ },
+ {
+  "artist": "T. Jacques",
+  "title": "Inside Out",
+  "bpm": 130.0
+ },
+ {
+  "artist": "The Clark Sisters",
+  "title": "You Brought The Sunshine (Into My Life) - Single edit",
+  "bpm": 117.2
+ },
+ {
+  "artist": "The Detroit Experiment,Mark E",
+  "title": "Think Twice - Mark E Remix",
+  "bpm": 115.0
+ },
+ {
+  "artist": "The Layabouts,Portia Monique",
+  "title": "Bring Me Joy",
+  "bpm": 124.0
+ },
+ {
+  "artist": "The Layabouts,Portia Monique",
+  "title": "Do Better - The Layabouts Vocal Mix",
+  "bpm": 124.0
+ },
+ {
+  "artist": "The System",
+  "title": "You Are in My System",
+  "bpm": 110.4
+ },
+ {
+  "artist": "Tim Deluxe",
+  "title": "Feelings",
+  "bpm": 123.9
+ },
+ {
+  "artist": "Tortured Soul",
+  "title": "Don't Hold Me Down",
+  "bpm": 126.1
  }
 ]

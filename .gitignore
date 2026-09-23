@@ -41,3 +41,6 @@ graphify-out/graph.html
 graphify-out/GRAPH_REPORT.md
 graphify-out/manifest.json
 graphify-out/.graphify_*
+
+# Sortie graphify egaree : le graphe du projet est a la racine, pas dans tools/
+tools/graphify-out/
