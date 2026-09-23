@@ -25,17 +25,14 @@ from collections import defaultdict
 from mutagen import File as MFile
 from mutagen.id3 import ID3, APIC
 
-DEFAULT_ROOTS = [
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\1_chill",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\2_groove",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\3_house",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\4_deep",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\5_clubhouse",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\6_techno",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\7_nightdub",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\8_jungle",
-    r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog\9_liquid",
-]
+# Derives de classify_bins : ecrits en dur, ils sont restes sur la grille a 9
+# bacs apres la bascule et le script balayait des dossiers disparus.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from classify_bins import NEW_BINS  # noqa: E402  (source de verite de la grille)
+
+NEW_PROG = os.getenv("KALBASS_NEW_PROG",
+                     r"C:\Users\ph.dufourcq\Music\00_AZURACAST\New_prog")
+DEFAULT_ROOTS = [os.path.join(NEW_PROG, b) for b in NEW_BINS]
 arg_roots = [a for a in sys.argv[1:] if not a.startswith('--')]
 ROOTS = arg_roots if arg_roots else DEFAULT_ROOTS
 APPLY = '--apply' in sys.argv
@@ -62,6 +59,79 @@ def clean(s):
     s = re.sub(r'\s{2,}', ' ', s)
     s = re.sub(r'\s+([.,])', r'\1', s)
     return s.strip(' -./').strip()
+
+
+def is_url_only(s):
+    """Vrai si la valeur n'est QU'une adresse de site.
+
+    clean() sait deja retirer les URLs et les domaines d'une chaine : s'il n'en
+    reste rien, c'est que le tag ne contenait que de la publicite. Le schema est
+    retire d'abord -- sur "https://djsoundtop.com", clean() mange le domaine
+    mais laisse "https:", ce qui suffisait a faire passer le tag pour du contenu.
+    """
+    s = (s or '').strip()
+    if not s:
+        return False
+    return not clean(re.sub(r'(?i)^(?:https?|ftp)://', '', s))
+
+
+def strip_spam_frames(tags):
+    """Retire les frames ID3 qui ne portent qu'une URL de site de telechargement.
+
+    Un fichier de djsoundtop.com arrive avec la meme adresse dans ALBUM, GENRE,
+    COMPOSITEUR, ALBUMARTIST, COMMENT, WWW et un TXXX maison. Le triage ne
+    nettoyait que titre/artiste/album : le reste partait tel quel sur AzuraCast,
+    ou le genre et le commentaire sont visibles. Retourne les noms retires.
+    """
+    retires = []
+    for key in list(tags.keys()):
+        frame = tags[key]
+        # W*** : leur contenu EST une URL par definition. Aucune n'est utile ici
+        # (AzuraCast ne les lit pas) et ce sont toujours celles du site.
+        if key.startswith('W'):
+            retires.append(key)
+            tags.delall(key)
+            continue
+        if key.startswith('TXXX'):
+            if is_url_only(getattr(frame, 'desc', '')) or all(is_url_only(v) for v in frame.text):
+                retires.append(key)
+                tags.delall(key)
+            continue
+        if key.startswith(('T', 'COMM')):
+            vals = list(getattr(frame, 'text', []) or [])
+            if vals and all(is_url_only(str(v)) for v in vals):
+                retires.append(key)
+                tags.delall(key)
+    return retires
+
+
+def dedupe_covers(tags, est_mauvaise):
+    """Ne garde qu'UNE pochette, la premiere qui n'est pas une banniere de site.
+
+    Un fichier peut porter plusieurs APIC toutes typees "Front Cover" (constate
+    le 2026-09-22 : banniere djsoundtop 1024x1024 en 1re position, vraie
+    pochette 1000x1000 en 2e). En supprimer une dans Mp3tag laisse l'autre, et
+    le lecteur affiche celle qui reste -- d'ou l'impression qu'une pochette
+    supprimee revient. Inspecter apics[0] seulement, comme le faisaient triage
+    et ce script, laissait passer une banniere en 2e position.
+
+    Retourne (pochette gardee ou None, nombre de pochettes retirees).
+    """
+    apics = tags.getall('APIC')
+    if not apics:
+        return None, 0
+    bonnes = [a for a in apics if not est_mauvaise(a.data)]
+    garde = bonnes[0] if bonnes else None
+    if len(apics) == 1 and garde is not None:
+        return garde, 0          # deja propre, on ne reecrit rien
+    tags.delall('APIC')
+    if garde is not None:
+        # Retypee proprement : plusieurs "Front Cover" dans un meme fichier,
+        # c'est precisement ce qu'on vient de corriger.
+        garde.type = 3
+        garde.desc = 'Cover'
+        tags.add(garde)
+    return garde, len(apics) - (1 if garde is not None else 0)
 
 
 def tokens(s):
@@ -150,6 +220,12 @@ def main():
             continue
         h = hashlib.md5(apics[0].data).hexdigest()
         file_covers[path] = h
+        for extra in apics[1:]:
+            # Les pochettes en 2e position comptent aussi dans la detection des
+            # logos de site, sinon une banniere systematiquement rangee apres la
+            # vraie pochette n'atteint jamais le seuil.
+            he = hashlib.md5(extra.data).hexdigest()
+            cover_groups[he]['files'].append(path)
         easy = MFile(path, easy=True)
         artist = (easy.tags.get('artist') or ['?'])[0] if easy and easy.tags else '?'
         cover_groups[h]['files'].append(path)
@@ -212,6 +288,24 @@ def main():
                     new_path = candidate
                 stats['fichiers_renommes'] += 1
 
+        # Frames publicitaires (GENRE/COMPOSITEUR/WWW... = l'adresse du site)
+        try:
+            t = ID3(new_path)
+            spam = strip_spam_frames(t)
+            garde, en_trop = dedupe_covers(
+                t, lambda data: hashlib.md5(data).hexdigest() in bad_hashes)
+            if spam or en_trop:
+                if spam:
+                    print(f"{line_prefix} TAGS PUB retires : {', '.join(spam)}")
+                    stats['tags_pub_retires'] += len(spam)
+                if en_trop:
+                    print(f"{line_prefix} {en_trop} pochette(s) en trop retiree(s)")
+                    stats['covers_en_trop'] += en_trop
+                if APPLY:
+                    t.save()
+        except Exception as e:
+            print(f"{line_prefix} ERREUR nettoyage frames : {e}")
+
         # Cover art
         cover_hash = file_covers.get(path)
         needs_new_cover = False
@@ -253,6 +347,8 @@ def main():
     print(f"  Tags nettoyes         : {stats['tags_nettoyes']}")
     print(f"  Fichiers renommes     : {stats['fichiers_renommes']}")
     print(f"  Covers supprimees     : {stats['covers_supprimees']}")
+    print(f"  Covers en trop        : {stats['covers_en_trop']}")
+    print(f"  Tags publicitaires    : {stats['tags_pub_retires']}")
     print(f"  Covers remplacees     : {stats['covers_remplacees']}")
     print(f"  Covers laissees vides : {stats['covers_laissees_vides']}")
     if not APPLY:

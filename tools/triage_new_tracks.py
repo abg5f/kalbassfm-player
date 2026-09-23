@@ -278,13 +278,23 @@ def clean_tags_and_filename(path):
     # Une cover presente ne veut pas dire une cover valable : les sites de
     # telechargement (heydj.pro, ClapCrate.com...) embarquent leur banniere.
     # bad_art_hashes.txt liste leurs empreintes, alimente par fix_artwork.py.
+    # TOUTES les pochettes sont examinees, pas seulement la premiere : un
+    # fichier peut en porter deux, toutes deux typees "Front Cover", la
+    # banniere du site devant la vraie pochette (constate le 2026-09-22 sur
+    # djsoundtop.com). N'en inspecter qu'une laissait l'autre a l'antenne.
     try:
         tags = ID3(new_path)
-        apics = tags.getall("APIC")
-        has_cover = bool(apics)
-        if has_cover and is_site_logo(apics[0].data):
-            print("    cover = logo de site -> remplacement")
-            has_cover = False
+        avant = len(tags.getall("APIC"))
+        garde, en_trop = clt.dedupe_covers(tags, is_site_logo)
+        spam = clt.strip_spam_frames(tags)
+        if en_trop or spam:
+            if en_trop:
+                print(f"    {en_trop} pochette(s) retiree(s) sur {avant} "
+                      f"(logo de site ou doublon)")
+            if spam:
+                print(f"    tags publicitaires retires : {', '.join(spam)}")
+            tags.save()
+        has_cover = garde is not None
     except Exception:
         has_cover = False
 
